@@ -90,10 +90,34 @@ function estimate_causal(; a, data::DataFrame,
                        treatment=treatment, outcome=outcome; kwargs...))
     else  # :nested_fixable
         @info "Treatment is nested-fixable. Using ANIPW."
-        return combine_levels(a, aval ->
-            nested_anipw_a(a=aval, data=data, graph=g,
-                           treatment=treatment, outcome=outcome,
-                           id_result=id; kwargs...))
+        avals = collect(a isa AbstractVector ? a : [a])
+        out1 = nested_anipw_a(a=avals[1], data=data, graph=g,
+                               treatment=treatment, outcome=outcome,
+                               id_result=id; kwargs...)
+        if length(avals) == 1
+            return Dict{Symbol,Any}(
+                :ANIPW    => (EYa=out1.ANIPW.estimated_psi,
+                              lower_ci=out1.ANIPW.lower_ci,
+                              upper_ci=out1.ANIPW.upper_ci,
+                              EIF=out1.ANIPW.EIF),
+                :NIPW     => (EYa=out1.NIPW.estimated_psi,),
+                :ANIPW_Ya => out1.ANIPW,
+                :rw       => out1.rw,
+            )
+        end
+        out0 = nested_anipw_a(a=avals[2], data=data, graph=g,
+                               treatment=treatment, outcome=outcome,
+                               id_result=id; kwargs...)
+        ace     = out1.ANIPW.estimated_psi - out0.ANIPW.estimated_psi
+        eif_ace = out1.ANIPW.EIF - out0.ANIPW.EIF
+        lo, hi  = ci_from_eif(ace, eif_ace, length(eif_ace))
+        return Dict{Symbol,Any}(
+            :ANIPW    => (ACE=ace, lower_ci=lo, upper_ci=hi, EIF=eif_ace),
+            :NIPW     => (ACE=out1.NIPW.estimated_psi - out0.NIPW.estimated_psi,),
+            :ANIPW_Y1 => out1.ANIPW,
+            :ANIPW_Y0 => out0.ANIPW,
+            :rw       => out1.rw,
+        )
     end
 end
 

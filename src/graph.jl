@@ -198,14 +198,14 @@ function fixed_graph(g::ADMG, nodes)
 end
 
 # ── Identification primitives ─────────────────────────────────────────────────
-function is_p_fix(g::ADMG, treatment)
-    a = sym(treatment)
-    all(child -> !has_biedge(g, a, child), children(g, a))
-end
-
 function is_fix(g::ADMG, treatment)
     a = sym(treatment)
-    all(d -> !has_biedge(g, a, d), descendants(g, a))
+    length(intersect(descendants(g, [a]), district(g, a))) == 1
+end
+
+function is_p_fix(g::ADMG, treatment)
+    a = sym(treatment)
+    isempty(intersect(district(g, a), children(g, a)))
 end
 
 function reachable_closure(g::ADMG, nodes)

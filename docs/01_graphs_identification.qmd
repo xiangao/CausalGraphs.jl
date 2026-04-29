@@ -4,16 +4,17 @@ format:
   html:
     toc: true
     code-fold: false
-jupyter: julia-1.10
+jupyter: julia-1.12
 ---
 
 This tutorial introduces the ADMG graph layer and the `identify()` function.
-It adapts examples from the **anankeR** R package
-([anankeR vignettes](https://github.com/xiangao/anankeR)).
+It adapts examples from the **anankeR** R package.
 
 ## Setup
 
 ```{julia}
+import Pkg
+Pkg.activate(joinpath(@__DIR__, ".."); io=devnull)
 using CausalGraphs, DataFrames, Random
 ```
 
@@ -22,10 +23,10 @@ using CausalGraphs, DataFrames, Random
 An **acyclic directed mixed graph (ADMG)** has two edge types:
 
 - **Directed** `A → B`: A causally affects B.
-- **Bidirected** `A ↔ B`: A and B share a hidden common cause.
+- **Bidirected** `A ↔ B`: A and B share an unmeasured common cause.
 
 ```{julia}
-# Frontdoor graph: A → M → Y, A ↔ Y (hidden confounder U affects both A and Y)
+# Frontdoor graph: A → M → Y, A ↔ Y (hidden U affects both A and Y)
 g_fd = make_graph(
     vertices = [:A, :M, :Y],
     di_edges  = [(:A, :M), (:M, :Y)],
@@ -46,22 +47,22 @@ g_bd = make_graph(
 ### Parents, children, descendants, ancestors
 
 ```{julia}
-println("parents(M)      = ", parents(g_fd, :M))
-println("children(A)     = ", children(g_fd, :A))
-println("descendants(A)  = ", descendants(g_fd, [:A]))
-println("ancestors(Y)    = ", ancestors(g_fd, [:Y]))
+println("parents(:M)     = ", parents(g_fd, :M))
+println("children(:A)    = ", children(g_fd, :A))
+println("descendants(:A) = ", descendants(g_fd, [:A]))
+println("ancestors(:Y)   = ", ancestors(g_fd, [:Y]))
 ```
 
 ### Districts (bidirected-connected components)
 
-The **district** of a vertex is the set of vertices connected to it by
-bidirected paths (through hidden common causes).
+The **district** of a vertex is the set of vertices reachable by
+bidirected paths — encoding which variables share hidden common causes.
 
 ```{julia}
-println("district(A) in frontdoor graph = ", district(g_fd, :A))
-println("district(M) in frontdoor graph = ", district(g_fd, :M))
-println()
-println("All districts in frontdoor graph:")
+println("district(:A) in frontdoor = ", district(g_fd, :A))
+println("district(:M) in frontdoor = ", district(g_fd, :M))
+
+println("\nAll districts in frontdoor graph:")
 for d in all_districts(g_fd)
     println("  ", d)
 end
@@ -70,16 +71,15 @@ end
 ### Markov blanket and Markov pillow
 
 ```{julia}
-println("Markov blanket(A) = ", markov_blanket(g_fd, :A))
-# Markov pillow = Markov blanket restricted to predecessors in topological order
-println("Markov pillow(A)  = ", markov_pillow(g_fd, :A; treatment=:A))
+println("markov_blanket(:A) = ", markov_blanket(g_fd, :A))
+println("markov_pillow(:A)  = ", markov_pillow(g_fd, :A; treatment=:A))
 ```
 
 ### Reachable closure
 
-The **reachable closure** of a set S is the smallest set containing S such
-that everything outside it can be sequentially "fixed" (a-fixed) away.
-It underlies the One-Line ID algorithm.
+The **reachable closure** of a set S is the smallest superset of S such
+that every vertex outside it is sequentially a-fixable. It is the core
+operation underlying One-Line ID.
 
 ```{julia}
 rc = reachable_closure(g_fd, [:Y])
@@ -89,7 +89,7 @@ println("Fixing order:              ", rc.fixing_order)
 
 ## Fixability
 
-Three fixability conditions determine which estimator to use:
+Three fixability conditions determine which estimator is appropriate:
 
 | Condition | Check | Estimator |
 |---|---|---|
@@ -98,21 +98,19 @@ Three fixability conditions determine which estimator to use:
 | **nested-fixable** | One-Line ID passes | ANIPW |
 
 ```{julia}
-# Backdoor graph: A has no hidden confounders with its descendants → a-fixable
 println("Backdoor graph:")
-println("  is_fix(A)   = ", is_fix(g_bd, :A))
-println("  is_p_fix(A) = ", is_p_fix(g_bd, :A))
+println("  is_fix(:A)   = ", is_fix(g_bd, :A))
+println("  is_p_fix(:A) = ", is_p_fix(g_bd, :A))
 
-println()
-println("Frontdoor graph:")
-println("  is_fix(A)   = ", is_fix(g_fd, :A))
-println("  is_p_fix(A) = ", is_p_fix(g_fd, :A))
+println("\nFrontdoor graph:")
+println("  is_fix(:A)   = ", is_fix(g_fd, :A))
+println("  is_p_fix(:A) = ", is_p_fix(g_fd, :A))
 ```
 
 ## Identification with `identify()`
 
-`identify()` runs all three checks in order and returns the identification
-strategy plus any metadata needed by the estimator.
+`identify()` checks all three conditions in order and returns the routing
+strategy plus any metadata the estimator needs.
 
 ```{julia}
 id_bd = identify(g_bd, :A, :Y)
@@ -122,10 +120,10 @@ id_fd = identify(g_fd, :A, :Y)
 println("Frontdoor: ", id_fd.strategy)
 ```
 
-### Non-identified example
+### Non-identified: the bow graph
 
-The **bow graph** (A → Y, A ↔ Y) is the classic non-identified case —
-the direct arrow and the hidden confounder are confounded.
+The **bow graph** (A → Y, A ↔ Y) is the classic non-identified case.
+The direct effect and the hidden confounder cannot be disentangled.
 
 ```{julia}
 g_bow = make_graph(
@@ -133,46 +131,40 @@ g_bow = make_graph(
     di_edges  = [(:A, :Y)],
     bi_edges  = [(:A, :Y)],
 )
-id_bow = identify(g_bow, :A, :Y)
-println("Bow graph: ", id_bow.strategy)
+println("Bow graph: ", identify(g_bow, :A, :Y).strategy)
 ```
 
-### A nested-fixable example
+### Nested-fixable: the extended front-door
 
-In this four-variable graph (W → A → M → Y, A ↔ Y, W ↔ M), A is neither
-a-fixable nor p-fixable, but the effect is still identified via the nested
-Markov model.
+When dist(A) and ch(A) overlap — i.e., A shares hidden common causes with
+one of its children — p-fixable fails. The One-Line ID algorithm can still
+identify the effect in more complex graphs. `identify()` checks this
+automatically.
 
 ```{julia}
-g_nest = make_graph(
-    vertices = [:W, :A, :M, :Y],
-    di_edges  = [(:W, :A), (:W, :Y), (:A, :M), (:M, :Y)],
-    bi_edges  = [(:A, :Y)],
+# Extended front-door: Z→A→M→Y, A↔M, Z→Y
+# dist(A) = {A,M}  (A↔M bidirected), ch(A) = {M}  → NOT p-fixable
+# But still identified by One-Line ID
+g_ext = make_graph(
+    vertices = [:Z, :A, :M, :Y],
+    di_edges  = [(:Z, :A), (:Z, :Y), (:A, :M), (:M, :Y)],
+    bi_edges  = [(:A, :M)],
 )
-id_nest = identify(g_nest, :A, :Y)
-println("Nested graph: ", id_nest.strategy)
-if id_nest.strategy == :nested_fixable
-    println("Y*:       ", id_nest.ystar)
-    println("n_order:  ", id_nest.n_order)
+
+id_ext = identify(g_ext, :A, :Y)
+println("is_p_fix(:A) = ", is_p_fix(g_ext, :A))
+println("strategy     = ", id_ext.strategy)
+if id_ext.strategy == :nested_fixable
+    println("Y*: ", id_ext.ystar)
 end
 ```
 
-## The `estimate_causal()` Entry Point
-
-The main function wraps `identify()` and calls the right estimator automatically.
-Later tutorials show each strategy in detail.
+## Summary
 
 ```{julia}
-#| eval: false
-result = estimate_causal(
-    a         = [1, 0],      # E[Y(1)] - E[Y(0)]
-    data      = df,
-    graph     = g,
-    treatment = :A,
-    outcome   = :Y,
-)
-# Returns TMLE, Onestep, Gcomp, IPW  (backdoor)
-#      or TMLE, Onestep              (frontdoor)
-#      or ANIPW, NIPW                (nested-fixable)
-result[:TMLE].ACE
+for (name, g) in [("backdoor", g_bd), ("frontdoor", g_fd),
+                   ("bow (not ID)", g_bow), ("extended front-door", g_ext)]
+    id = identify(g, :A, :Y)
+    println("$name  →  $(id.strategy)")
+end
 ```

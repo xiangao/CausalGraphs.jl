@@ -4,7 +4,7 @@ format:
   html:
     toc: true
     code-fold: false
-jupyter: julia-1.10
+jupyter: julia-1.12
 ---
 
 This tutorial covers estimation for the two most common identification
@@ -14,7 +14,9 @@ It adapts examples from **FlexCausal.jl** and **anankeR**.
 ## Setup
 
 ```{julia}
-using CausalGraphs, DataFrames, Random, Statistics
+import Pkg
+Pkg.activate(joinpath(@__DIR__, ".."); io=devnull)
+using CausalGraphs, DataFrames, Random, Statistics, Printf
 
 logistic(x) = inv(1 + exp(-x))
 ```
@@ -23,10 +25,7 @@ logistic(x) = inv(1 + exp(-x))
 
 ## 1. Backdoor Adjustment (a-fixable)
 
-### Graph and data
-
-The **backdoor graph** has an observed confounder X that blocks all
-non-causal paths from A to Y.
+### Graph
 
 ```
 X → A → Y
@@ -38,12 +37,13 @@ g_bd = make_graph(
     vertices = [:X, :A, :Y],
     di_edges  = [(:X, :A), (:X, :Y), (:A, :Y)],
 )
-identify(g_bd, :A, :Y).strategy   # :a_fixable
+println("strategy: ", identify(g_bd, :A, :Y).strategy)
 ```
 
+### Data — true ACE = 2.0
+
 ```{julia}
-# DGP: true ACE = 2.0
-function simulate_backdoor(n; seed=1)
+function sim_backdoor(n; seed=1)
     Random.seed!(seed)
     X = randn(n)
     A = Float64.(rand(n) .< logistic.(0.2 .+ 0.8 .* X))
@@ -51,93 +51,55 @@ function simulate_backdoor(n; seed=1)
     DataFrame(X=X, A=A, Y=Y)
 end
 
-df_bd = simulate_backdoor(1_000)
+df_bd = sim_backdoor(1_000)
 first(df_bd, 3)
 ```
 
 ### Estimation
 
-`estimate_causal()` automatically detects the backdoor structure and returns
-TMLE, one-step (AIPW), G-computation, and IPW.
-
 ```{julia}
-res_bd = estimate_causal(
-    a         = [1, 0],
-    data      = df_bd,
-    graph     = g_bd,
-    treatment = :A,
-    outcome   = :Y,
-)
+res_bd = estimate_causal(a=[1,0], data=df_bd, graph=g_bd,
+                          treatment=:A, outcome=:Y)
 
 println("True ACE = 2.0")
-println("TMLE:    ACE = ", round(res_bd[:TMLE].ACE,    digits=3),
-        "  95% CI (", round(res_bd[:TMLE].lower_ci, digits=3),
-        ", ", round(res_bd[:TMLE].upper_ci, digits=3), ")")
-println("Onestep: ACE = ", round(res_bd[:Onestep].ACE, digits=3))
-println("Gcomp:   ACE = ", round(res_bd[:Gcomp].ACE,   digits=3))
-println("IPW:     ACE = ", round(res_bd[:IPW].ACE,     digits=3))
+@printf("TMLE:    ACE = %.3f  95%% CI (%.3f, %.3f)\n",
+        res_bd[:TMLE].ACE, res_bd[:TMLE].lower_ci, res_bd[:TMLE].upper_ci)
+@printf("Onestep: ACE = %.3f\n", res_bd[:Onestep].ACE)
+@printf("Gcomp:   ACE = %.3f\n", res_bd[:Gcomp].ACE)
+@printf("IPW:     ACE = %.3f\n", res_bd[:IPW].ACE)
 ```
 
 ### With SuperLearner
 
-Pass `superlearner_Y=true` and/or `superlearner_A=true` to use MLJ stacked
-ensembles (GLM + random forest + gradient boosting) for the nuisance fits,
-with optional cross-fitting.
-
 ```{julia}
 #| eval: false
 res_sl = estimate_causal(
-    a              = [1, 0],
-    data           = df_bd,
-    graph          = g_bd,
-    treatment      = :A,
-    outcome        = :Y,
-    superlearner_Y = true,
-    superlearner_A = true,
-    crossfit       = true,
-    K              = 5,
+    a=[1,0], data=df_bd, graph=g_bd, treatment=:A, outcome=:Y,
+    superlearner_Y=true, superlearner_A=true, crossfit=true, K=5,
 )
 ```
 
-### Larger confounder set
-
-`identify()` and `estimate_causal()` work with arbitrary graphs. Here we
-add a second confounder:
+### Scalar a — E[Y(1)] and E[Y(0)] separately
 
 ```{julia}
-function simulate_backdoor2(n; seed=11)
-    Random.seed!(seed)
-    X1 = randn(n); X2 = 0.5 .* X1 .+ randn(n)
-    A  = Float64.(rand(n) .< logistic.(X1 .+ 0.5 .* X2))
-    Y  = 2 .* A .+ X1 .+ X2 .+ randn(n)
-    DataFrame(X1=X1, X2=X2, A=A, Y=Y)
-end
+res1 = estimate_causal(a=1, data=df_bd, graph=g_bd, treatment=:A, outcome=:Y)
+res0 = estimate_causal(a=0, data=df_bd, graph=g_bd, treatment=:A, outcome=:Y)
 
-g_bd2 = make_graph(
-    vertices = [:X1, :X2, :A, :Y],
-    di_edges  = [(:X1, :X2), (:X1, :A), (:X2, :A), (:X1, :Y), (:X2, :Y), (:A, :Y)],
-)
-df_bd2 = simulate_backdoor2(1_000)
-
-res_bd2 = estimate_causal(a=[1,0], data=df_bd2, graph=g_bd2,
-                           treatment=:A, outcome=:Y)
-println("True ACE = 2.0")
-println("TMLE: ", round(res_bd2[:TMLE].ACE, digits=3))
+@printf("E[Y(1)] = %.3f\n", res1[:TMLE].EYa)
+@printf("E[Y(0)] = %.3f\n", res0[:TMLE].EYa)
+@printf("ACE     = %.3f\n", res1[:TMLE].EYa - res0[:TMLE].EYa)
 ```
 
 ---
 
 ## 2. Front-Door / NPS Adjustment (p-fixable)
 
-### Graph and data
-
-The **front-door graph** has a hidden confounder U that affects both A and Y,
-but A influences Y only through the mediator M — which is unconfounded.
+### Graph
 
 ```
 A → M → Y
-A ↔ Y   (hidden U)
-X → A, X → Y, X → M   (optional observed confounder)
+A ↔ Y   (hidden U confounds A and Y)
+X → A, X → Y, X → M
 ```
 
 ```{julia}
@@ -146,50 +108,38 @@ g_fd = make_graph(
     bi_edges  = [(:A, :Y)],
     di_edges  = [(:X, :A), (:X, :Y), (:X, :M), (:A, :M), (:M, :Y)],
 )
-identify(g_fd, :A, :Y).strategy   # :p_fixable
+println("strategy: ", identify(g_fd, :A, :Y).strategy)
 ```
 
+### Data — true mediated ACE ≈ 1.8 (= 1.2 × 1.5)
+
 ```{julia}
-# DGP: true mediated ACE ≈ 1.2 × 1.5 = 1.8
-function simulate_frontdoor(n; seed=2)
+function sim_frontdoor(n; seed=2)
     Random.seed!(seed)
-    X  = randn(n)
-    U  = randn(n)                       # hidden confounder
-    A  = Float64.(rand(n) .< logistic.(-0.2 .+ 0.6 .* X .+ 0.5 .* U))
-    M  = 0.4 .+ 1.2 .* A .+ 0.7 .* X .+ randn(n)
-    Y  = 1.0 .+ 1.5 .* M .+ X .+ U .+ randn(n)
+    X = randn(n); U = randn(n)
+    A = Float64.(rand(n) .< logistic.(-0.2 .+ 0.6 .* X .+ 0.5 .* U))
+    M = 0.4 .+ 1.2 .* A .+ 0.7 .* X .+ randn(n)
+    Y = 1.0 .+ 1.5 .* M .+ X .+ U .+ randn(n)
     DataFrame(X=X, A=A, M=M, Y=Y)
 end
 
-df_fd = simulate_frontdoor(800)
+df_fd = sim_frontdoor(800)
 first(df_fd, 3)
 ```
 
 ### Estimation
 
-For p-fixable treatments, `estimate_causal()` uses NPS-TMLE (sequential
-regression targeting) — the front-door functional generalized to arbitrary
-primal-fixable structures.
-
 ```{julia}
-res_fd = estimate_causal(
-    a         = [1, 0],
-    data      = df_fd,
-    graph     = g_fd,
-    treatment = :A,
-    outcome   = :Y,
-)
+res_fd = estimate_causal(a=[1,0], data=df_fd, graph=g_fd,
+                          treatment=:A, outcome=:Y)
 
 println("True ACE ≈ 1.8  (= 1.2 × 1.5)")
-println("TMLE:    ACE = ", round(res_fd[:TMLE].ACE,    digits=3),
-        "  95% CI (", round(res_fd[:TMLE].lower_ci, digits=3),
-        ", ", round(res_fd[:TMLE].upper_ci, digits=3), ")")
-println("Onestep: ACE = ", round(res_fd[:Onestep].ACE, digits=3))
+@printf("TMLE:    ACE = %.3f  95%% CI (%.3f, %.3f)\n",
+        res_fd[:TMLE].ACE, res_fd[:TMLE].lower_ci, res_fd[:TMLE].upper_ci)
+@printf("Onestep: ACE = %.3f\n", res_fd[:Onestep].ACE)
 ```
 
-### Pure front-door (no X)
-
-The classic front-door: A → M → Y, A ↔ Y.
+### Pure front-door (no observed confounders)
 
 ```{julia}
 g_fd_pure = make_graph(
@@ -198,65 +148,46 @@ g_fd_pure = make_graph(
     di_edges  = [(:A, :M), (:M, :Y)],
 )
 
-function simulate_frontdoor_pure(n; seed=3)
+function sim_fd_pure(n; seed=3)
     Random.seed!(seed)
     U = randn(n)
     A = Float64.(rand(n) .< logistic.(U))
-    M = 0.5 .* A .+ randn(n)      # A → M with coefficient 0.5
-    Y = 0.3 .* M .+ 0.4 .* U .+ randn(n)   # M → Y with coefficient 0.3; true ACE = 0.5 × 0.3 = 0.15
+    M = 0.5 .* A .+ randn(n)      # coefficient 0.5
+    Y = 0.3 .* M .+ 0.4 .* U .+ randn(n)  # true ACE = 0.5 × 0.3 = 0.15
     DataFrame(A=A, M=M, Y=Y)
 end
 
-df_fd_pure = simulate_frontdoor_pure(1_200)
+df_fd_pure = sim_fd_pure(1_200)
 res_fd_pure = estimate_causal(a=[1,0], data=df_fd_pure, graph=g_fd_pure,
                                treatment=:A, outcome=:Y)
 println("True ACE = 0.15")
-println("TMLE:    ", round(res_fd_pure[:TMLE].ACE,    digits=3))
-println("Onestep: ", round(res_fd_pure[:Onestep].ACE, digits=3))
+@printf("TMLE:    %.3f\n", res_fd_pure[:TMLE].ACE)
+@printf("Onestep: %.3f\n", res_fd_pure[:Onestep].ACE)
 ```
 
 ---
 
-## 3. Estimating E[Y(a)] (not just ACE)
-
-Pass a scalar `a` to get the marginal potential outcome E[Y(a)] instead of
-the contrast.
-
-```{julia}
-res1 = estimate_causal(a=1, data=df_bd, graph=g_bd, treatment=:A, outcome=:Y)
-res0 = estimate_causal(a=0, data=df_bd, graph=g_bd, treatment=:A, outcome=:Y)
-
-println("E[Y(1)] TMLE = ", round(res1[:TMLE].EYa, digits=3))
-println("E[Y(0)] TMLE = ", round(res0[:TMLE].EYa, digits=3))
-println("ACE          = ", round(res1[:TMLE].EYa - res0[:TMLE].EYa, digits=3))
-```
-
----
-
-## 4. Comparing Estimators
-
-A brief simulation study comparing TMLE, AIPW, and IPW at n = 500.
+## 3. Simulation comparison: TMLE vs Onestep vs IPW
 
 ```{julia}
 function sim_compare(n_reps=200, n=500)
-    tmle_vec = Float64[]; aipw_vec = Float64[]; ipw_vec = Float64[]
+    tmle = Float64[]; aipw = Float64[]; ipw = Float64[]
     for seed in 1:n_reps
-        df = simulate_backdoor(n; seed)
+        df  = sim_backdoor(n; seed)
         res = estimate_causal(a=[1,0], data=df, graph=g_bd,
                               treatment=:A, outcome=:Y)
-        push!(tmle_vec, res[:TMLE].ACE)
-        push!(aipw_vec, res[:Onestep].ACE)
-        push!(ipw_vec,  res[:IPW].ACE)
+        push!(tmle, res[:TMLE].ACE)
+        push!(aipw, res[:Onestep].ACE)
+        push!(ipw,  res[:IPW].ACE)
     end
-    println("n = $n, reps = $n_reps, true ACE = 2.0")
-    println("         Bias     RMSE")
-    for (name, v) in [("TMLE", tmle_vec), ("Onestep", aipw_vec), ("IPW", ipw_vec)]
+    println("n=$n, reps=$n_reps, true ACE=2.0")
+    println("          Bias      RMSE")
+    for (name, v) in [("TMLE", tmle), ("Onestep", aipw), ("IPW", ipw)]
         bias = mean(v) - 2.0
         rmse = sqrt(mean((v .- 2.0).^2))
-        @printf("  %-8s %+.4f  %.4f\n", name, bias, rmse)
+        @printf("  %-8s %+.4f   %.4f\n", name, bias, rmse)
     end
 end
 
-using Printf
 sim_compare()
 ```

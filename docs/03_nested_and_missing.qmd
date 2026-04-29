@@ -4,256 +4,212 @@ format:
   html:
     toc: true
     code-fold: false
-jupyter: julia-1.10
+jupyter: julia-1.12
 ---
-
-This tutorial covers the two advanced features unique to **CausalGraphs.jl**:
-
-1. The **nested-fixable** identification strategy and ANIPW estimator
-   (Bhattacharya, Nabi & Shpitser, 2022).
-2. Using **FlexMissing.jl** propensity weights alongside `estimate_causal()`.
 
 ## Setup
 
 ```{julia}
-using CausalGraphs, DataFrames, Random, Statistics
+import Pkg
+Pkg.activate(joinpath(@__DIR__, ".."); io=devnull)
+using CausalGraphs, DataFrames, Random, Statistics, Printf
 
 logistic(x) = inv(1 + exp(-x))
 ```
 
 ---
 
-## Part 1: Nested-Fixable Estimation
+## Part 1: Nested-Fixable Estimation (ANIPW)
 
-### What is nested-fixable?
-
-A treatment A is **nested-fixable** if the causal effect is identified, but A
-is neither a-fixable (backdoor) nor p-fixable (front-door). This happens when
-the identification requires a more complex fixing sequence.
-
-The hierarchy is:
+### The identification hierarchy
 
 ```
 a-fixable  ⊂  p-fixable  ⊂  nested-fixable  ⊂  identified
 ```
 
-All a-fixable effects are also p-fixable and nested-fixable; the converse
-doesn't hold.
+A treatment is **nested-fixable** when the effect is identified by the
+One-Line ID algorithm, but is **neither a-fixable nor p-fixable**. This
+occurs when a *child* of the treatment shares a hidden common cause with
+the treatment — so neither backdoor nor front-door adjustment is sufficient.
 
-### Example: W → A → M → Y with A ↔ Y and W → Y
+### Example: HIV treatment graph
 
-```
-W ──→ A ──→ M ──→ Y
-      ↕ (A ↔ Y: hidden U affects both A and Y)
-W ──────────────→ Y
-```
-
-A is not a-fixable (hidden confounder A ↔ Y). It is also not p-fixable because
-children(A) = {M} and M is in the same district as A via... let's check:
+This example comes from the anankeR estimation-strategies vignette.
+A drug treatment T affects CD4 count (outcome), mediated partly through
+Toxicity and Adherence. Hidden common causes link several variables.
 
 ```{julia}
-g_nest = make_graph(
-    vertices = [:W, :A, :M, :Y],
-    di_edges  = [(:W, :A), (:W, :Y), (:A, :M), (:M, :Y)],
-    bi_edges  = [(:A, :Y)],
+g_hiv = make_graph(
+    vertices = [:ViralLoad, :Income, :Exercise, :T, :Toxicity, :Adherence, :CD4],
+    di_edges  = [
+        (:ViralLoad, :T),       (:ViralLoad, :CD4),
+        (:Income,    :T),       (:Exercise,  :CD4),
+        (:T,         :Toxicity),(:T,          :CD4),
+        (:Toxicity,  :Adherence),(:Adherence, :CD4),
+    ],
+    bi_edges  = [
+        (:Income,    :Toxicity),
+        (:Exercise,  :Income),
+        (:Exercise,  :T),
+        (:ViralLoad, :Adherence),
+        (:ViralLoad, :CD4),
+    ],
 )
-
-println("is_fix(A)   = ", is_fix(g_nest, :A))
-println("is_p_fix(A) = ", is_p_fix(g_nest, :A))
-
-id = identify(g_nest, :A, :Y)
-println("strategy    = ", id.strategy)
 ```
 
+Toxicity is a **child** of T and also in T's **district** (through the
+chain Exercise ↔ Income ↔ Toxicity), making T not p-fixable:
+
 ```{julia}
-# DGP: W → A → M → Y, A ↔ Y (U hidden)
-# True ACE(A→Y): Y = A + M + W, M = 0.5*A + 0.3*W
-#   → direct effect = 1, indirect through M = 1 × 0.5 × 1 = 0.5
-#   → total ACE ≈ 1.5
-function simulate_nested(n; seed=42)
+println("district(T)  = ", district(g_hiv, :T))
+println("children(T)  = ", children(g_hiv, :T))
+println()
+println("is_fix(:T)   = ", is_fix(g_hiv, :T))
+println("is_p_fix(:T) = ", is_p_fix(g_hiv, :T))
+
+id_hiv = identify(g_hiv, :T, :CD4)
+println("strategy     = ", id_hiv.strategy)
+```
+
+### Simulate data from the DGP
+
+```{julia}
+function sim_hiv(n; seed=42)
     Random.seed!(seed)
-    W = randn(n)
-    U = randn(n)
-    A = Float64.(rand(n) .< logistic.(0.5 .* W .+ 0.4 .* U))
-    M = 0.5 .* A .+ 0.3 .* W .+ randn(n)
-    Y = 1.0 .* A .+ 1.0 .* M .+ W .+ U .+ randn(n)
-    DataFrame(W=W, A=A, M=M, Y=Y)
+    # Latent hidden common causes
+    U_EI   = randn(n)   # Exercise ↔ Income
+    U_ET   = randn(n)   # Exercise ↔ T
+    U_ITox = randn(n)   # Income ↔ Toxicity
+    U_VA   = randn(n)   # ViralLoad ↔ Adherence
+    U_VCD4 = randn(n)   # ViralLoad ↔ CD4
+
+    ViralLoad = randn(n)
+    Exercise  = randn(n) .+ 0.5 .* U_EI .+ 0.5 .* U_ET
+    Income    = randn(n) .+ 0.4 .* ViralLoad .+ 0.4 .* U_EI .+ 0.4 .* U_ITox
+    T         = Float64.(rand(n) .< logistic.(0.5 .* ViralLoad .+ 0.3 .* Income .+ 0.4 .* U_ET))
+    Toxicity  = randn(n) .+ 0.6 .* T .+ 0.3 .* U_ITox
+    Adherence = randn(n) .+ 0.5 .* Toxicity .+ 0.3 .* U_VA
+    CD4       = randn(n) .+ 0.4 .* T .+ 0.3 .* Adherence .+
+                            0.2 .* Exercise .+ 0.3 .* ViralLoad .+
+                            0.3 .* U_VCD4 .+ 0.2 .* U_VA
+
+    # True ACE(T=1 vs T=0):
+    # Direct: 0.4
+    # Indirect T→Tox→Adh→CD4: 0.6 × 0.5 × 0.3 = 0.09
+    # Total ≈ 0.49
+
+    DataFrame(ViralLoad=ViralLoad, Income=Income, Exercise=Exercise,
+              T=T, Toxicity=Toxicity, Adherence=Adherence, CD4=CD4)
 end
 
-df_nest = simulate_nested(600)
-println("Correlation A↔Y (confounded, should be positive): ",
-        round(cor(df_nest.A, df_nest.Y), digits=3))
+df_hiv = sim_hiv(2_000)
+println("True ACE ≈ 0.49  (0.4 direct + 0.09 through Adherence)")
+first(df_hiv, 3)
 ```
 
-### ANIPW estimation
+### Estimation
 
-`estimate_causal()` routes to ANIPW when it detects nested-fixable.
-The estimator uses **nested rebalancing weights** (intrinsic kernel) to
-account for the complex identification structure.
+`estimate_causal()` detects nested-fixable and routes to ANIPW.
 
 ```{julia}
-res_nest = estimate_causal(
+res_hiv = estimate_causal(
     a         = [1, 0],
-    data      = df_nest,
-    graph     = g_nest,
-    treatment = :A,
-    outcome   = :Y,
+    data      = df_hiv,
+    graph     = g_hiv,
+    treatment = :T,
+    outcome   = :CD4,
 )
 
-println("True ACE ≈ 1.5")
-println("ANIPW: ACE = ", round(res_nest[:ANIPW].ACE, digits=3),
-        "  95% CI (", round(res_nest[:ANIPW].lower_ci, digits=3),
-        ", ", round(res_nest[:ANIPW].upper_ci, digits=3), ")")
-println("NIPW:  ACE = ", round(res_nest[:NIPW].ACE, digits=3))
+println("True ACE ≈ 0.49")
+@printf("ANIPW: ACE = %.3f  95%% CI (%.3f, %.3f)\n",
+        res_hiv[:ANIPW].ACE, res_hiv[:ANIPW].lower_ci, res_hiv[:ANIPW].upper_ci)
+@printf("NIPW:  ACE = %.3f\n", res_hiv[:NIPW].ACE)
 ```
 
-```{julia}
-# Inspect the nested rebalancing weights
-rw = res_nest[:ANIPW_raw] !== nothing ? res_nest[:ANIPW_raw] :
-     nested_anipw_a(a=1, data=df_nest, graph=g_nest, treatment=:A,
-                    outcome=:Y, id_result=identify(g_nest,:A,:Y)).rw
-println("Rebalancing weights — min: ", round(minimum(rw), digits=3),
-        "  max: ", round(maximum(rw), digits=3),
-        "  mean: ", round(mean(rw), digits=3))
-```
+### Nested rebalancing weights
 
-### Comparing strategies on a p-fixable graph
-
-To verify that our routing is correct, let's compare ANIPW to NPS-TMLE on a
-graph where both apply (the front-door graph is also nested-fixable):
+The ANIPW estimator builds **nested rebalancing weights** through the
+intrinsic kernel of each modified district. After reweighting, propensity
+and outcome regression are estimated by weighted GLM.
 
 ```{julia}
-g_fd = make_graph(
-    vertices = [:A, :M, :Y],
-    bi_edges  = [(:A, :Y)],
-    di_edges  = [(:A, :M), (:M, :Y)],
-)
-
-# The front-door graph is p-fixable, so estimate_causal uses NPS-TMLE.
-# Force nested routing for comparison:
-function simulate_fd(n; seed=7)
-    Random.seed!(seed)
-    U = randn(n)
-    A = Float64.(rand(n) .< logistic.(U))
-    M = 0.5 .* A .+ randn(n)
-    Y = 0.3 .* M .+ 0.4 .* U .+ randn(n)
-    DataFrame(A=A, M=M, Y=Y)
-end
-
-df_fd = simulate_fd(800)
-
-# p-fixable routing (NPS-TMLE)
-res_pfx = estimate_causal(a=[1,0], data=df_fd, graph=g_fd,
-                           treatment=:A, outcome=:Y)
-
-# nested routing (ANIPW) — call directly
-id_fd = identify(g_fd, :A, :Y)
-println("Front-door identified as: ", id_fd.strategy)
+rw = res_hiv[:rw]
+@printf("Rebalancing weights — min: %.3f  max: %.3f  mean: %.3f\n",
+        minimum(rw), maximum(rw), mean(rw))
 ```
 
 ---
 
 ## Part 2: Missing Data with FlexMissing.jl
 
-When observed covariates have **missing values**, the graph must encode
-the missingness mechanism. `FlexMissing.jl` handles identification and
-propensity estimation in missingness DAGs (mDAGs).
+When covariates are **missing at random** (MAR), `FlexMissing.jl` identifies
+and estimates the missing-data propensity scores, producing per-row IPW
+weights for `estimate_causal()`.
 
 ### Workflow
-
-The workflow is sequential:
-1. Use `FlexMissing.ID_algorithm()` to check that the missing propensities
-   are identified.
-2. Use `FlexMissing.propensity()` to estimate `p(R=1 | parents)` for each
-   missing-data indicator R.
-3. Compute per-row IPW weights and pass them to `estimate_causal()` via
-   `sample_weights`.
 
 ```{julia}
 #| eval: false
 using FlexMissing
 
-# Step 1: define the mDAG (missing-data structure)
+# 1. Define the missingness DAG (mDAG)
 mdag = FlexMissing.make_graph(
-    obs_variables      = ["A", "Y"],
-    missing_variables  = ["X"],
-    missing_indicators = ["Rx"],
-    di_edges = [("A","Y"), ("X","A"), ("X","Y"), ("X","Rx")],
+    obs_variables      = ["T", "CD4"],
+    missing_variables  = ["ViralLoad"],
+    missing_indicators = ["R_VL"],
+    di_edges = [("ViralLoad","T"), ("ViralLoad","CD4"), ("ViralLoad","R_VL"),
+                ("T","CD4")],
 )
 
-# Step 2: check identification and estimate propensities
+# 2. Identify and estimate missing-data propensities
 ID    = FlexMissing.ID_algorithm(mdag)
-props = FlexMissing.propensity(mdag, data, ID; law=:target)
+props = FlexMissing.propensity(mdag, data_with_missing, ID; law=:target)
 
-# Step 3: compute per-row IPW weights
-obs_rows = .!ismissing.(data.X)
-weights  = zeros(nrow(data))
-weights[obs_rows] .= 1.0 ./ coalesce.(props["Rx"].pred[obs_rows], 1.0)
+# 3. Build IPW weights on complete cases
+obs = .!ismissing.(data_with_missing.ViralLoad)
+wts = 1.0 ./ coalesce.(props["R_VL"].pred[obs], 1.0)
 
-# Step 4: pass to estimate_causal
-g_causal = make_graph(
-    vertices = [:A, :Y, :X],
-    di_edges  = [(:X,:A), (:X,:Y), (:A,:Y)],
-)
+# 4. Estimate causal effect using IPW-weighted complete cases
 result = estimate_causal(
-    a              = [1, 0],
-    data           = dropmissing(data),   # complete cases only after weighting
-    graph          = g_causal,
-    treatment      = :A,
-    outcome        = :Y,
-    sample_weights = weights[obs_rows],
+    a=[1,0], data=dropmissing(data_with_missing),
+    graph=g_hiv, treatment=:T, outcome=:CD4,
+    sample_weights=wts,
 )
 ```
 
-### G2 example from FlexMissing.jl
+### G2 graph (FlexMissing.jl)
 
-Below is the complete G2 mDAG from the FlexMissing tutorial — 6 variables with
-complex missingness dependencies. We show the identification summary and
-propensity estimation; the causal estimation step follows the pattern above.
+The G2 example from `FlexMissing.jl` has six variables with complex
+dependent missingness patterns. The full runnable code is in
+`FlexMissing.jl/examples/01_identification.jl`.
 
 ```{julia}
 #| eval: false
 using FlexMissing
 
 G2 = FlexMissing.make_graph(
-    obs_variables=[],
-    missing_variables=["X1","X2","X3","X4","X5","X6"],
+    obs_variables=[], missing_variables=["X1","X2","X3","X4","X5","X6"],
     missing_indicators=["R1","R2","R3","R4","R5","R6"],
     di_edges=[
         ("X1","X2"),("X2","X3"),("X3","X4"),("X4","X5"),("X5","X6"),
         ("R6","R5"),("R6","R3"),("R5","R3"),("R4","R3"),("R3","R2"),("R2","R1"),
-        ("X1","R3"),
-        ("X3","R4"),("X3","R5"),("X3","R6"),
-        ("X4","R1"),("X4","R6"),
-        ("X5","R2"),("X6","R5"),
+        ("X1","R3"),("X3","R4"),("X3","R5"),("X3","R6"),
+        ("X4","R1"),("X4","R6"),("X5","R2"),("X6","R5"),
     ],
 )
-
 id = FlexMissing.ID_algorithm(G2; fulllaw=true)
-summary = FlexMissing.summarize_ID(id)
-
-# Simulate data and estimate propensities
-# (full example in FlexMissing.jl/examples/02_propensity_and_mestimation.jl)
+FlexMissing.summarize_ID(id).target
 ```
-
-### When to use missing-data weighting
-
-| Scenario | Recommendation |
-|---|---|
-| MCAR (missing completely at random) | Complete-case analysis is unbiased; no weighting needed |
-| MAR (missing at random given observed) | Use FlexMissing.jl IPW weights |
-| MNAR (missing not at random) | Check identifiability with FlexMissing.ID_algorithm first |
 
 ---
 
 ## Summary
 
-| Strategy | Graph condition | Estimator | Key reference |
+| Strategy | Condition | Estimator | Returns |
 |---|---|---|---|
-| a-fixable | `desc(A) ∩ dist(A) = {A}` | Backdoor TMLE | Robins (1986) |
-| p-fixable | `dist(A) ∩ ch(A) = {}` | NPS-TMLE | Richardson et al. (2017) |
-| nested-fixable | One-Line ID passes | ANIPW | Bhattacharya et al. (2022) |
-| Missing data | mDAG identified | FlexMissing + IPW weights | Guo et al. (2023) |
+| a-fixable | `desc(A)∩dist(A) = {A}` | Backdoor TMLE | `:TMLE`, `:Onestep`, `:Gcomp`, `:IPW` |
+| p-fixable | `dist(A)∩ch(A) = {}` | NPS-TMLE | `:TMLE`, `:Onestep` |
+| nested-fixable | One-Line ID passes | ANIPW | `:ANIPW`, `:NIPW`, `:rw` |
 
-All strategies are available through the single `estimate_causal()` call —
-the identification check and estimator routing happen automatically.
+All three strategies are accessible through `estimate_causal()` — routing
+is automatic based on the graph structure.
