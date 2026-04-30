@@ -1,0 +1,199 @@
+---
+title: "Real Example: Job Training and Earnings"
+format:
+  html:
+    toc: true
+    code-fold: false
+jupyter: julia-1.12
+---
+
+This tutorial uses the National Supported Work (NSW) job-training data from
+LaLonde's evaluation study and the Dehejia-Wahba data archive. It demonstrates
+the full applied workflow:
+
+1. State the causal question.
+2. Hypothesize a causal graph.
+3. Identify the effect from the graph.
+4. Estimate the effect using `estimate_causal()`.
+
+The outcome is real earnings in 1978. The treatment is participation in the NSW
+job-training program. The data are available from Rajeev Dehejia's NBER archive:
+<https://users.nber.org/~rdehejia/data/.nswdata2.html>.
+
+## Setup
+
+```{julia}
+import Pkg
+Pkg.activate(joinpath(@__DIR__, ".."); io=devnull)
+
+using CausalGraphs
+using DataFrames
+using DelimitedFiles
+using Downloads
+using Printf
+using Statistics
+```
+
+## 1. Causal question
+
+We want the average causal effect of the job-training program on later earnings:
+
+```text
+E[re78(treat = 1)] - E[re78(treat = 0)]
+```
+
+The NSW experimental sample contains treated and control units from the same
+randomized program. The variables in these text files are:
+
+```text
+treat, age, educ, black, hisp, married, nodegr, re74, re75, re78
+```
+
+where `re74`, `re75`, and `re78` are real earnings in 1974, 1975, and 1978.
+
+```{julia}
+function read_nsw_file(url)
+    local_file = Downloads.download(url; timeout=120)
+    x = readdlm(local_file)
+    DataFrame(
+        x,
+        [:treat, :age, :educ, :black, :hisp, :married,
+         :nodegr, :re74, :re75, :re78],
+    )
+end
+
+base = "https://users.nber.org/~rdehejia/data"
+treated = read_nsw_file("$base/nswre74_treated.txt")
+control = read_nsw_file("$base/nswre74_control.txt")
+
+data = vcat(treated, control)
+data.u74 = Float64.(data.re74 .== 0)
+data.u75 = Float64.(data.re75 .== 0)
+
+println("n = ", nrow(data))
+println("treated = ", sum(data.treat .== 1), ", controls = ", sum(data.treat .== 0))
+first(data, 3)
+```
+
+## 2. Hypothesize a graph
+
+For the randomized NSW sample, the simplest causal graph says that treatment
+affects later earnings, while pre-treatment characteristics may also affect
+later earnings:
+
+```text
+age, educ, race, marital status, prior earnings  ->  re78
+treat                                           ->  re78
+```
+
+Because treatment was randomized within the NSW experiment, the graph does not
+put arrows from pre-treatment characteristics into `treat`.
+
+```{julia}
+covars = [:age, :educ, :black, :hisp, :married, :nodegr, :re74, :re75, :u74, :u75]
+
+graph = make_graph(
+    vertices = vcat(covars, [:treat, :re78]),
+    di_edges = vcat(
+        [(x, :re78) for x in covars],
+        [(:treat, :re78)],
+    ),
+)
+```
+
+This graph encodes a randomized-treatment estimand. The covariates are not
+needed for confounding control, but they make the substantive assumptions
+explicit and can be useful in alternative observational graphs.
+
+## 3. Identify
+
+`identify()` reads the graph and chooses the estimation strategy.
+
+```{julia}
+id = identify(graph, :treat, :re78)
+println("strategy: ", id.strategy)
+```
+
+The effect is `:a_fixable`: no hidden or observed backdoor path from treatment
+to outcome remains open in this graph. `estimate_causal()` will therefore route
+to the backdoor/a-fixable estimators.
+
+## 4. Estimate
+
+```{julia}
+res = estimate_causal(
+    a = [1, 0],
+    data = data,
+    graph = graph,
+    treatment = :treat,
+    outcome = :re78,
+)
+
+@printf("TMLE:    ACE = %.2f  95%% CI (%.2f, %.2f)\n",
+        res[:TMLE].ACE, res[:TMLE].lower_ci, res[:TMLE].upper_ci)
+@printf("Onestep: ACE = %.2f\n", res[:Onestep].ACE)
+@printf("Gcomp:   ACE = %.2f\n", res[:Gcomp].ACE)
+@printf("IPW:     ACE = %.2f\n", res[:IPW].ACE)
+```
+
+For this randomized graph, the estimators reduce to the treated-control mean
+contrast. We can verify that directly:
+
+```{julia}
+raw_difference =
+    mean(data.re78[data.treat .== 1]) - mean(data.re78[data.treat .== 0])
+
+@printf("Raw treated-control difference = %.2f\n", raw_difference)
+```
+
+The graph is doing something important even in this simple case: it records why
+the raw comparison has a causal interpretation.
+
+## Observational variant
+
+A common non-experimental version compares NSW treated units to controls drawn
+from the Current Population Survey (CPS). In that setting, treatment status also
+marks sample membership, so a more plausible graph includes observed
+pre-treatment predictors of both treatment/sample membership and later earnings:
+
+```text
+covariates -> treat
+covariates -> re78
+treat      -> re78
+```
+
+That graph is still backdoor/a-fixable, but the identifying assumption is now
+stronger: after conditioning on the measured covariates, there is no remaining
+unmeasured confounding of treatment and earnings. The code change is only the
+edge set and the control file:
+
+```{julia}
+#| eval: false
+cps_controls = read_nsw_file("$base/cps3_controls.txt")
+obs_data = vcat(treated, cps_controls)
+obs_data.u74 = Float64.(obs_data.re74 .== 0)
+obs_data.u75 = Float64.(obs_data.re75 .== 0)
+
+obs_graph = make_graph(
+    vertices = vcat(covars, [:treat, :re78]),
+    di_edges = vcat(
+        [(x, :treat) for x in covars],
+        [(x, :re78) for x in covars],
+        [(:treat, :re78)],
+    ),
+)
+
+identify(obs_graph, :treat, :re78).strategy
+
+obs_res = estimate_causal(
+    a = [1, 0],
+    data = obs_data,
+    graph = obs_graph,
+    treatment = :treat,
+    outcome = :re78,
+)
+```
+
+This is the usual applied workflow: the graph states the assumptions, the
+identifier checks whether those assumptions are sufficient, and the estimator
+computes the corresponding statistical estimand.

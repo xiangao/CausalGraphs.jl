@@ -43,12 +43,14 @@ Rendered tutorials and examples are available in:
 - [Graphs and Identification](docs/01_graphs_identification.html)
 - [Estimation: Backdoor and Front-Door](docs/02_estimation.html)
 - [Nested-Fixable Estimation and Missing Data](docs/03_nested_and_missing.html)
+- [Real Example: Job Training and Earnings](docs/04_real_job_training.html)
 
 The corresponding Quarto sources are:
 
 - [docs/01_graphs_identification.qmd](docs/01_graphs_identification.qmd)
 - [docs/02_estimation.qmd](docs/02_estimation.qmd)
 - [docs/03_nested_and_missing.qmd](docs/03_nested_and_missing.qmd)
+- [docs/04_real_job_training.qmd](docs/04_real_job_training.qmd)
 
 ## Quick Start
 
