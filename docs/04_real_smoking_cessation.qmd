@@ -1,0 +1,306 @@
+---
+title: "Real Example: Smoking Cessation and Weight Change"
+format:
+  html:
+    toc: true
+    code-fold: false
+jupyter: julia-1.12
+---
+
+This tutorial uses the complete-case National Health and Nutrition Examination
+Survey I Epidemiologic Follow-up Study (NHEFS) data distributed through the
+`causaldata` example-data package and mirrored by RDatasets.
+
+The causal question is:
+
+```text
+What is the effect of quitting smoking on weight change from 1971 to 1982?
+```
+
+This is a more realistic example than a randomized job-training graph. The
+treatment is not randomized, so identification depends on assumptions about
+baseline confounding by demographics, education, smoking history, activity, and
+baseline weight.
+
+## Setup
+
+```{julia}
+import Pkg
+Pkg.activate(joinpath(@__DIR__, ".."); io=devnull)
+
+using CausalGraphs
+using DataFrames
+using DelimitedFiles
+using Downloads
+using Printf
+```
+
+## 1. Load NHEFS Complete-Case Data
+
+The outcome is `wt82_71`, weight change from 1971 to 1982. The treatment is
+`qsmk`, an indicator for quitting smoking between the baseline questionnaire
+and follow-up.
+
+```{julia}
+function read_rdatasets_csv(url, cols)
+    local_file = Downloads.download(url; timeout=120)
+    x, header = readdlm(local_file, ',', Any, '\n'; header=true)
+    raw = DataFrame(x, Symbol.(vec(header)))
+    DataFrame((c => Float64.(raw[!, c]) for c in cols)...)
+end
+
+url = "https://vincentarelbundock.github.io/Rdatasets/csv/causaldata/nhefs_complete.csv"
+
+cols = [
+    :qsmk, :wt82_71,
+    :sex, :race, :age, :school,
+    :smokeintensity, :smokeyrs,
+    :exercise, :active, :wt71,
+]
+
+data = read_rdatasets_csv(url, cols)
+
+println("n = ", nrow(data))
+first(data, 5)
+```
+
+## 2. Hypothesize a Causal Graph
+
+In an observational analysis, this graph is not learned from the data and it is
+not known to be true. It is a compact statement of assumptions. Those
+assumptions would usually come from temporal ordering, subject-matter knowledge,
+the study protocol, prior literature, and discussion with domain experts.
+
+For this example, the clean conceptual graph is just an adjustment DAG:
+
+```text
+X -> A -> Y
+X -----> Y
+```
+
+where `X` is the baseline covariate set, `A` is quitting smoking, and `Y` is
+later weight change. We use `A` rather than `M` because quitting is the treatment
+here. A node called `M` would usually be a mediator between treatment and
+outcome.
+
+```{julia}
+conceptual_graph = make_graph(
+    vertices=[:X, :A, :Y],
+    di_edges=[(:X, :A), (:X, :Y), (:A, :Y)],
+);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(conceptual_graph; direction="LR"))
+println("```")
+```
+
+This grouped graph states the minimal structure needed for the example:
+
+1. The baseline variables were measured before quitting status and before later
+   weight change.
+2. Each baseline variable is allowed to affect quitting, later weight change, or
+   both.
+3. Quitting may affect later weight change.
+4. There is no unmeasured common cause of quitting and later weight change after
+   adjusting for these baseline variables.
+
+The fourth point is the strongest assumption. The DAG makes it visible so that
+we can challenge it.
+
+For estimation, `X` has to be expanded into the actual data columns used by the
+nuisance models:
+
+```{julia}
+vertices = [
+    :sex, :race, :age, :school,
+    :smokeintensity, :smokeyrs,
+    :exercise, :active, :wt71,
+    :qsmk, :wt82_71,
+]
+
+baseline = setdiff(vertices, [:qsmk, :wt82_71])
+
+edges = vcat(
+    [(w, :qsmk) for w in baseline],
+    [(w, :wt82_71) for w in baseline],
+    [(:qsmk, :wt82_71)],
+)
+
+graph = make_graph(vertices=vertices, di_edges=edges);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(graph; direction="LR"))
+println("```")
+```
+
+## 3. Identify
+
+The identifying logic is now direct. Under this adjustment DAG, conditioning on
+the measured baseline variables blocks the backdoor paths from quitting to later
+weight change.
+
+```{julia}
+id = identify(graph, :qsmk, :wt82_71)
+println("strategy: ", id.strategy)
+println("Markov pillow of qsmk: ", markov_pillow(graph, :qsmk; treatment=:qsmk))
+```
+
+The effect is `:a_fixable`, so `estimate_causal()` routes to the backdoor
+estimators.
+
+This conclusion is conditional on the graph. If we instead believe there is an
+unmeasured common cause of quitting and later weight change, we should encode
+that as a bidirected edge and identify again:
+
+```{julia}
+sensitivity_graph = make_graph(
+    vertices=vertices,
+    di_edges=edges,
+    bi_edges=[(:qsmk, :wt82_71)],
+)
+
+sensitivity_id = identify(sensitivity_graph, :qsmk, :wt82_71)
+println("strategy with unmeasured qsmk-wt82_71 confounding: ",
+        sensitivity_id.strategy)
+```
+
+With that extra assumption, this package reports the effect as not identified.
+That is the point of drawing the DAG: it makes the identifying assumptions
+explicit enough to challenge.
+
+## 4. Estimate
+
+```{julia}
+res = estimate_causal(
+    a = [1, 0],
+    data = data,
+    graph = graph,
+    treatment = :qsmk,
+    outcome = :wt82_71,
+)
+
+@printf("TMLE:    ACE = %.2f  95%% CI (%.2f, %.2f)\n",
+        res[:TMLE].ACE, res[:TMLE].lower_ci, res[:TMLE].upper_ci)
+@printf("Onestep: ACE = %.2f\n", res[:Onestep].ACE)
+@printf("Gcomp:   ACE = %.2f\n", res[:Gcomp].ACE)
+@printf("IPW:     ACE = %.2f\n", res[:IPW].ACE)
+```
+
+Interpreted under the graph, the TMLE estimate is the average effect of quitting
+smoking versus continuing smoking on weight change over follow-up, in the
+complete-case NHEFS population.
+
+## Why This Example Is Useful
+
+This example shows a more realistic applied workflow:
+
+1. The main DAG is the simple grouped adjustment graph `X -> A -> Y` and
+   `X -> Y`.
+2. The graph is presented as a hypothesis, not as something recovered from the
+   observed data.
+3. The expanded graph is only the implementation form needed because the data
+   have separate covariate columns.
+4. The same workflow can compare candidate graphs before estimation.
+5. Identification can disappear when a plausible unmeasured-confounding
+   assumption is added.
+
+## Alternative: Structured Baseline Model
+
+The simple adjustment DAG is often the right place to start. If we want to make
+more baseline structure explicit, we can write a richer alternative model. This
+is a stronger set of assumptions, so it belongs after the simple model rather
+than replacing it.
+
+At the conceptual level, the alternative groups variables like this:
+
+- `D`: demographics, such as sex, race, and age
+- `E`: education
+- `H`: smoking history
+- `L`: activity and exercise
+- `W`: baseline weight
+- `A`: quitting smoking
+- `Y`: later weight change
+
+```{julia}
+structured_conceptual_graph = make_graph(
+    vertices=[:D, :E, :H, :L, :W, :A, :Y],
+    di_edges=[
+        (:D, :E), (:D, :H), (:D, :L), (:D, :W), (:D, :A), (:D, :Y),
+        (:E, :H), (:E, :A), (:E, :Y),
+        (:H, :A), (:H, :Y),
+        (:L, :W), (:L, :A), (:L, :Y),
+        (:W, :A), (:W, :Y),
+        (:A, :Y),
+    ],
+);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(structured_conceptual_graph; direction="LR"))
+println("```")
+```
+
+Expanded to the actual columns, one version of that model is:
+
+```{julia}
+structured_edges = [
+    (:age, :school), (:age, :smokeyrs), (:age, :wt71),
+    (:age, :active), (:age, :exercise), (:age, :qsmk), (:age, :wt82_71),
+
+    (:sex, :smokeintensity), (:sex, :smokeyrs), (:sex, :wt71),
+    (:sex, :qsmk), (:sex, :wt82_71),
+
+    (:race, :school), (:race, :smokeintensity),
+    (:race, :qsmk), (:race, :wt82_71),
+
+    (:school, :smokeintensity), (:school, :qsmk), (:school, :wt82_71),
+
+    (:smokeyrs, :smokeintensity), (:smokeyrs, :qsmk), (:smokeyrs, :wt82_71),
+    (:smokeintensity, :qsmk), (:smokeintensity, :wt82_71),
+
+    (:exercise, :wt71), (:exercise, :qsmk), (:exercise, :wt82_71),
+    (:active, :wt71), (:active, :qsmk), (:active, :wt82_71),
+    (:wt71, :qsmk), (:wt71, :wt82_71),
+
+    (:qsmk, :wt82_71),
+]
+
+structured_graph = make_graph(vertices=vertices, di_edges=structured_edges);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(structured_graph; direction="LR"))
+println("```")
+```
+
+This richer graph gives the same identification result for the quitting effect:
+
+```{julia}
+structured_id = identify(structured_graph, :qsmk, :wt82_71)
+println("strategy under structured baseline model: ", structured_id.strategy)
+println("Markov pillow of qsmk: ",
+        markov_pillow(structured_graph, :qsmk; treatment=:qsmk))
+```
+
+Because the structured graph gives `qsmk` the same measured baseline parents as
+the simple adjustment graph, `estimate_causal()` uses the same adjustment set.
+For this treatment effect, the two DAGs are adjustment-equivalent: they imply
+the same sufficient adjustment set and therefore the same estimating formulas.
+They are not the same full causal model, because the structured DAG also makes
+claims about how baseline variables cause one another. Those extra claims do not
+affect this particular backdoor adjustment.
+
+For this estimand, the richer graph is not needed to estimate the effect. Its
+value is mainly communicative: it records a more detailed causal story about how
+baseline variables may relate to one another. If that story is hard to defend,
+the simpler grouped adjustment DAG is preferable.
