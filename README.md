@@ -38,19 +38,16 @@ using Pkg
 Pkg.test()
 ```
 
-Rendered vignettes are available in:
+## Vignettes
 
-- [Graphs and Identification](vignettes/Graphs_and_Identification.html)
-- [Estimation: Backdoor and Front-Door](vignettes/Estimation_Backdoor_Frontdoor.html)
-- [Nested-Fixable Estimation and Missing Data](vignettes/Nested_and_Missing_Data.html)
-- [Real Example: Smoking Cessation and Weight Change](vignettes/Smoking_Cessation_NHEFS.html)
+| Vignette | Description |
+|---|---|
+| [Graphs and Identification](vignettes/Graphs_and_Identification.html) | ADMG construction, graph visualization, graph properties, and `identify()` routing |
+| [Estimation: Backdoor and Front-Door](vignettes/Estimation_Backdoor_Frontdoor.html) | Backdoor/a-fixable and front-door/p-fixable estimation workflows |
+| [Nested-Fixable Estimation and Missing Data](vignettes/Nested_and_Missing_Data.html) | Nested-fixable effects, ANIPW/NIPW, and missing-data weighting with mDAGs |
+| [Real Example: Smoking Cessation and Weight Change](vignettes/Smoking_Cessation_NHEFS.html) | End-to-end NHEFS example: hypothesize a graph, identify, estimate, and compare assumptions |
 
-The corresponding Quarto sources are:
-
-- [vignettes/Graphs_and_Identification.qmd](vignettes/Graphs_and_Identification.qmd)
-- [vignettes/Estimation_Backdoor_Frontdoor.qmd](vignettes/Estimation_Backdoor_Frontdoor.qmd)
-- [vignettes/Nested_and_Missing_Data.qmd](vignettes/Nested_and_Missing_Data.qmd)
-- [vignettes/Smoking_Cessation_NHEFS.qmd](vignettes/Smoking_Cessation_NHEFS.qmd)
+The Quarto sources live in [`vignettes/`](vignettes/README.md).
 
 ## Quick Start
 
