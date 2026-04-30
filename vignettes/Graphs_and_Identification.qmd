@@ -7,7 +7,7 @@ format:
 jupyter: julia-1.12
 ---
 
-This tutorial introduces the ADMG graph layer and the `identify()` function.
+This vignette introduces the ADMG graph layer and the `identify()` function.
 It uses small canonical ADMG examples to show how graph structure drives
 identification.
 

@@ -38,19 +38,19 @@ using Pkg
 Pkg.test()
 ```
 
-Rendered tutorials and examples are available in:
+Rendered vignettes are available in:
 
-- [Graphs and Identification](docs/01_graphs_identification.html)
-- [Estimation: Backdoor and Front-Door](docs/02_estimation.html)
-- [Nested-Fixable Estimation and Missing Data](docs/03_nested_and_missing.html)
-- [Real Example: Smoking Cessation and Weight Change](docs/04_real_smoking_cessation.html)
+- [Graphs and Identification](vignettes/Graphs_and_Identification.html)
+- [Estimation: Backdoor and Front-Door](vignettes/Estimation_Backdoor_Frontdoor.html)
+- [Nested-Fixable Estimation and Missing Data](vignettes/Nested_and_Missing_Data.html)
+- [Real Example: Smoking Cessation and Weight Change](vignettes/Smoking_Cessation_NHEFS.html)
 
 The corresponding Quarto sources are:
 
-- [docs/01_graphs_identification.qmd](docs/01_graphs_identification.qmd)
-- [docs/02_estimation.qmd](docs/02_estimation.qmd)
-- [docs/03_nested_and_missing.qmd](docs/03_nested_and_missing.qmd)
-- [docs/04_real_smoking_cessation.qmd](docs/04_real_smoking_cessation.qmd)
+- [vignettes/Graphs_and_Identification.qmd](vignettes/Graphs_and_Identification.qmd)
+- [vignettes/Estimation_Backdoor_Frontdoor.qmd](vignettes/Estimation_Backdoor_Frontdoor.qmd)
+- [vignettes/Nested_and_Missing_Data.qmd](vignettes/Nested_and_Missing_Data.qmd)
+- [vignettes/Smoking_Cessation_NHEFS.qmd](vignettes/Smoking_Cessation_NHEFS.qmd)
 
 ## Quick Start
 

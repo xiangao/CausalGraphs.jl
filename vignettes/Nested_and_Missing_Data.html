@@ -58,18 +58,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </style>
 
 
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="03_nested_and_missing_files/libs/clipboard/clipboard.min.js"></script>
-<script src="03_nested_and_missing_files/libs/quarto-html/quarto.js" type="module"></script>
-<script src="03_nested_and_missing_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="03_nested_and_missing_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
-<script src="03_nested_and_missing_files/libs/quarto-html/popper.min.js"></script>
-<script src="03_nested_and_missing_files/libs/quarto-html/tippy.umd.min.js"></script>
-<script src="03_nested_and_missing_files/libs/quarto-html/anchor.min.js"></script>
-<link href="03_nested_and_missing_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="03_nested_and_missing_files/libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="03_nested_and_missing_files/libs/bootstrap/bootstrap.min.js"></script>
-<link href="03_nested_and_missing_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="03_nested_and_missing_files/libs/bootstrap/bootstrap-3b89f8177b1a2a82b23d4c23e004c95e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="Nested_and_Missing_Data_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Nested_and_Missing_Data_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Nested_and_Missing_Data_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Nested_and_Missing_Data_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="Nested_and_Missing_Data_files/libs/quarto-html/popper.min.js"></script>
+<script src="Nested_and_Missing_Data_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Nested_and_Missing_Data_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Nested_and_Missing_Data_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Nested_and_Missing_Data_files/libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Nested_and_Missing_Data_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Nested_and_Missing_Data_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Nested_and_Missing_Data_files/libs/bootstrap/bootstrap-3b89f8177b1a2a82b23d4c23e004c95e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
 
 <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
@@ -126,7 +126,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="fa576c38" class="cell" data-execution_count="1">
+<div id="cc2b2ba1" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">CausalGraphs</span>, <span class="bu">DataFrames</span>, <span class="bu">Random</span>, <span class="bu">Statistics</span>, <span class="bu">Printf</span></span>
@@ -148,7 +148,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-hiv-treatment-graph" class="level3">
 <h3 class="anchored" data-anchor-id="example-hiv-treatment-graph">Example: HIV treatment graph</h3>
 <p>A drug treatment T affects CD4 count (outcome), mediated partly through Toxicity and Adherence. Hidden common causes link several variables.</p>
-<div id="ec025577" class="cell" data-execution_count="2">
+<div id="145049d5" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>g_hiv <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>ViralLoad, <span class="op">:</span>Income, <span class="op">:</span>Exercise, <span class="op">:</span>T, <span class="op">:</span>Toxicity, <span class="op">:</span>Adherence, <span class="op">:</span>CD4],</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [</span>
@@ -170,7 +170,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>Toxicity is a <strong>child</strong> of T and also in T’s <strong>district</strong> (through the chain Exercise ↔︎ Income ↔︎ Toxicity), making T not p-fixable:</p>
-<div id="4e519305" class="cell" data-execution_count="3">
+<div id="1f88e5f5" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"district(T)  = "</span>, <span class="fu">district</span>(g_hiv, <span class="op">:</span>T))</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"children(T)  = "</span>, <span class="fu">children</span>(g_hiv, <span class="op">:</span>T))</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>()</span>
@@ -191,7 +191,7 @@ strategy     = nested_fixable</code></pre>
 </section>
 <section id="simulate-data-from-the-dgp" class="level3">
 <h3 class="anchored" data-anchor-id="simulate-data-from-the-dgp">Simulate data from the DGP</h3>
-<div id="79d0df0b" class="cell" data-execution_count="4">
+<div id="b6a9fd49" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_hiv</span>(n; seed<span class="op">=</span><span class="fl">42</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Latent hidden common causes</span></span>
@@ -291,7 +291,7 @@ strategy     = nested_fixable</code></pre>
 <section id="estimation" class="level3">
 <h3 class="anchored" data-anchor-id="estimation">Estimation</h3>
 <p><code>estimate_causal()</code> detects nested-fixable and routes to ANIPW.</p>
-<div id="dffe5a84" class="cell" data-execution_count="5">
+<div id="f51df5b9" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>res_hiv <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    a         <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    data      <span class="op">=</span> df_hiv,</span>
@@ -320,7 +320,7 @@ NIPW:  ACE = 2.246</code></pre>
 <section id="nested-rebalancing-weights" class="level3">
 <h3 class="anchored" data-anchor-id="nested-rebalancing-weights">Nested rebalancing weights</h3>
 <p>The ANIPW estimator builds <strong>nested rebalancing weights</strong> through the intrinsic kernel of each modified district. After reweighting, propensity and outcome regression are estimated by weighted GLM.</p>
-<div id="5ab17002" class="cell" data-execution_count="6">
+<div id="3073e828" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>rw <span class="op">=</span> res_hiv[<span class="op">:</span>rw]</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Rebalancing weights — min: %.3f  max: %.3f  mean: %.3f</span><span class="sc">\n</span><span class="st">"</span>,</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">minimum</span>(rw), <span class="fu">maximum</span>(rw), <span class="fu">mean</span>(rw))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -336,7 +336,7 @@ NIPW:  ACE = 2.246</code></pre>
 <p>When covariates are <strong>missing at random</strong> (MAR), CausalGraphs.jl identifies and estimates the missing-data propensity scores, producing per-row IPW weights for <code>estimate_causal()</code>.</p>
 <section id="workflow" class="level3">
 <h3 class="anchored" data-anchor-id="workflow">Workflow</h3>
-<div id="586bd4b2" class="cell" data-execution_count="7">
+<div id="91bd9b18" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Define the missingness DAG (mDAG)</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>mdag <span class="op">=</span> <span class="fu">make_mdag</span>(</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    obs_variables      <span class="op">=</span> [<span class="st">"T"</span>, <span class="st">"CD4"</span>],</span>
@@ -365,7 +365,7 @@ NIPW:  ACE = 2.246</code></pre>
 <section id="g2-graph" class="level3">
 <h3 class="anchored" data-anchor-id="g2-graph">G2 graph</h3>
 <p>The G2 example has six variables with complex dependent missingness patterns.</p>
-<div id="2d7dc851" class="cell" data-execution_count="8">
+<div id="56785bb3" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>G2 <span class="op">=</span> <span class="fu">make_mdag</span>(</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    obs_variables<span class="op">=</span>[], missing_variables<span class="op">=</span>[<span class="st">"X1"</span>,<span class="st">"X2"</span>,<span class="st">"X3"</span>,<span class="st">"X4"</span>,<span class="st">"X5"</span>,<span class="st">"X6"</span>],</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    missing_indicators<span class="op">=</span>[<span class="st">"R1"</span>,<span class="st">"R2"</span>,<span class="st">"R3"</span>,<span class="st">"R4"</span>,<span class="st">"R5"</span>,<span class="st">"R6"</span>],</span>

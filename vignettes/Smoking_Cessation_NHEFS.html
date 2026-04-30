@@ -58,21 +58,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </style>
 
 
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="04_real_smoking_cessation_files/libs/clipboard/clipboard.min.js"></script>
-<script src="04_real_smoking_cessation_files/libs/quarto-html/quarto.js" type="module"></script>
-<script src="04_real_smoking_cessation_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="04_real_smoking_cessation_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
-<script src="04_real_smoking_cessation_files/libs/quarto-html/popper.min.js"></script>
-<script src="04_real_smoking_cessation_files/libs/quarto-html/tippy.umd.min.js"></script>
-<script src="04_real_smoking_cessation_files/libs/quarto-html/anchor.min.js"></script>
-<link href="04_real_smoking_cessation_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="04_real_smoking_cessation_files/libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="04_real_smoking_cessation_files/libs/bootstrap/bootstrap.min.js"></script>
-<link href="04_real_smoking_cessation_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="04_real_smoking_cessation_files/libs/bootstrap/bootstrap-3b89f8177b1a2a82b23d4c23e004c95e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
-<script src="04_real_smoking_cessation_files/libs/quarto-diagram/mermaid.min.js"></script>
-<script src="04_real_smoking_cessation_files/libs/quarto-diagram/mermaid-init.js"></script>
-<link href="04_real_smoking_cessation_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="Smoking_Cessation_NHEFS_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Smoking_Cessation_NHEFS_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Smoking_Cessation_NHEFS_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Smoking_Cessation_NHEFS_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="Smoking_Cessation_NHEFS_files/libs/quarto-html/popper.min.js"></script>
+<script src="Smoking_Cessation_NHEFS_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Smoking_Cessation_NHEFS_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Smoking_Cessation_NHEFS_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Smoking_Cessation_NHEFS_files/libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Smoking_Cessation_NHEFS_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Smoking_Cessation_NHEFS_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Smoking_Cessation_NHEFS_files/libs/bootstrap/bootstrap-3b89f8177b1a2a82b23d4c23e004c95e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="Smoking_Cessation_NHEFS_files/libs/quarto-diagram/mermaid.min.js"></script>
+<script src="Smoking_Cessation_NHEFS_files/libs/quarto-diagram/mermaid-init.js"></script>
+<link href="Smoking_Cessation_NHEFS_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
 
 <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
@@ -119,13 +119,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>This tutorial uses the complete-case National Health and Nutrition Examination Survey I Epidemiologic Follow-up Study (NHEFS) data distributed through the <code>causaldata</code> example-data package and mirrored by RDatasets.</p>
+<p>This vignette uses the complete-case National Health and Nutrition Examination Survey I Epidemiologic Follow-up Study (NHEFS) data distributed through the <code>causaldata</code> example-data package and mirrored by RDatasets.</p>
 <p>The causal question is:</p>
 <pre class="text"><code>What is the effect of quitting smoking on weight change from 1971 to 1982?</code></pre>
 <p>This is a more realistic example than a randomized job-training graph. The treatment is not randomized, so identification depends on assumptions about baseline confounding by demographics, education, smoking history, activity, and baseline weight.</p>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="7c95b329" class="cell" data-execution_count="1">
+<div id="785ea80c" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -139,7 +139,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="load-nhefs-complete-case-data" class="level2">
 <h2 class="anchored" data-anchor-id="load-nhefs-complete-case-data">1. Load NHEFS Complete-Case Data</h2>
 <p>The outcome is <code>wt82_71</code>, weight change from 1971 to 1982. The treatment is <code>qsmk</code>, an indicator for quitting smoking between the baseline questionnaire and follow-up.</p>
-<div id="4601f9a4" class="cell" data-execution_count="2">
+<div id="690fc2dc" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">read_rdatasets_csv</span>(url, cols)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    local_file <span class="op">=</span> <span class="bu">Downloads</span>.<span class="fu">download</span>(url; timeout<span class="op">=</span><span class="fl">120</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    x, header <span class="op">=</span> <span class="fu">readdlm</span>(local_file, <span class="ch">','</span>, <span class="dt">Any</span>, <span class="ch">'\n'</span>; header<span class="op">=</span><span class="cn">true</span>)</span>
@@ -280,7 +280,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre class="text"><code>X -&gt; A -&gt; Y
 X -----&gt; Y</code></pre>
 <p>where <code>X</code> is the baseline covariate set, <code>A</code> is quitting smoking, and <code>Y</code> is later weight change. We use <code>A</code> rather than <code>M</code> because quitting is the treatment here. A node called <code>M</code> would usually be a mediator between treatment and outcome.</p>
-<div id="efb31f29" class="cell" data-execution_count="3">
+<div id="c9b6df55" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>conceptual_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    vertices<span class="op">=</span>[<span class="op">:</span>X, <span class="op">:</span>A, <span class="op">:</span>Y],</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    di_edges<span class="op">=</span>[(<span class="op">:</span>X, <span class="op">:</span>A), (<span class="op">:</span>X, <span class="op">:</span>Y), (<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
@@ -320,7 +320,7 @@ X -----&gt; Y</code></pre>
 </ol>
 <p>The fourth point is the strongest assumption. The DAG makes it visible so that we can challenge it.</p>
 <p>For estimation, <code>X</code> has to be expanded into the actual data columns used by the nuisance models:</p>
-<div id="bee6f053" class="cell" data-execution_count="5">
+<div id="0ddceab3" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>vertices <span class="op">=</span> [</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span>sex, <span class="op">:</span>race, <span class="op">:</span>age, <span class="op">:</span>school,</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span>smokeintensity, <span class="op">:</span>smokeyrs,</span>
@@ -407,7 +407,7 @@ X -----&gt; Y</code></pre>
 <section id="identify" class="level2">
 <h2 class="anchored" data-anchor-id="identify">3. Identify</h2>
 <p>The identifying logic is now direct. Under this adjustment DAG, conditioning on the measured baseline variables blocks the backdoor paths from quitting to later weight change.</p>
-<div id="d4c73a79" class="cell" data-execution_count="7">
+<div id="0d352fcf" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>id <span class="op">=</span> <span class="fu">identify</span>(graph, <span class="op">:</span>qsmk, <span class="op">:</span>wt82_71)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, id.strategy)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Markov pillow of qsmk: "</span>, <span class="fu">markov_pillow</span>(graph, <span class="op">:</span>qsmk; treatment<span class="op">=:</span>qsmk))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -418,7 +418,7 @@ Markov pillow of qsmk: [:sex, :race, :age, :school, :smokeintensity, :smokeyrs, 
 </div>
 <p>The effect is <code>:a_fixable</code>, so <code>estimate_causal()</code> routes to the backdoor estimators.</p>
 <p>This conclusion is conditional on the graph. If we instead believe there is an unmeasured common cause of quitting and later weight change, we should encode that as a bidirected edge and identify again:</p>
-<div id="43dfb146" class="cell" data-execution_count="8">
+<div id="2c42abf3" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>sensitivity_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    vertices<span class="op">=</span>vertices,</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    di_edges<span class="op">=</span>edges,</span>
@@ -436,7 +436,7 @@ Markov pillow of qsmk: [:sex, :race, :age, :school, :smokeintensity, :smokeyrs, 
 </section>
 <section id="estimate" class="level2">
 <h2 class="anchored" data-anchor-id="estimate">4. Estimate</h2>
-<div id="2b6a14bc" class="cell" data-execution_count="9">
+<div id="4b268357" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> data,</span>
@@ -489,7 +489,7 @@ IPW:     ACE = 3.25</code></pre>
 <li><code>A</code>: quitting smoking</li>
 <li><code>Y</code>: later weight change</li>
 </ul>
-<div id="c1dadf2a" class="cell" data-execution_count="10">
+<div id="233d76de" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>structured_conceptual_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    vertices<span class="op">=</span>[<span class="op">:</span>D, <span class="op">:</span>E, <span class="op">:</span>H, <span class="op">:</span>L, <span class="op">:</span>W, <span class="op">:</span>A, <span class="op">:</span>Y],</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    di_edges<span class="op">=</span>[</span>
@@ -560,7 +560,7 @@ IPW:     ACE = 3.25</code></pre>
 </div>
 </div>
 <p>Expanded to the actual columns, one version of that model is:</p>
-<div id="91b0daf3" class="cell" data-execution_count="12">
+<div id="ca1e874b" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>structured_edges <span class="op">=</span> [</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    (<span class="op">:</span>age, <span class="op">:</span>school), (<span class="op">:</span>age, <span class="op">:</span>smokeyrs), (<span class="op">:</span>age, <span class="op">:</span>wt71),</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    (<span class="op">:</span>age, <span class="op">:</span>active), (<span class="op">:</span>age, <span class="op">:</span>exercise), (<span class="op">:</span>age, <span class="op">:</span>qsmk), (<span class="op">:</span>age, <span class="op">:</span>wt82_71),</span>
@@ -679,7 +679,7 @@ IPW:     ACE = 3.25</code></pre>
 </div>
 </div>
 <p>This richer graph gives the same identification result for the quitting effect:</p>
-<div id="c5f9f157" class="cell" data-execution_count="14">
+<div id="e0267157" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>structured_id <span class="op">=</span> <span class="fu">identify</span>(structured_graph, <span class="op">:</span>qsmk, <span class="op">:</span>wt82_71)</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy under structured baseline model: "</span>, structured_id.strategy)</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Markov pillow of qsmk: "</span>,</span>
