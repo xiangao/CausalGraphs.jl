@@ -1,5 +1,7 @@
 # CausalGraphs.jl Vignettes
 
+Full documentation: **https://xiangao.github.io/CausalGraphs.jl/dev/**
+
 | Vignette | Description |
 |---|---|
 | [Graphs and Identification](Graphs_and_Identification.html) | ADMG construction, graph visualization, graph properties, and `identify()` routing |

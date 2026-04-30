@@ -40,6 +40,8 @@ Pkg.test()
 
 ## Vignettes
 
+Full documentation: **https://xiangao.github.io/CausalGraphs.jl/dev/**
+
 | Vignette | Description |
 |---|---|
 | [Graphs and Identification](vignettes/Graphs_and_Identification.html) | ADMG construction, graph visualization, graph properties, and `identify()` routing |
