@@ -80,20 +80,24 @@ function estimate_causal(; a, data::DataFrame,
         @info "Treatment is a-fixable (backdoor). Using TMLE."
         return combine_levels(a, aval ->
             backdoor_tmle_a(a=aval, data=data, graph=g,
-                            treatment=treatment, outcome=outcome; kwargs...))
+                            treatment=treatment, outcome=outcome,
+                            sample_weights=sample_weights; kwargs...))
     elseif id.strategy == :p_fixable
         is_np_saturated(g) ||
             @info "Graph is not NP-saturated. More efficient estimators may exist."
         @info "Treatment is p-fixable (front-door/NPS). Using NPS-TMLE."
         return combine_levels(a, aval ->
             nps_tmle_a(a=aval, data=data, graph=g,
-                       treatment=treatment, outcome=outcome; kwargs...))
+                       treatment=treatment, outcome=outcome,
+                       sample_weights=sample_weights; kwargs...))
     else  # :nested_fixable
         @info "Treatment is nested-fixable. Using ANIPW."
         avals = collect(a isa AbstractVector ? a : [a])
+        isempty(avals) && error("`a` must be a scalar or length-two vector.")
+        length(avals) > 2 && error("Use scalar for E[Y(a)] or length-two for ACE.")
         out1 = nested_anipw_a(a=avals[1], data=data, graph=g,
                                treatment=treatment, outcome=outcome,
-                               id_result=id; kwargs...)
+                               id_result=id, sample_weights=sample_weights; kwargs...)
         if length(avals) == 1
             return Dict{Symbol,Any}(
                 :ANIPW    => (EYa=out1.ANIPW.estimated_psi,
@@ -107,7 +111,7 @@ function estimate_causal(; a, data::DataFrame,
         end
         out0 = nested_anipw_a(a=avals[2], data=data, graph=g,
                                treatment=treatment, outcome=outcome,
-                               id_result=id; kwargs...)
+                               id_result=id, sample_weights=sample_weights; kwargs...)
         ace     = out1.ANIPW.estimated_psi - out0.ANIPW.estimated_psi
         eif_ace = out1.ANIPW.EIF - out0.ANIPW.EIF
         lo, hi  = ci_from_eif(ace, eif_ace, length(eif_ace))

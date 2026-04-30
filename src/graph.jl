@@ -314,6 +314,25 @@ expit(x) = 1.0 ./ (1.0 .+ exp.(-x))
 probability_a(pA1, a) = a == 1 ? pA1 : 1 .- pA1
 normal_pdf(x, μ, σ) = exp(-0.5*((x-μ)/max(Float64(σ),1e-8))^2) / (sqrt(2π)*max(Float64(σ),1e-8))
 
+function check_binary_treatment!(A, a)
+    is_binary(A) || error("Only binary treatment columns coded as 0/1 are currently supported.")
+    Float64(a) in (0.0, 1.0) ||
+        error("Only binary treatment levels 0 and 1 are currently supported.")
+    nothing
+end
+
+function observation_weights(sample_weights, n::Int)
+    sample_weights === nothing && return ones(Float64, n)
+    w = Float64.(sample_weights)
+    length(w) == n || error("`sample_weights` must have one entry per row of `data`.")
+    all(isfinite, w) || error("`sample_weights` must be finite.")
+    all(>=(0), w) || error("`sample_weights` must be non-negative.")
+    sum(w) > 0 || error("`sample_weights` must contain at least one positive value.")
+    w
+end
+
+weighted_mean(x, w) = sum(Float64.(w) .* Float64.(x)) / sum(Float64.(w))
+
 product_columns(dict, vars, n) =
     isempty(vars) ? ones(n) : reduce(.*, [dict[v] for v in vars])
 
@@ -369,13 +388,14 @@ end
 predict_logistic(β, df::DataFrame, predictors::Vector{Symbol}) =
     clip(expit(design_matrix(df, predictors) * β), 1e-8, 1-1e-8)
 
-function scalar_logistic_fluctuation(y, offset, H; maxiter=100, tol=1e-9)
+function scalar_logistic_fluctuation(y, offset, H; weights=nothing, maxiter=100, tol=1e-9)
     yy, off, hh = Float64.(y), Float64.(offset), Float64.(H)
+    sw = weights === nothing ? ones(length(yy)) : Float64.(weights)
     ε = 0.0
     for _ in 1:maxiter
         μ = clip(expit(off .+ ε .* hh), 1e-8, 1-1e-8)
-        score = sum(hh .* (yy .- μ))
-        info  = sum((hh .^ 2) .* μ .* (1 .- μ))
+        score = sum(sw .* hh .* (yy .- μ))
+        info  = sum(sw .* (hh .^ 2) .* μ .* (1 .- μ))
         info <= eps() && return ε
         step = score / info; ε += step
         abs(step) < tol && return ε

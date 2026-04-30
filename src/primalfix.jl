@@ -104,13 +104,16 @@ function nps_tmle_a(; a, data::DataFrame, graph::ADMG, treatment, outcome,
                       zerodiv_avoid=0.0, formula_Y=nothing, formula_A=nothing,
                       superlearner_Y=false, superlearner_A=false, superlearner_seq=false,
                       superlearner_M=false, superlearner_L=false,
-                      crossfit=false, K=5, kwargs...)
+                      crossfit=false, K=5, sample_weights=nothing, kwargs...)
     (ratio_method_L == "densratio" || ratio_method_M == "densratio") &&
         error("Kernel densratio not implemented.")
 
     Aname, Yname = sym(treatment), sym(outcome)
     A, Y = col(data, Aname), col(data, Yname)
     n = nrow(data); a0 = Float64(a); a1 = 1.0 - a0
+    check_binary_treatment!(A, a0)
+    sw = observation_weights(sample_weights, n)
+    fit_sw = sample_weights === nothing ? nothing : sw
     tau   = top_order(graph; treatment=Aname)
     order = Dict(v => i for (i,v) in enumerate(tau))
     sets  = cml(graph, Aname)
@@ -127,19 +130,25 @@ function nps_tmle_a(; a, data::DataFrame, graph::ADMG, treatment, outcome,
     mpY = replace_vector(markov_pillow(graph, Yname; treatment=Aname),
                          graph.multivariate_variables)
     mu0, mu1 = if crossfit && mu_model !== nothing
+        sample_weights === nothing ||
+            error("`sample_weights` with cross-fitted SuperLearner outcome models is not currently supported.")
         crossfit_outcome(mu_model, data, Y, mpY, Aname, a0, a1, K)
     else
         fit_outcome_predictions(data, Y, mpY, Aname, a0, a1;
-                                formula=formula_Y, response_name=Yname, ml_model=mu_model)
+                                formula=formula_Y, response_name=Yname, ml_model=mu_model,
+                                sample_weights=fit_sw)
     end
     mu[(Yname,0)] = mu0; mu[(Yname,1)] = mu1
 
     mpA = replace_vector(markov_pillow(graph, Aname; treatment=Aname),
                          graph.multivariate_variables)
     _raw_pA1 = if crossfit && pi_model !== nothing
+        sample_weights === nothing ||
+            error("`sample_weights` with cross-fitted SuperLearner propensity models is not currently supported.")
         crossfit_propensity(pi_model, data, A, mpA, K)
     else
-        fit_propensity(data, A, mpA; formula=formula_A, treatment_name=Aname, ml_model=pi_model)
+        fit_propensity(data, A, mpA; formula=formula_A, treatment_name=Aname,
+                       ml_model=pi_model, sample_weights=fit_sw)
     end
     pA1  = clip(_raw_pA1, truncate_lower, truncate_upper)
     p_a1 = probability_a(pA1, a1); p_a0 = 1 .- p_a1
@@ -203,15 +212,16 @@ function nps_tmle_a(; a, data::DataFrame, graph::ADMG, treatment, outcome,
     end
 
     EIFY, EIFA, sumv, nextA = compute_eifs!()
-    estimate = mean(EIFY .+ sumv .+ EIFA .+ p_a1 .* mu[(nextA,0)] .+ (A .== a0) .* Y)
-    eif = EIFY .+ sumv .+ EIFA .+ p_a1 .* mu[(nextA,0)] .+ (A .== a0) .* Y .- estimate
+    contrib = EIFY .+ sumv .+ EIFA .+ p_a1 .* mu[(nextA,0)] .+ (A .== a0) .* Y
+    estimate = weighted_mean(contrib, sw)
+    eif = (sw ./ mean(sw)) .* (contrib .- estimate)
     lo, hi = ci_from_eif(estimate, eif, n)
     onestep = (estimated_psi=estimate, lower_ci=lo, upper_ci=hi, EIF=eif)
 
     EDstar = 10.0; EDrecord = Float64[]; iter = 0
     while abs(EDstar) > cvg_criteria && iter < n_iter
         cleverA = mu[(nextA,0)]
-        εA  = scalar_logistic_fluctuation(A .== a1, safe_logit(p_a1), cleverA)
+        εA  = scalar_logistic_fluctuation(A .== a1, safe_logit(p_a1), cleverA; weights=sw)
         p_a1 = clip(expit(safe_logit(p_a1) .+ εA .* cleverA), 1e-8, 1-1e-8)
         p_a0 = max.(1 .- p_a1, zerodiv_avoid); p_a1 = max.(p_a1, zerodiv_avoid)
         dens[Aname] = p_a0 ./ p_a1
@@ -225,10 +235,10 @@ function nps_tmle_a(; a, data::DataFrame, graph::ADMG, treatment, outcome,
         offsetY = Yname in L ? mu[(Yname,1)] : mu[(Yname,0)]
         key_Y   = Yname in L ? (Yname,1) : (Yname,0)
         if Y_is_binary
-            εY = scalar_logistic_fluctuation(Y, safe_logit(offsetY), weightY)
+            εY = scalar_logistic_fluctuation(Y, safe_logit(offsetY), weightY; weights=sw)
             mu[key_Y] = expit(safe_logit(offsetY) .+ εY .* weightY)
         else
-            εY = weighted_mean_residual(Y, offsetY, weightY)
+            εY = weighted_mean_residual(Y, offsetY, sw .* weightY)
             mu[key_Y] = offsetY .+ εY
         end
 
@@ -243,21 +253,22 @@ function nps_tmle_a(; a, data::DataFrame, graph::ADMG, treatment, outcome,
             key     = v in L ? (v,1) : (v,0)
             offsetv = mu[key]
             if Y_is_binary
-                εv = scalar_logistic_fluctuation(nextmu, safe_logit(offsetv), weightv)
+                εv = scalar_logistic_fluctuation(nextmu, safe_logit(offsetv), weightv; weights=sw)
                 mu[key] = expit(safe_logit(offsetv) .+ εv .* weightv)
             else
-                εv = weighted_mean_residual(nextmu, offsetv, weightv)
+                εv = weighted_mean_residual(nextmu, offsetv, sw .* weightv)
                 mu[key] = offsetv .+ εv
             end
         end
 
         EIFY, EIFA, sumv, nextA = compute_eifs!()
-        EDstar = mean(EIFA) + mean(EIFY) + mean(sumv)
+        EDstar = weighted_mean(EIFA .+ EIFY .+ sumv, sw)
         push!(EDrecord, EDstar); iter += 1
     end
 
-    estimate = mean(EIFY .+ sumv .+ EIFA .+ p_a1 .* mu[(nextA,0)] .+ (A .== a0) .* Y)
-    eif = EIFY .+ sumv .+ EIFA .+ p_a1 .* mu[(nextA,0)] .+ (A .== a0) .* Y .- estimate
+    contrib = EIFY .+ sumv .+ EIFA .+ p_a1 .* mu[(nextA,0)] .+ (A .== a0) .* Y
+    estimate = weighted_mean(contrib, sw)
+    eif = (sw ./ mean(sw)) .* (contrib .- estimate)
     lo, hi = ci_from_eif(estimate, eif, n)
     tmle = (estimated_psi=estimate, lower_ci=lo, upper_ci=hi, EIF=eif,
             EDstar=EDstar, iter=iter, EDstar_record=EDrecord)

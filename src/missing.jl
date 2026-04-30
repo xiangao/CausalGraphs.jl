@@ -1,18 +1,23 @@
-# ── Missing data integration (v0.1 stub) ─────────────────────────────────────
+# ── Missing data integration ─────────────────────────────────────────────────
 #
-# Full mDAG identification and propensity estimation is implemented in the
-# standalone FlexMissing.jl package. This module provides a thin bridge:
-# compute_missing_weights() runs FlexMissing's pipeline and returns per-row
-# IPW weights that can be passed to the main estimation functions.
-#
-# v0.2 will embed FlexMissing's full graph engine here for joint estimation.
+# Full mDAG identification and propensity estimation remains in FlexMissing.jl.
+# This bridge intentionally avoids a hard dependency: it dispatches through the
+# module that owns the supplied MDAG/ID objects, so `using FlexMissing` in the
+# calling session is enough.
 
 """
-    compute_missing_weights(mdag, data)
+    compute_missing_weights(mdag, data; ID=nothing, law=:target,
+                            indicators=nothing, complete_cases_only=false,
+                            normalize=false, kwargs...)
 
 Given a FlexMissing.jl `MDAG` and a `DataFrame` with missing-indicator columns
 (0/1), run the identification algorithm and estimate propensity scores, then
-return a vector of inverse-probability weights (one per row).
+return inverse-probability weights for complete-case estimation.
+
+By default the returned vector has one entry per row of `data`, with zero
+weight on incomplete rows. If `complete_cases_only=true`, only weights for rows
+where all requested indicators equal 1 are returned; this is useful when passing
+`dropmissing(data)` to `estimate_causal`.
 
 Requires `FlexMissing` to be loaded in the calling session.
 
@@ -25,18 +30,73 @@ mdag = FlexMissing.make_graph(
     di_edges=[("A","Y"),("X","A"),("X","Y"),("X","Rx")]
 )
 ID  = FlexMissing.ID_algorithm(mdag)
-wts = compute_missing_weights(mdag, data; ID=ID)
-result = estimate_causal(a=[1,0], data=data, ..., sample_weights=wts)
+wts = compute_missing_weights(mdag, data; ID=ID, complete_cases_only=true)
+result = estimate_causal(a=[1,0], data=dropmissing(data), ..., sample_weights=wts)
 ```
 """
-function compute_missing_weights(mdag, data::DataFrame; ID=nothing, kwargs...)
+function compute_missing_weights(mdag, data::DataFrame; ID=nothing, law=:target,
+                                 indicators=nothing, propensities=nothing,
+                                 complete_cases_only=false, normalize=false,
+                                 eps_prob=1e-10, kwargs...)
+    fm = _flexmissing_module(mdag)
+    _ensure_flexmissing_predict!(fm)
+    ID = ID === nothing ? Base.invokelatest(getproperty(fm, :ID_algorithm), mdag) : ID
+    props = propensities === nothing ?
+            Base.invokelatest(getproperty(fm, :propensity), mdag, data, ID; law=law, kwargs...) :
+            propensities
+
+    Rs = indicators === nothing ? String.(getproperty(mdag, :missing_indicators)) :
+         String.(indicators isa Union{AbstractString,Symbol} ? [indicators] : indicators)
+    n = nrow(data)
+    isempty(Rs) && return ones(Float64, n)
+
+    missing_props = setdiff(Rs, String.(collect(keys(props))))
+    isempty(missing_props) ||
+        error("No FlexMissing propensity estimate was returned for $(join(missing_props, ", ")).")
+
+    complete = trues(n)
+    for R in Rs
+        R in names(data) || error("Missing indicator column `$R` is not present in `data`.")
+        complete .&= [!ismissing(v) && Float64(v) == 1.0 for v in data[!, R]]
+    end
+
+    weights = zeros(Float64, n)
+    weights[complete] .= 1.0
+    for R in Rs
+        pred = props[R].pred
+        length(pred) == n || error("Propensity predictions for `$R` do not match `data` rows.")
+        for i in findall(complete)
+            p = pred[i]
+            ismissing(p) && error("Propensity prediction for `$R` is missing on complete row $i.")
+            weights[i] /= max(Float64(p), eps_prob)
+        end
+    end
+
+    if normalize
+        denom = mean(weights[complete])
+        denom > 0 && (weights[complete] ./= denom)
+    end
+    complete_cases_only ? weights[complete] : weights
+end
+
+function _flexmissing_module(mdag)
+    fm = parentmodule(typeof(mdag))
+    if isdefined(fm, :ID_algorithm) && isdefined(fm, :propensity)
+        return fm
+    end
+    if isdefined(Main, :FlexMissing)
+        return getproperty(Main, :FlexMissing)
+    end
     error("""
-Missing data integration requires FlexMissing.jl to be loaded and an `ID` result passed in.
+FlexMissing.jl must be loaded before calling `compute_missing_weights`.
 Example:
     using FlexMissing
-    ID  = FlexMissing.ID_algorithm(mdag)
-    wts = compute_missing_weights(mdag, data; ID=ID)
-
-Full embedded mDAG support is planned for CausalGraphs.jl v0.2.
+    wts = compute_missing_weights(mdag, data)
 """)
+end
+
+function _ensure_flexmissing_predict!(fm)
+    isdefined(fm, :predict) && return nothing
+    Core.eval(fm, :(import GLM: predict))
+    nothing
 end

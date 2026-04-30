@@ -91,10 +91,13 @@ function get_nested_weights(graph::ADMG, data::DataFrame, Aname::Symbol,
 end
 
 function nested_anipw_a(; a, data::DataFrame, graph::ADMG, treatment, outcome, id_result,
-                           truncate_lower=1e-3, truncate_upper=1-1e-3, kwargs...)
+                           truncate_lower=1e-3, truncate_upper=1-1e-3,
+                           sample_weights=nothing, kwargs...)
     Aname = sym(treatment); Yname = sym(outcome)
     A = col(data, Aname); Y = col(data, Yname)
     n = nrow(data); a0 = Float64(a)
+    check_binary_treatment!(A, a0)
+    sw = observation_weights(sample_weights, n)
 
     ystar   = id_result.ystar
     Gystar  = id_result.Gystar
@@ -107,32 +110,34 @@ function nested_anipw_a(; a, data::DataFrame, graph::ADMG, treatment, outcome, i
 
     # Compute nested rebalancing weights
     rw = get_nested_weights(graph, data, Aname, modified_districts, n_order)
+    fit_weights = rw .* sw
 
     # Markov pillow of T under n_order
     mp_T = markov_pillow_with_order(graph, Aname, n_order)
 
     # Fit p(T | mp_T) with rw weights
     pA1 = if isempty(mp_T)
-        w_sum = sum(rw); fill(sum(rw .* (A .== 1)) / w_sum, n)
+        w_sum = sum(fit_weights); fill(sum(fit_weights .* (A .== 1)) / w_sum, n)
     else
-        fit_propensity(data, A, mp_T; sample_weights=rw)
+        fit_propensity(data, A, mp_T; sample_weights=fit_weights)
     end
     p_a = clip(probability_a(pA1, a0), truncate_lower, truncate_upper)
 
     # Fit E[Y | T, mp_T] with rw weights
     predictors = unique(vcat(mp_T, [Aname]))
     Yhat0, _   = fit_outcome_predictions(data, Y, predictors, Aname, a0, 1.0-a0;
-                                          sample_weights=rw)
+                                          sample_weights=fit_weights)
     Yhat_a = Yhat0  # counterfactual prediction at T=a0
 
     # ANIPW doubly-robust formula (anankeR eq.)
     indicator  = Float64.(A .== a0)
-    anipw_est  = mean(indicator ./ p_a .* (Y .- Yhat_a) .+ Yhat_a)
-    eif        = indicator ./ p_a .* (Y .- Yhat_a) .+ Yhat_a .- anipw_est
+    anipw_contrib = indicator ./ p_a .* (Y .- Yhat_a) .+ Yhat_a
+    anipw_est  = weighted_mean(anipw_contrib, sw)
+    eif        = (sw ./ mean(sw)) .* (anipw_contrib .- anipw_est)
     lo, hi     = ci_from_eif(anipw_est, eif, n)
 
     # IPW only (nested)
-    nipw_est = mean(indicator ./ p_a .* Y)
+    nipw_est = weighted_mean(indicator ./ p_a .* Y, sw)
 
     return (ANIPW    = (estimated_psi=anipw_est, lower_ci=lo, upper_ci=hi, EIF=eif,
                         p_a_mpT=p_a, mu_Y_a=Yhat_a),

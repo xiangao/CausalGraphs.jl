@@ -62,6 +62,12 @@ end
     @test haskey(res, :TMLE)
     @test isfinite(res[:TMLE].ACE)
     @test abs(res[:TMLE].ACE - 2.0) < 0.5
+
+    w = vcat(fill(20.0, n ÷ 2), fill(0.1, n - n ÷ 2))
+    res_w = estimate_causal(a=[1,0], data=df, graph=g, treatment=:A, outcome=:Y,
+                            sample_weights=w)
+    @test isfinite(res_w[:TMLE].ACE)
+    @test res_w[:TMLE].ACE != res[:TMLE].ACE
 end
 
 # ── NPS-TMLE (front-door / p-fixable) ────────────────────────────────────────
@@ -81,24 +87,61 @@ end
 
 # ── Nested ANIPW ──────────────────────────────────────────────────────────────
 @testset "nested ANIPW" begin
-    # Build a graph where A is nested-fixable but not p-fixable:
-    # W -> A -> M -> Y, A <-> Y (hidden), W -> Y, W <-> M
-    # Treatment A is neither a-fix nor p-fix; OneLineID identifies it.
     Random.seed!(42)
-    n = 400
-    W = randn(n)
-    A = Float64.(rand(n) .< 1 ./(1 .+ exp.(-W)))
-    M = 0.5 .* A .+ 0.3 .* W .+ randn(n)
-    Y = A .+ M .+ W .+ randn(n)   # ACE(A→Y) ≈ 1 + d(M)/d(A)·1 = 1 + 0.5 = 1.5
-    df = DataFrame(W=W, A=A, M=M, Y=Y)
-    g  = make_graph(vertices=[:W,:A,:M,:Y],
-                    bi_edges=[(:A,:Y)],
-                    di_edges=[(:W,:A),(:W,:Y),(:A,:M),(:M,:Y)])
-    id = identify(g, :A, :Y)
-    # This graph: A is p-fixable (district(A)={A,Y}, children(A)={M}; M not in district → p-fixable)
-    # We just check that estimate_causal runs without error and gives a finite result
-    res = estimate_causal(a=[1,0], data=df, graph=g, treatment=:A, outcome=:Y)
-    @test any(haskey(res, k) for k in (:TMLE, :ANIPW))
-    first_est = haskey(res, :TMLE) ? res[:TMLE].ACE : res[:ANIPW].ACE
-    @test isfinite(first_est)
+    n = 500
+    U_EI   = randn(n)
+    U_ET   = randn(n)
+    U_ITox = randn(n)
+    U_VA   = randn(n)
+    U_VCD4 = randn(n)
+    ViralLoad = randn(n)
+    Exercise  = randn(n) .+ 0.5 .* U_EI .+ 0.5 .* U_ET
+    Income    = randn(n) .+ 0.4 .* ViralLoad .+ 0.4 .* U_EI .+ 0.4 .* U_ITox
+    T         = Float64.(rand(n) .< 1 ./(1 .+ exp.(-(0.5 .* ViralLoad .+ 0.3 .* Income .+ 0.4 .* U_ET))))
+    Toxicity  = randn(n) .+ 0.6 .* T .+ 0.3 .* U_ITox
+    Adherence = randn(n) .+ 0.5 .* Toxicity .+ 0.3 .* U_VA
+    CD4       = randn(n) .+ 0.4 .* T .+ 0.3 .* Adherence .+
+                0.2 .* Exercise .+ 0.3 .* ViralLoad .+ 0.3 .* U_VCD4 .+ 0.2 .* U_VA
+    df = DataFrame(ViralLoad=ViralLoad, Income=Income, Exercise=Exercise,
+                   T=T, Toxicity=Toxicity, Adherence=Adherence, CD4=CD4)
+    g = make_graph(
+        vertices = [:ViralLoad, :Income, :Exercise, :T, :Toxicity, :Adherence, :CD4],
+        di_edges = [
+            (:ViralLoad, :T), (:ViralLoad, :CD4), (:Income, :T), (:Exercise, :CD4),
+            (:T, :Toxicity), (:T, :CD4), (:Toxicity, :Adherence), (:Adherence, :CD4),
+        ],
+        bi_edges = [
+            (:Income, :Toxicity), (:Exercise, :Income), (:Exercise, :T),
+            (:ViralLoad, :Adherence), (:ViralLoad, :CD4),
+        ],
+    )
+    @test !is_fix(g, :T)
+    @test !is_p_fix(g, :T)
+    @test identify(g, :T, :CD4).strategy == :nested_fixable
+    res = estimate_causal(a=[1,0], data=df, graph=g, treatment=:T, outcome=:CD4)
+    @test haskey(res, :ANIPW)
+    @test isfinite(res[:ANIPW].ACE)
+    @test isfinite(res[:NIPW].ACE)
+end
+
+module FakeFlexMissing
+using DataFrames
+struct MDAG
+    missing_indicators::Vector{String}
+end
+struct IDResult end
+struct PropensityEstimate
+    pred::Vector{Union{Missing,Float64}}
+end
+ID_algorithm(::MDAG) = IDResult()
+propensity(::MDAG, data::DataFrame, ::IDResult; law=:target, kwargs...) =
+    Dict("R" => PropensityEstimate(fill(0.5, nrow(data))))
+end
+
+@testset "missing weights bridge" begin
+    df = DataFrame(X=[1.0, missing, 2.0], R=[1, 0, 1])
+    mdag = FakeFlexMissing.MDAG(["R"])
+    w_full = compute_missing_weights(mdag, df)
+    @test w_full == [2.0, 0.0, 2.0]
+    @test compute_missing_weights(mdag, df; complete_cases_only=true) == [2.0, 2.0]
 end

@@ -9,6 +9,8 @@ function fit_outcome_predictions(data::DataFrame, y, predictors::Vector{Symbol},
     dat0 = intervention_col in predictors ? set_column(dat, intervention_col, a0) : dat
     dat1 = intervention_col in predictors ? set_column(dat, intervention_col, a1) : dat
     if ml_model !== nothing
+        sample_weights === nothing ||
+            error("`sample_weights` with MLJ outcome models is not currently supported.")
         if is_binary(y)
             mach = _mlj_fit_classifier(ml_model, dat, y)
             return (_mlj_predict_prob1(mach, dat0), _mlj_predict_prob1(mach, dat1))
@@ -25,7 +27,9 @@ function fit_outcome_predictions(data::DataFrame, y, predictors::Vector{Symbol},
         dat_fit = copy(dat); dat_fit[!, yname] = Float64.(y)
         family = is_binary(y) ? Binomial() : Normal()
         link   = is_binary(y) ? LogitLink() : IdentityLink()
-        fit_glm = glm(formula, dat_fit, family, link)
+        fit_glm = sample_weights === nothing ?
+                  glm(formula, dat_fit, family, link) :
+                  glm(formula, dat_fit, family, link; wts=Float64.(sample_weights))
         return (Float64.(predict(fit_glm, dat0)), Float64.(predict(fit_glm, dat1)))
     end
     if is_binary(y)
@@ -40,8 +44,14 @@ end
 function fit_propensity(data::DataFrame, A, predictors::Vector{Symbol};
                          formula=nothing, treatment_name::Union{Symbol,Nothing}=nothing,
                          ml_model=nothing, sample_weights=nothing)
-    isempty(predictors) && return fill(mean(Float64.(A .== 1)), nrow(data))
+    w = sample_weights === nothing ? nothing : Float64.(sample_weights)
+    isempty(predictors) && return fill(w === nothing ?
+                                       mean(Float64.(A .== 1)) :
+                                       weighted_mean(Float64.(A .== 1), w),
+                                       nrow(data))
     if ml_model !== nothing
+        sample_weights === nothing ||
+            error("`sample_weights` with MLJ propensity models is not currently supported.")
         mach = _mlj_fit_classifier(ml_model, data[:, predictors], A)
         return _mlj_predict_prob1(mach, data[:, predictors])
     end
@@ -49,7 +59,9 @@ function fit_propensity(data::DataFrame, A, predictors::Vector{Symbol};
         aname = treatment_name !== nothing ? treatment_name :
                 (formula.lhs isa Term ? formula.lhs.sym : error("Pass treatment_name."))
         dat = copy(data[:, predictors]); dat[!, aname] = Float64.(A)
-        fit_glm = glm(formula, dat, Binomial(), LogitLink())
+        fit_glm = sample_weights === nothing ?
+                  glm(formula, dat, Binomial(), LogitLink()) :
+                  glm(formula, dat, Binomial(), LogitLink(); wts=w)
         return clip(Float64.(predict(fit_glm, data[:, predictors])), 1e-8, 1-1e-8)
     end
     β = fit_logistic(data[:, predictors], A, predictors; sample_weights)
