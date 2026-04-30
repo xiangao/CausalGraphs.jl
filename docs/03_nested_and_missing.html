@@ -94,10 +94,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#estimation" id="toc-estimation" class="nav-link" data-scroll-target="#estimation">Estimation</a></li>
   <li><a href="#nested-rebalancing-weights" id="toc-nested-rebalancing-weights" class="nav-link" data-scroll-target="#nested-rebalancing-weights">Nested rebalancing weights</a></li>
   </ul></li>
-  <li><a href="#part-2-missing-data-with-flexmissing.jl" id="toc-part-2-missing-data-with-flexmissing.jl" class="nav-link" data-scroll-target="#part-2-missing-data-with-flexmissing.jl">Part 2: Missing Data with FlexMissing.jl</a>
+  <li><a href="#part-2-missing-data-with-mdags" id="toc-part-2-missing-data-with-mdags" class="nav-link" data-scroll-target="#part-2-missing-data-with-mdags">Part 2: Missing Data with mDAGs</a>
   <ul class="collapse">
   <li><a href="#workflow" id="toc-workflow" class="nav-link" data-scroll-target="#workflow">Workflow</a></li>
-  <li><a href="#g2-graph-flexmissing.jl" id="toc-g2-graph-flexmissing.jl" class="nav-link" data-scroll-target="#g2-graph-flexmissing.jl">G2 graph (FlexMissing.jl)</a></li>
+  <li><a href="#g2-graph" id="toc-g2-graph" class="nav-link" data-scroll-target="#g2-graph">G2 graph</a></li>
   </ul></li>
   <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
   </ul>
@@ -126,22 +126,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="2526d69e" class="cell" data-execution_count="1">
+<div id="fa576c38" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">CausalGraphs</span>, <span class="bu">DataFrames</span>, <span class="bu">Random</span>, <span class="bu">Statistics</span>, <span class="bu">Printf</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">logistic</span>(x) <span class="op">=</span> <span class="fu">inv</span>(<span class="fl">1</span> <span class="op">+</span> <span class="fu">exp</span>(<span class="op">-</span>x))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stderr">
-<div class="ansi-escaped-output">
-<pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Precompiling CausalGraphs [c9f3a1b2-7e4d-5f8a-b0c1-2d3e4f5a6b7c] (cache misses: include_dependency fsize change (2), mismatched flags (4))
-
-
-
-SYSTEM: caught exception of type :MethodError while trying to print a failed Task notice; giving up
-</pre>
-</div>
-</div>
 <div class="cell-output cell-output-display" data-execution_count="2">
 <pre><code>logistic (generic function with 1 method)</code></pre>
 </div>
@@ -157,8 +147,8 @@ SYSTEM: caught exception of type :MethodError while trying to print a failed Tas
 </section>
 <section id="example-hiv-treatment-graph" class="level3">
 <h3 class="anchored" data-anchor-id="example-hiv-treatment-graph">Example: HIV treatment graph</h3>
-<p>This example comes from the anankeR estimation-strategies vignette. A drug treatment T affects CD4 count (outcome), mediated partly through Toxicity and Adherence. Hidden common causes link several variables.</p>
-<div id="60371a56" class="cell" data-execution_count="2">
+<p>A drug treatment T affects CD4 count (outcome), mediated partly through Toxicity and Adherence. Hidden common causes link several variables.</p>
+<div id="ec025577" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>g_hiv <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>ViralLoad, <span class="op">:</span>Income, <span class="op">:</span>Exercise, <span class="op">:</span>T, <span class="op">:</span>Toxicity, <span class="op">:</span>Adherence, <span class="op">:</span>CD4],</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [</span>
@@ -180,7 +170,7 @@ SYSTEM: caught exception of type :MethodError while trying to print a failed Tas
 </div>
 </div>
 <p>Toxicity is a <strong>child</strong> of T and also in T’s <strong>district</strong> (through the chain Exercise ↔︎ Income ↔︎ Toxicity), making T not p-fixable:</p>
-<div id="17665e0c" class="cell" data-execution_count="3">
+<div id="4e519305" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"district(T)  = "</span>, <span class="fu">district</span>(g_hiv, <span class="op">:</span>T))</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"children(T)  = "</span>, <span class="fu">children</span>(g_hiv, <span class="op">:</span>T))</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>()</span>
@@ -201,7 +191,7 @@ strategy     = nested_fixable</code></pre>
 </section>
 <section id="simulate-data-from-the-dgp" class="level3">
 <h3 class="anchored" data-anchor-id="simulate-data-from-the-dgp">Simulate data from the DGP</h3>
-<div id="989d75fd" class="cell" data-execution_count="4">
+<div id="79d0df0b" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_hiv</span>(n; seed<span class="op">=</span><span class="fl">42</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Latent hidden common causes</span></span>
@@ -301,7 +291,7 @@ strategy     = nested_fixable</code></pre>
 <section id="estimation" class="level3">
 <h3 class="anchored" data-anchor-id="estimation">Estimation</h3>
 <p><code>estimate_causal()</code> detects nested-fixable and routes to ANIPW.</p>
-<div id="42855be2" class="cell" data-execution_count="5">
+<div id="dffe5a84" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>res_hiv <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    a         <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    data      <span class="op">=</span> df_hiv,</span>
@@ -330,7 +320,7 @@ NIPW:  ACE = 2.246</code></pre>
 <section id="nested-rebalancing-weights" class="level3">
 <h3 class="anchored" data-anchor-id="nested-rebalancing-weights">Nested rebalancing weights</h3>
 <p>The ANIPW estimator builds <strong>nested rebalancing weights</strong> through the intrinsic kernel of each modified district. After reweighting, propensity and outcome regression are estimated by weighted GLM.</p>
-<div id="cf695ed5" class="cell" data-execution_count="6">
+<div id="5ab17002" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>rw <span class="op">=</span> res_hiv[<span class="op">:</span>rw]</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Rebalancing weights — min: %.3f  max: %.3f  mean: %.3f</span><span class="sc">\n</span><span class="st">"</span>,</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">minimum</span>(rw), <span class="fu">maximum</span>(rw), <span class="fu">mean</span>(rw))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -341,57 +331,53 @@ NIPW:  ACE = 2.246</code></pre>
 <hr>
 </section>
 </section>
-<section id="part-2-missing-data-with-flexmissing.jl" class="level2">
-<h2 class="anchored" data-anchor-id="part-2-missing-data-with-flexmissing.jl">Part 2: Missing Data with FlexMissing.jl</h2>
-<p>When covariates are <strong>missing at random</strong> (MAR), <code>FlexMissing.jl</code> identifies and estimates the missing-data propensity scores, producing per-row IPW weights for <code>estimate_causal()</code>.</p>
+<section id="part-2-missing-data-with-mdags" class="level2">
+<h2 class="anchored" data-anchor-id="part-2-missing-data-with-mdags">Part 2: Missing Data with mDAGs</h2>
+<p>When covariates are <strong>missing at random</strong> (MAR), CausalGraphs.jl identifies and estimates the missing-data propensity scores, producing per-row IPW weights for <code>estimate_causal()</code>.</p>
 <section id="workflow" class="level3">
 <h3 class="anchored" data-anchor-id="workflow">Workflow</h3>
-<div id="d69835be" class="cell" data-execution_count="7">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">FlexMissing</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Define the missingness DAG (mDAG)</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>mdag <span class="op">=</span> FlexMissing.<span class="fu">make_graph</span>(</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    obs_variables      <span class="op">=</span> [<span class="st">"T"</span>, <span class="st">"CD4"</span>],</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    missing_variables  <span class="op">=</span> [<span class="st">"ViralLoad"</span>],</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    missing_indicators <span class="op">=</span> [<span class="st">"R_VL"</span>],</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="st">"ViralLoad"</span>,<span class="st">"T"</span>), (<span class="st">"ViralLoad"</span>,<span class="st">"CD4"</span>), (<span class="st">"ViralLoad"</span>,<span class="st">"R_VL"</span>),</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>                (<span class="st">"T"</span>,<span class="st">"CD4"</span>)],</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Identify and estimate missing-data propensities</span></span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>ID    <span class="op">=</span> FlexMissing.<span class="fu">ID_algorithm</span>(mdag)</span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>props <span class="op">=</span> FlexMissing.<span class="fu">propensity</span>(mdag, data_with_missing, ID; law<span class="op">=:</span>target)</span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Build IPW weights on complete cases</span></span>
-<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>obs <span class="op">=</span> .!<span class="fu">ismissing</span>.(data_with_missing.ViralLoad)</span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>wts <span class="op">=</span> <span class="fl">1.0</span> <span class="op">./</span> <span class="fu">coalesce</span>.(props[<span class="st">"R_VL"</span>].pred[obs], <span class="fl">1.0</span>)</span>
-<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Estimate causal effect using IPW-weighted complete cases</span></span>
-<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
-<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>    a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span><span class="fu">dropmissing</span>(data_with_missing),</span>
-<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>    graph<span class="op">=</span>g_hiv, treatment<span class="op">=:</span>T, outcome<span class="op">=:</span>CD4,</span>
-<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>    sample_weights<span class="op">=</span>wts,</span>
-<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="586bd4b2" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Define the missingness DAG (mDAG)</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>mdag <span class="op">=</span> <span class="fu">make_mdag</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    obs_variables      <span class="op">=</span> [<span class="st">"T"</span>, <span class="st">"CD4"</span>],</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    missing_variables  <span class="op">=</span> [<span class="st">"ViralLoad"</span>],</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    missing_indicators <span class="op">=</span> [<span class="st">"R_VL"</span>],</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="st">"ViralLoad"</span>,<span class="st">"T"</span>), (<span class="st">"ViralLoad"</span>,<span class="st">"CD4"</span>), (<span class="st">"ViralLoad"</span>,<span class="st">"R_VL"</span>),</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>                (<span class="st">"T"</span>,<span class="st">"CD4"</span>)],</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Identify and estimate missing-data propensities</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>ID    <span class="op">=</span> <span class="fu">ID_algorithm</span>(mdag)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>props <span class="op">=</span> <span class="fu">propensity</span>(mdag, data_with_missing, ID; law<span class="op">=:</span>target)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Build IPW weights on complete cases</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>obs <span class="op">=</span> .!<span class="fu">ismissing</span>.(data_with_missing.ViralLoad)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>wts <span class="op">=</span> <span class="fl">1.0</span> <span class="op">./</span> <span class="fu">coalesce</span>.(props[<span class="st">"R_VL"</span>].pred[obs], <span class="fl">1.0</span>)</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Estimate causal effect using IPW-weighted complete cases</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span><span class="fu">dropmissing</span>(data_with_missing),</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    graph<span class="op">=</span>g_hiv, treatment<span class="op">=:</span>T, outcome<span class="op">=:</span>CD4,</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>    sample_weights<span class="op">=</span>wts,</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
-<section id="g2-graph-flexmissing.jl" class="level3">
-<h3 class="anchored" data-anchor-id="g2-graph-flexmissing.jl">G2 graph (FlexMissing.jl)</h3>
-<p>The G2 example from <code>FlexMissing.jl</code> has six variables with complex dependent missingness patterns. The full runnable code is in <code>FlexMissing.jl/examples/01_identification.jl</code>.</p>
-<div id="871c9d15" class="cell" data-execution_count="8">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">FlexMissing</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>G2 <span class="op">=</span> FlexMissing.<span class="fu">make_graph</span>(</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    obs_variables<span class="op">=</span>[], missing_variables<span class="op">=</span>[<span class="st">"X1"</span>,<span class="st">"X2"</span>,<span class="st">"X3"</span>,<span class="st">"X4"</span>,<span class="st">"X5"</span>,<span class="st">"X6"</span>],</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    missing_indicators<span class="op">=</span>[<span class="st">"R1"</span>,<span class="st">"R2"</span>,<span class="st">"R3"</span>,<span class="st">"R4"</span>,<span class="st">"R5"</span>,<span class="st">"R6"</span>],</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    di_edges<span class="op">=</span>[</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"X1"</span>,<span class="st">"X2"</span>),(<span class="st">"X2"</span>,<span class="st">"X3"</span>),(<span class="st">"X3"</span>,<span class="st">"X4"</span>),(<span class="st">"X4"</span>,<span class="st">"X5"</span>),(<span class="st">"X5"</span>,<span class="st">"X6"</span>),</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"R6"</span>,<span class="st">"R5"</span>),(<span class="st">"R6"</span>,<span class="st">"R3"</span>),(<span class="st">"R5"</span>,<span class="st">"R3"</span>),(<span class="st">"R4"</span>,<span class="st">"R3"</span>),(<span class="st">"R3"</span>,<span class="st">"R2"</span>),(<span class="st">"R2"</span>,<span class="st">"R1"</span>),</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"X1"</span>,<span class="st">"R3"</span>),(<span class="st">"X3"</span>,<span class="st">"R4"</span>),(<span class="st">"X3"</span>,<span class="st">"R5"</span>),(<span class="st">"X3"</span>,<span class="st">"R6"</span>),</span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"X4"</span>,<span class="st">"R1"</span>),(<span class="st">"X4"</span>,<span class="st">"R6"</span>),(<span class="st">"X5"</span>,<span class="st">"R2"</span>),(<span class="st">"X6"</span>,<span class="st">"R5"</span>),</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>id <span class="op">=</span> FlexMissing.<span class="fu">ID_algorithm</span>(G2; fulllaw<span class="op">=</span><span class="cn">true</span>)</span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>FlexMissing.<span class="fu">summarize_ID</span>(id).target</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="g2-graph" class="level3">
+<h3 class="anchored" data-anchor-id="g2-graph">G2 graph</h3>
+<p>The G2 example has six variables with complex dependent missingness patterns.</p>
+<div id="2d7dc851" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>G2 <span class="op">=</span> <span class="fu">make_mdag</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    obs_variables<span class="op">=</span>[], missing_variables<span class="op">=</span>[<span class="st">"X1"</span>,<span class="st">"X2"</span>,<span class="st">"X3"</span>,<span class="st">"X4"</span>,<span class="st">"X5"</span>,<span class="st">"X6"</span>],</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    missing_indicators<span class="op">=</span>[<span class="st">"R1"</span>,<span class="st">"R2"</span>,<span class="st">"R3"</span>,<span class="st">"R4"</span>,<span class="st">"R5"</span>,<span class="st">"R6"</span>],</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    di_edges<span class="op">=</span>[</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"X1"</span>,<span class="st">"X2"</span>),(<span class="st">"X2"</span>,<span class="st">"X3"</span>),(<span class="st">"X3"</span>,<span class="st">"X4"</span>),(<span class="st">"X4"</span>,<span class="st">"X5"</span>),(<span class="st">"X5"</span>,<span class="st">"X6"</span>),</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"R6"</span>,<span class="st">"R5"</span>),(<span class="st">"R6"</span>,<span class="st">"R3"</span>),(<span class="st">"R5"</span>,<span class="st">"R3"</span>),(<span class="st">"R4"</span>,<span class="st">"R3"</span>),(<span class="st">"R3"</span>,<span class="st">"R2"</span>),(<span class="st">"R2"</span>,<span class="st">"R1"</span>),</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"X1"</span>,<span class="st">"R3"</span>),(<span class="st">"X3"</span>,<span class="st">"R4"</span>),(<span class="st">"X3"</span>,<span class="st">"R5"</span>),(<span class="st">"X3"</span>,<span class="st">"R6"</span>),</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"X4"</span>,<span class="st">"R1"</span>),(<span class="st">"X4"</span>,<span class="st">"R6"</span>),(<span class="st">"X5"</span>,<span class="st">"R2"</span>),(<span class="st">"X6"</span>,<span class="st">"R5"</span>),</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>id <span class="op">=</span> <span class="fu">ID_algorithm</span>(G2; fulllaw<span class="op">=</span><span class="cn">true</span>)</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_ID</span>(id).target</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <hr>
 </section>

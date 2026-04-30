@@ -6,19 +6,32 @@ using LinearAlgebra
 using Random
 using Statistics
 using StatsModels
+import GLM: predict
 
 export ADMG, make_graph
 export top_order, parents, children, descendants, ancestors
 export district, all_districts, markov_blanket, markov_pillow
 export subgraph, fixed_graph, reachable_closure
 export is_fix, is_p_fix, is_np_saturated, mb_shielded
+export to_dot, to_mermaid, draw_graph, MermaidGraph
 export identify
 export superlearner
 export estimate_causal, backdoor_tmle_a, nps_tmle_a, nested_anipw_a
 export calculate_density_ratio_dnorm
+export MDAG, MissingTree, IDLaw, IDResult, PropensityEstimate, CliqueResult, MEstimationResult
+export make_mdag, make_mtree, append_leaf, prune_tree, are_trees_identical
+export get_all_nodes, get_all_edges
+export adj_matrix, top_order_R, nondescendants
+export gfix, selectionx_set, problematic_set, colluder, colluder_chain, is_d_separated
+export ID_algorithm, ID_flex_eval, summarize_ID
+export propensity, find_clique, M_estimation, Mestimation
+export f_ID_algorithm, f_ID_flex_eval, f_propensity, f_Mestimation
+export r_indicator_for_x, x_variable_for_r
 export compute_missing_weights
 
 include("graph.jl")
+include("missing_core.jl")
+include("visualization.jl")
 include("identification.jl")
 include("nuisance.jl")
 include("backdoor.jl")

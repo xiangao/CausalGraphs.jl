@@ -34,7 +34,6 @@ the treatment — so neither backdoor nor front-door adjustment is sufficient.
 
 ### Example: HIV treatment graph
 
-This example comes from the anankeR estimation-strategies vignette.
 A drug treatment T affects CD4 count (outcome), mediated partly through
 Toxicity and Adherence. Hidden common causes link several variables.
 
@@ -140,20 +139,18 @@ rw = res_hiv[:rw]
 
 ---
 
-## Part 2: Missing Data with FlexMissing.jl
+## Part 2: Missing Data with mDAGs
 
-When covariates are **missing at random** (MAR), `FlexMissing.jl` identifies
-and estimates the missing-data propensity scores, producing per-row IPW
-weights for `estimate_causal()`.
+When covariates are **missing at random** (MAR), CausalGraphs.jl identifies and
+estimates the missing-data propensity scores, producing per-row IPW weights for
+`estimate_causal()`.
 
 ### Workflow
 
 ```{julia}
 #| eval: false
-using FlexMissing
-
 # 1. Define the missingness DAG (mDAG)
-mdag = FlexMissing.make_graph(
+mdag = make_mdag(
     obs_variables      = ["T", "CD4"],
     missing_variables  = ["ViralLoad"],
     missing_indicators = ["R_VL"],
@@ -162,8 +159,8 @@ mdag = FlexMissing.make_graph(
 )
 
 # 2. Identify and estimate missing-data propensities
-ID    = FlexMissing.ID_algorithm(mdag)
-props = FlexMissing.propensity(mdag, data_with_missing, ID; law=:target)
+ID    = ID_algorithm(mdag)
+props = propensity(mdag, data_with_missing, ID; law=:target)
 
 # 3. Build IPW weights on complete cases
 obs = .!ismissing.(data_with_missing.ViralLoad)
@@ -177,17 +174,13 @@ result = estimate_causal(
 )
 ```
 
-### G2 graph (FlexMissing.jl)
+### G2 graph
 
-The G2 example from `FlexMissing.jl` has six variables with complex
-dependent missingness patterns. The full runnable code is in
-`FlexMissing.jl/examples/01_identification.jl`.
+The G2 example has six variables with complex dependent missingness patterns.
 
 ```{julia}
 #| eval: false
-using FlexMissing
-
-G2 = FlexMissing.make_graph(
+G2 = make_mdag(
     obs_variables=[], missing_variables=["X1","X2","X3","X4","X5","X6"],
     missing_indicators=["R1","R2","R3","R4","R5","R6"],
     di_edges=[
@@ -197,8 +190,8 @@ G2 = FlexMissing.make_graph(
         ("X4","R1"),("X4","R6"),("X5","R2"),("X6","R5"),
     ],
 )
-id = FlexMissing.ID_algorithm(G2; fulllaw=true)
-FlexMissing.summarize_ID(id).target
+id = ID_algorithm(G2; fulllaw=true)
+summarize_ID(id).target
 ```
 
 ---

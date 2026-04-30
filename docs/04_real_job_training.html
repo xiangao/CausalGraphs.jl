@@ -70,6 +70,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="04_real_job_training_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="04_real_job_training_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="04_real_job_training_files/libs/bootstrap/bootstrap-3b89f8177b1a2a82b23d4c23e004c95e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="04_real_job_training_files/libs/quarto-diagram/mermaid.min.js"></script>
+<script src="04_real_job_training_files/libs/quarto-diagram/mermaid-init.js"></script>
+<link href="04_real_job_training_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
 
 <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
@@ -125,7 +128,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The outcome is real earnings in 1978. The treatment is participation in the NSW job-training program. The data are available from Rajeev Dehejia’s NBER archive: <a href="https://users.nber.org/~rdehejia/data/.nswdata2.html" class="uri">https://users.nber.org/~rdehejia/data/.nswdata2.html</a>.</p>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="c4575710" class="cell" data-execution_count="1">
+<div id="b6092e63" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -144,7 +147,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The NSW experimental sample contains treated and control units from the same randomized program. The variables in these text files are:</p>
 <pre class="text"><code>treat, age, educ, black, hisp, married, nodegr, re74, re75, re78</code></pre>
 <p>where <code>re74</code>, <code>re75</code>, and <code>re78</code> are real earnings in 1974, 1975, and 1978.</p>
-<div id="2a858d17" class="cell" data-execution_count="2">
+<div id="62896db2" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">read_nsw_file</span>(url)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    local_file <span class="op">=</span> <span class="bu">Downloads</span>.<span class="fu">download</span>(url; timeout<span class="op">=</span><span class="fl">120</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> <span class="fu">readdlm</span>(local_file)</span>
@@ -263,7 +266,7 @@ treated = 185, controls = 260</code></pre>
 <pre class="text"><code>age, educ, race, marital status, prior earnings  -&gt;  re78
 treat                                           -&gt;  re78</code></pre>
 <p>Because treatment was randomized within the NSW experiment, the graph does not put arrows from pre-treatment characteristics into <code>treat</code>.</p>
-<div id="1efd953f" class="cell" data-execution_count="3">
+<div id="78f58100" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>covars <span class="op">=</span> [<span class="op">:</span>age, <span class="op">:</span>educ, <span class="op">:</span>black, <span class="op">:</span>hisp, <span class="op">:</span>married, <span class="op">:</span>nodegr, <span class="op">:</span>re74, <span class="op">:</span>re75, <span class="op">:</span>u74, <span class="op">:</span>u75]</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
@@ -277,14 +280,64 @@ treat                                           -&gt;  re78</code></pre>
 <pre><code>ADMG([:age, :educ, :black, :hisp, :married, :nodegr, :re74, :re75, :u74, :u75, :treat, :re78], [(:age, :re78), (:educ, :re78), (:black, :re78), (:hisp, :re78), (:married, :re78), (:nodegr, :re78), (:re74, :re78), (:re75, :re78), (:u74, :re78), (:u75, :re78), (:treat, :re78)], Tuple{Symbol, Symbol}[], Dict{Symbol, Vector{Symbol}}(), Dict{Symbol, Bool}(:re74 =&gt; 0, :re75 =&gt; 0, :u75 =&gt; 0, :educ =&gt; 0, :u74 =&gt; 0, :re78 =&gt; 0, :nodegr =&gt; 0, :married =&gt; 0, :age =&gt; 0, :black =&gt; 0…))</code></pre>
 </div>
 </div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"```{mermaid}"</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="fu">to_mermaid</span>(graph; direction<span class="op">=</span><span class="st">"LR"</span>))</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"```"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  n1_age["age"]
+  n2_educ["educ"]
+  n3_black["black"]
+  n4_hisp["hisp"]
+  n5_married["married"]
+  n6_nodegr["nodegr"]
+  n7_re74["re74"]
+  n8_re75["re75"]
+  n9_u74["u74"]
+  n10_u75["u75"]
+  n11_treat["treat"]
+  n12_re78["re78"]
+  n1_age --&gt; n12_re78
+  n2_educ --&gt; n12_re78
+  n3_black --&gt; n12_re78
+  n4_hisp --&gt; n12_re78
+  n5_married --&gt; n12_re78
+  n6_nodegr --&gt; n12_re78
+  n7_re74 --&gt; n12_re78
+  n8_re75 --&gt; n12_re78
+  n9_u74 --&gt; n12_re78
+  n10_u75 --&gt; n12_re78
+  n11_treat --&gt; n12_re78
+  classDef fixed stroke:#111827,stroke-width:2px
+  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 3 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 4 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 5 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 6 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 7 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 8 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 9 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 10 stroke:#2563eb,stroke-width:1.8px
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
 <p>This graph encodes a randomized-treatment estimand. The covariates are not needed for confounding control, but they make the substantive assumptions explicit and can be useful in alternative observational graphs.</p>
 </section>
 <section id="identify" class="level2">
 <h2 class="anchored" data-anchor-id="identify">3. Identify</h2>
 <p><code>identify()</code> reads the graph and chooses the estimation strategy.</p>
-<div id="d4228eba" class="cell" data-execution_count="4">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>id <span class="op">=</span> <span class="fu">identify</span>(graph, <span class="op">:</span>treat, <span class="op">:</span>re78)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, id.strategy)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="829bd6b1" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>id <span class="op">=</span> <span class="fu">identify</span>(graph, <span class="op">:</span>treat, <span class="op">:</span>re78)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, id.strategy)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>strategy: a_fixable</code></pre>
 </div>
@@ -293,20 +346,20 @@ treat                                           -&gt;  re78</code></pre>
 </section>
 <section id="estimate" class="level2">
 <h2 class="anchored" data-anchor-id="estimate">4. Estimate</h2>
-<div id="44a40c83" class="cell" data-execution_count="5">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> data,</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    graph <span class="op">=</span> graph,</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    treatment <span class="op">=</span> <span class="op">:</span>treat,</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    outcome <span class="op">=</span> <span class="op">:</span>re78,</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE:    ACE = %.2f  95%% CI (%.2f, %.2f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        res[<span class="op">:</span>TMLE].ACE, res[<span class="op">:</span>TMLE].lower_ci, res[<span class="op">:</span>TMLE].upper_ci)</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Onestep: ACE = %.2f</span><span class="sc">\n</span><span class="st">"</span>, res[<span class="op">:</span>Onestep].ACE)</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Gcomp:   ACE = %.2f</span><span class="sc">\n</span><span class="st">"</span>, res[<span class="op">:</span>Gcomp].ACE)</span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"IPW:     ACE = %.2f</span><span class="sc">\n</span><span class="st">"</span>, res[<span class="op">:</span>IPW].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="46d32f1f" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> data,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    graph <span class="op">=</span> graph,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    treatment <span class="op">=</span> <span class="op">:</span>treat,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    outcome <span class="op">=</span> <span class="op">:</span>re78,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE:    ACE = %.2f  95%% CI (%.2f, %.2f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        res[<span class="op">:</span>TMLE].ACE, res[<span class="op">:</span>TMLE].lower_ci, res[<span class="op">:</span>TMLE].upper_ci)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Onestep: ACE = %.2f</span><span class="sc">\n</span><span class="st">"</span>, res[<span class="op">:</span>Onestep].ACE)</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Gcomp:   ACE = %.2f</span><span class="sc">\n</span><span class="st">"</span>, res[<span class="op">:</span>Gcomp].ACE)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"IPW:     ACE = %.2f</span><span class="sc">\n</span><span class="st">"</span>, res[<span class="op">:</span>IPW].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <div class="ansi-escaped-output">
 <pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
@@ -321,11 +374,11 @@ IPW:     ACE = 1794.34</code></pre>
 </div>
 </div>
 <p>For this randomized graph, the estimators reduce to the treated-control mean contrast. We can verify that directly:</p>
-<div id="0e3de793" class="cell" data-execution_count="6">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>raw_difference <span class="op">=</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mean</span>(data.re78[data.treat <span class="op">.==</span> <span class="fl">1</span>]) <span class="op">-</span> <span class="fu">mean</span>(data.re78[data.treat <span class="op">.==</span> <span class="fl">0</span>])</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Raw treated-control difference = %.2f</span><span class="sc">\n</span><span class="st">"</span>, raw_difference)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="51070ab8" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>raw_difference <span class="op">=</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mean</span>(data.re78[data.treat <span class="op">.==</span> <span class="fl">1</span>]) <span class="op">-</span> <span class="fu">mean</span>(data.re78[data.treat <span class="op">.==</span> <span class="fl">0</span>])</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Raw treated-control difference = %.2f</span><span class="sc">\n</span><span class="st">"</span>, raw_difference)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Raw treated-control difference = 1794.34</code></pre>
 </div>
@@ -339,30 +392,30 @@ IPW:     ACE = 1794.34</code></pre>
 covariates -&gt; re78
 treat      -&gt; re78</code></pre>
 <p>That graph is still backdoor/a-fixable, but the identifying assumption is now stronger: after conditioning on the measured covariates, there is no remaining unmeasured confounding of treatment and earnings. The code change is only the edge set and the control file:</p>
-<div id="096ee5d2" class="cell" data-execution_count="7">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>cps_controls <span class="op">=</span> <span class="fu">read_nsw_file</span>(<span class="st">"</span><span class="sc">$</span>base<span class="st">/cps3_controls.txt"</span>)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>obs_data <span class="op">=</span> <span class="fu">vcat</span>(treated, cps_controls)</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>obs_data.u74 <span class="op">=</span> <span class="fu">Float64</span>.(obs_data.re74 <span class="op">.==</span> <span class="fl">0</span>)</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>obs_data.u75 <span class="op">=</span> <span class="fu">Float64</span>.(obs_data.re75 <span class="op">.==</span> <span class="fl">0</span>)</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>obs_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> <span class="fu">vcat</span>(covars, [<span class="op">:</span>treat, <span class="op">:</span>re78]),</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> <span class="fu">vcat</span>(</span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>        [(x, <span class="op">:</span>treat) for x <span class="kw">in</span> covars],</span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>        [(x, <span class="op">:</span>re78) for x <span class="kw">in</span> covars],</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        [(<span class="op">:</span>treat, <span class="op">:</span>re78)],</span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="fu">identify</span>(obs_graph, <span class="op">:</span>treat, <span class="op">:</span>re78).strategy</span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>obs_res <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> obs_data,</span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    graph <span class="op">=</span> obs_graph,</span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>    treatment <span class="op">=</span> <span class="op">:</span>treat,</span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    outcome <span class="op">=</span> <span class="op">:</span>re78,</span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="ed1693a5" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>cps_controls <span class="op">=</span> <span class="fu">read_nsw_file</span>(<span class="st">"</span><span class="sc">$</span>base<span class="st">/cps3_controls.txt"</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>obs_data <span class="op">=</span> <span class="fu">vcat</span>(treated, cps_controls)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>obs_data.u74 <span class="op">=</span> <span class="fu">Float64</span>.(obs_data.re74 <span class="op">.==</span> <span class="fl">0</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>obs_data.u75 <span class="op">=</span> <span class="fu">Float64</span>.(obs_data.re75 <span class="op">.==</span> <span class="fl">0</span>)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>obs_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> <span class="fu">vcat</span>(covars, [<span class="op">:</span>treat, <span class="op">:</span>re78]),</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> <span class="fu">vcat</span>(</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>        [(x, <span class="op">:</span>treat) for x <span class="kw">in</span> covars],</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>        [(x, <span class="op">:</span>re78) for x <span class="kw">in</span> covars],</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>        [(<span class="op">:</span>treat, <span class="op">:</span>re78)],</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="fu">identify</span>(obs_graph, <span class="op">:</span>treat, <span class="op">:</span>re78).strategy</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>obs_res <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> obs_data,</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>    graph <span class="op">=</span> obs_graph,</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>    treatment <span class="op">=</span> <span class="op">:</span>treat,</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>    outcome <span class="op">=</span> <span class="op">:</span>re78,</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>This is the usual applied workflow: the graph states the assumptions, the identifier checks whether those assumptions are sufficient, and the estimator computes the corresponding statistical estimand.</p>
 </section>

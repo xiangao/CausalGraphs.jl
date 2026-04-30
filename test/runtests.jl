@@ -19,6 +19,19 @@ using CausalGraphs
           Set(ancestors(g_back, [:Y])) == Set([:Y,:A,:X])
     sub = subgraph(g_back, [:A,:Y])
     @test :X ∉ sub.vertices
+
+    dot = to_dot(g; direction="LR")
+    @test occursin("graph [rankdir=\"LR\"]", dot)
+    @test occursin("\"A\" -> \"M\" [color=blue]", dot)
+    @test occursin("\"A\" -> \"Y\" [dir=both, color=red]", dot)
+
+    mermaid = to_mermaid(g; direction="LR")
+    @test occursin("flowchart LR", mermaid)
+    @test occursin("-->", mermaid)
+    @test occursin("<-->", mermaid)
+
+    html = sprint(show, MIME("text/html"), draw_graph(g))
+    @test occursin("class=\"mermaid\"", html)
 end
 
 # ── Identification ────────────────────────────────────────────────────────────
@@ -124,24 +137,65 @@ end
     @test isfinite(res[:NIPW].ACE)
 end
 
-module FakeFlexMissing
-using DataFrames
-struct MDAG
-    missing_indicators::Vector{String}
-end
-struct IDResult end
-struct PropensityEstimate
-    pred::Vector{Union{Missing,Float64}}
-end
-ID_algorithm(::MDAG) = IDResult()
-propensity(::MDAG, data::DataFrame, ::IDResult; law=:target, kwargs...) =
-    Dict("R" => PropensityEstimate(fill(0.5, nrow(data))))
+function g2_mdag()
+    make_mdag(
+        obs_variables=[],
+        missing_variables=["X1", "X2", "X3", "X4", "X5", "X6"],
+        missing_indicators=["R1", "R2", "R3", "R4", "R5", "R6"],
+        di_edges=[
+            ("X1", "X2"), ("X2", "X3"), ("X3", "X4"), ("X4", "X5"), ("X5", "X6"),
+            ("R6", "R5"), ("R6", "R3"), ("R5", "R3"), ("R4", "R3"), ("R3", "R2"), ("R2", "R1"),
+            ("X1", "R3"),
+            ("X3", "R4"), ("X3", "R5"), ("X3", "R6"),
+            ("X4", "R1"), ("X4", "R6"),
+            ("X5", "R2"),
+            ("X6", "R5"),
+        ],
+    )
 end
 
-@testset "missing weights bridge" begin
+@testset "missing data mDAG" begin
+    g = make_mdag(obs_variables=["X", "A", "Y"], missing_variables=[], missing_indicators=[],
+                  di_edges=[("X", "A"), ("A", "Y"), ("X", "Y")])
+    @test top_order(g) == ["X", "A", "Y"]
+    @test parents(g, "Y") == ["X", "A"]
+    @test children(g, "X") == ["A", "Y"]
+    @test !is_d_separated(g, "A", "Y", ["X"]).d_separated
+    @test occursin("\"X\" -> \"A\" [color=blue]", to_dot(g))
+    @test occursin("flowchart LR", to_mermaid(g))
+
+    g2 = g2_mdag()
+    id = ID_algorithm(g2; fulllaw=true)
+    @test id.target.id_status
+    @test id.full !== nothing
+    @test !id.full.id_status
+    target = summarize_ID(id).target
+    @test all(target.ID_Status)
+    @test id.target.selection_collection["R3"] == ["R1", "R4", "R5"]
+    @test id.target.selectionr_collection["R3"] == ["R4", "R5"]
+    @test id.target.selectionx_collection["R3"] == ["R1"]
+    @test id.full.id_status_collection["R3"] == false
+    @test id.full.id_status_collection["R5"] == false
+end
+
+@testset "missing weights" begin
     df = DataFrame(X=[1.0, missing, 2.0], R=[1, 0, 1])
-    mdag = FakeFlexMissing.MDAG(["R"])
-    w_full = compute_missing_weights(mdag, df)
+    mdag = make_mdag(obs_variables=[], missing_variables=["X"],
+                     missing_indicators=["R"], di_edges=[])
+    id = ID_algorithm(mdag)
+    props = Dict("R" => PropensityEstimate(nothing, Union{Missing,Float64}[0.5 for _ in 1:nrow(df)],
+                                           String[], trues(nrow(df)), trues(nrow(df)),
+                                           String[], String[]))
+    w_full = compute_missing_weights(mdag, df; ID=id, propensities=props)
     @test w_full == [2.0, 0.0, 2.0]
-    @test compute_missing_weights(mdag, df; complete_cases_only=true) == [2.0, 2.0]
+    @test compute_missing_weights(mdag, df; ID=id, propensities=props,
+                                  complete_cases_only=true) == [2.0, 2.0]
+
+    props_fit = propensity(mdag, df, id; vocal=false)
+    result = Mestimation(df, mdag, props_fit, id;
+                         est_FUN=(d, th) -> reshape(coalesce.(d.X, 0.0) .- th[1], :, 1),
+                         variables=[["X"]], start=[0.0], vocal=false)
+    @test result.results.converged
+    @test length(result.results.estimates) == 1
+    @test isfinite(result.results.se[1])
 end

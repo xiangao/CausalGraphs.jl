@@ -4,20 +4,20 @@
 causal effects in acyclic directed mixed graphs (ADMGs), with support for hidden
 variables, nested-fixable effects, and missing-data weighting.
 
-It combines the main workflows from the local `FlexCausal.jl`,
-`FlexMissing.jl`, and `anankeR` projects:
+It combines graph-based causal identification, semiparametric effect
+estimation, and missing-data weighting in one package:
 
 1. Build an ADMG with directed and bidirected edges.
 2. Check whether an effect is a-fixable, p-fixable, nested-fixable, or not
    identified.
 3. Route automatically to the appropriate semiparametric estimator.
-4. Optionally construct missing-data inverse-probability weights with
-   `FlexMissing.jl` and pass them into the causal estimator.
+4. Optionally identify missing-data mechanisms on an mDAG and pass
+   inverse-probability weights into the causal estimator.
 
 The package currently implements graph utilities, automatic identification
 routing, backdoor TMLE, front-door/NPS TMLE, nested ANIPW/NIPW, default
-parametric nuisance fits, MLJ-based SuperLearner ensembles, and a lightweight
-bridge to `FlexMissing.jl`.
+parametric nuisance fits, MLJ-based SuperLearner ensembles, mDAG missing-data
+identification, missingness propensity estimation, and missing-data weighting.
 
 ## Install/Load Locally
 
@@ -69,6 +69,8 @@ graph = make_graph(
     di_edges = [(:X, :A), (:X, :Y), (:A, :Y)],
 )
 
+draw_graph(graph)
+
 id = identify(graph, :A, :Y)
 id.strategy
 
@@ -90,6 +92,8 @@ result[:TMLE].upper_ci
 ### Graphs
 
 - `make_graph()` constructor for ADMGs
+- Mermaid and Graphviz DOT graph export with `draw_graph()`, `to_mermaid()`,
+  and `to_dot()`
 - Directed and bidirected edges
 - Ancestors, descendants, parents, children
 - Districts and all districts
@@ -149,21 +153,22 @@ MLJ models.
 
 ### Missing Data
 
-`compute_missing_weights()` provides a bridge to `FlexMissing.jl`. It uses a
-FlexMissing mDAG and propensity estimates to build inverse-probability weights
-that can be passed to `estimate_causal`.
+`make_mdag()`, `ID_algorithm()`, and `propensity()` implement missing-data
+identification and missingness propensity estimation inside CausalGraphs.jl.
+`compute_missing_weights()` converts those propensities into inverse-probability
+weights that can be passed to `estimate_causal`.
 
 ```julia
-using FlexMissing, CausalGraphs, DataFrames
+using CausalGraphs, DataFrames
 
-mdag = FlexMissing.make_graph(
+mdag = make_mdag(
     obs_variables = ["A", "Y"],
     missing_variables = ["X"],
     missing_indicators = ["Rx"],
     di_edges = [("X", "A"), ("X", "Y"), ("X", "Rx"), ("A", "Y")],
 )
 
-ID = FlexMissing.ID_algorithm(mdag)
+ID = ID_algorithm(mdag)
 wts = compute_missing_weights(mdag, data_with_missing;
                               ID=ID, complete_cases_only=true)
 
@@ -176,9 +181,6 @@ result = estimate_causal(
     sample_weights = wts,
 )
 ```
-
-`FlexMissing.jl` is not a hard dependency of `CausalGraphs.jl`; load it in the
-calling session when using missing-data weights.
 
 ## Examples
 
@@ -258,9 +260,9 @@ construct the relevant outcome ancestors and modified districts. It computes
 nested rebalancing weights through intrinsic kernels, then estimates the effect
 with nested IPW and augmented nested IPW.
 
-Missing-data adjustment is handled by `FlexMissing.jl`: CausalGraphs consumes
-the identified missingness propensities as row weights and passes them through
-the causal estimator.
+Missing-data adjustment is handled by the mDAG tools in CausalGraphs.jl:
+the package identifies missingness propensities, estimates them, converts them
+to row weights, and passes those weights through the causal estimator.
 
 ## R-to-Julia Naming
 
@@ -273,7 +275,9 @@ The package follows Julia-style snake_case names:
 | Causal effect estimation | `estimate_causal` |
 | Markov blanket | `markov_blanket` |
 | Markov pillow | `markov_pillow` |
-| Missing-data IPW bridge | `compute_missing_weights` |
+| mDAG constructor | `make_mdag` |
+| Missing-data identification | `ID_algorithm` |
+| Missing-data IPW | `compute_missing_weights` |
 | SuperLearner stack | `superlearner` |
 
 ## Current Limitations
@@ -282,7 +286,6 @@ The package follows Julia-style snake_case names:
 - Kernel `densratio` is not implemented.
 - `sample_weights` are supported for default/GLM nuisance fits, but not for
   cross-fitted MLJ/SuperLearner nuisance fits.
-- `FlexMissing.jl` support is a bridge, not an embedded mDAG implementation.
 
 ## References
 
@@ -294,5 +297,4 @@ The implementation is based on ideas from:
   Recursive Semi-Markovian Causal Models*.
 - Richardson, Robins, and Shpitser. *Nested Markov Properties for Acyclic
   Directed Mixed Graphs*.
-- The local `FlexCausal.jl`, `FlexMissing.jl`, and `anankeR` implementations in
-  this repository.
+- Earlier prototype implementations of these workflows.

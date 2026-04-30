@@ -1,7 +1,7 @@
 # ── Nested-fixable: ANIPW estimator ──────────────────────────────────────────
 #
-# Translated from anankeR's CausalEffect private methods:
-#   .get_nested_rebalanced_weights, .fit_intrinsic_kernel, .augmented_nested_ipw
+# Nested-fixable estimators based on intrinsic kernels and nested rebalancing
+# weights.
 #
 # Reference: Bhattacharya, Nabi & Shpitser (2022) "Semiparametric inference for
 # causal effects in graphical models with hidden variables."
@@ -129,7 +129,7 @@ function nested_anipw_a(; a, data::DataFrame, graph::ADMG, treatment, outcome, i
                                           sample_weights=fit_weights)
     Yhat_a = Yhat0  # counterfactual prediction at T=a0
 
-    # ANIPW doubly-robust formula (anankeR eq.)
+    # ANIPW doubly-robust estimating equation.
     indicator  = Float64.(A .== a0)
     anipw_contrib = indicator ./ p_a .* (Y .- Yhat_a) .+ Yhat_a
     anipw_est  = weighted_mean(anipw_contrib, sw)

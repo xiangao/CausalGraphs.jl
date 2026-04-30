@@ -8,7 +8,8 @@ jupyter: julia-1.12
 ---
 
 This tutorial introduces the ADMG graph layer and the `identify()` function.
-It adapts examples from the **anankeR** R package.
+It uses small canonical ADMG examples to show how graph structure drives
+identification.
 
 ## Setup
 
@@ -35,11 +36,28 @@ g_fd = make_graph(
 ```
 
 ```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(g_fd; direction="LR"))
+println("```")
+```
+
+```{julia}
 # Backdoor graph: X → A → Y, X → Y  (X is an observed confounder)
 g_bd = make_graph(
     vertices = [:X, :A, :Y],
     di_edges  = [(:X, :A), (:X, :Y), (:A, :Y)],
 )
+```
+
+`draw_graph(g_bd)` displays the same graph in notebook environments. In Quarto,
+we can render the Mermaid source directly:
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(g_bd; direction="LR"))
+println("```")
 ```
 
 ## Graph Properties

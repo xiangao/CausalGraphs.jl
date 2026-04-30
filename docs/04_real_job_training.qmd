@@ -101,6 +101,13 @@ graph = make_graph(
 )
 ```
 
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(graph; direction="LR"))
+println("```")
+```
+
 This graph encodes a randomized-treatment estimand. The covariates are not
 needed for confounding control, but they make the substantive assumptions
 explicit and can be useful in alternative observational graphs.
