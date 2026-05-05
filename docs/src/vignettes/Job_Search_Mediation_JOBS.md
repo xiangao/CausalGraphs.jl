@@ -198,7 +198,11 @@ relationship. Job-search self-efficacy is post-treatment, not randomized.
 Unmeasured optimism, family support, health, or local job-market conditions
 could affect both self-efficacy and depressive symptoms.
 
-A sensitivity graph adds a bidirected edge between the mediator and outcome:
+A sensitivity graph adds a bidirected edge between the mediator and outcome.
+This is different from the directed edge `job_seek -> depress2`, which is the
+causal mediated pathway. The bidirected edge `job_seek <-> depress2` means
+there is an unmeasured common cause of job-search self-efficacy and depressive
+symptoms.
 
 ```@example jobs_mediation
 sensitivity_graph = make_graph(
@@ -210,7 +214,9 @@ sensitivity_graph = make_graph(
 draw_graph(sensitivity_graph; direction="LR")
 ```
 
-The total effect of `treat` on `depress2` is still a treatment-effect question.
+The total effect of `treat` on `depress2` is still a treatment-effect question
+and can still be estimated under the baseline-adjustment assumptions above,
+because the total effect does not condition on or intervene on the mediator.
 The natural direct and indirect effects, however, are no longer justified by
 the simple mediation g-formula because the `M -> Y` relationship is confounded
 after conditioning on `A` and `X`.
