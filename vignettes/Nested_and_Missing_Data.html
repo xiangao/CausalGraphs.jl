@@ -124,9 +124,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<p>This vignette covers two situations where simple backdoor and front-door workflows are not enough:</p>
+<ol type="1">
+<li><strong>nested-fixable effects</strong> in ADMGs with more complicated hidden-confounding structure;</li>
+<li><strong>missing-data weighting</strong> using missingness DAGs (mDAGs).</li>
+</ol>
+<p>The common theme is identification before estimation. The graph determines whether the target law can be represented using observed data. Only after that step does the package construct weights and nuisance regressions.</p>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="cc2b2ba1" class="cell" data-execution_count="1">
+<div id="cee1d41d" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">CausalGraphs</span>, <span class="bu">DataFrames</span>, <span class="bu">Random</span>, <span class="bu">Statistics</span>, <span class="bu">Printf</span></span>
@@ -144,11 +150,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="the-identification-hierarchy">The identification hierarchy</h3>
 <pre><code>a-fixable  ⊂  p-fixable  ⊂  nested-fixable  ⊂  identified</code></pre>
 <p>A treatment is <strong>nested-fixable</strong> when the effect is identified by the One-Line ID algorithm, but is <strong>neither a-fixable nor p-fixable</strong>. This occurs when a <em>child</em> of the treatment shares a hidden common cause with the treatment — so neither backdoor nor front-door adjustment is sufficient.</p>
+<p>The word “nested” comes from nested Markov models for ADMGs. In these models, identification is described by repeatedly “fixing” variables: moving a variable from random to fixed status and updating the kernel that describes the remaining random variables. If a valid fixing sequence isolates the target counterfactual distribution, the effect is identified even though no ordinary adjustment set or classical front-door formula exists.</p>
+<p>Operationally, <code>identify()</code> uses a One-Line ID style check. If it passes, <code>estimate_causal()</code> routes to nested IPW estimators. These estimators construct rebalancing weights associated with the intrinsic kernels of the relevant districts. ANIPW augments those weights with outcome regression terms, in the same spirit that AIPW augments ordinary IPW.</p>
 </section>
 <section id="example-hiv-treatment-graph" class="level3">
 <h3 class="anchored" data-anchor-id="example-hiv-treatment-graph">Example: HIV treatment graph</h3>
 <p>A drug treatment T affects CD4 count (outcome), mediated partly through Toxicity and Adherence. Hidden common causes link several variables.</p>
-<div id="145049d5" class="cell" data-execution_count="2">
+<div id="41b3d996" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>g_hiv <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>ViralLoad, <span class="op">:</span>Income, <span class="op">:</span>Exercise, <span class="op">:</span>T, <span class="op">:</span>Toxicity, <span class="op">:</span>Adherence, <span class="op">:</span>CD4],</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [</span>
@@ -170,7 +178,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>Toxicity is a <strong>child</strong> of T and also in T’s <strong>district</strong> (through the chain Exercise ↔︎ Income ↔︎ Toxicity), making T not p-fixable:</p>
-<div id="1f88e5f5" class="cell" data-execution_count="3">
+<div id="d144b485" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"district(T)  = "</span>, <span class="fu">district</span>(g_hiv, <span class="op">:</span>T))</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"children(T)  = "</span>, <span class="fu">children</span>(g_hiv, <span class="op">:</span>T))</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>()</span>
@@ -191,7 +199,7 @@ strategy     = nested_fixable</code></pre>
 </section>
 <section id="simulate-data-from-the-dgp" class="level3">
 <h3 class="anchored" data-anchor-id="simulate-data-from-the-dgp">Simulate data from the DGP</h3>
-<div id="b6a9fd49" class="cell" data-execution_count="4">
+<div id="ab5b46de" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_hiv</span>(n; seed<span class="op">=</span><span class="fl">42</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Latent hidden common causes</span></span>
@@ -291,7 +299,7 @@ strategy     = nested_fixable</code></pre>
 <section id="estimation" class="level3">
 <h3 class="anchored" data-anchor-id="estimation">Estimation</h3>
 <p><code>estimate_causal()</code> detects nested-fixable and routes to ANIPW.</p>
-<div id="f51df5b9" class="cell" data-execution_count="5">
+<div id="926546ee" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>res_hiv <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    a         <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    data      <span class="op">=</span> df_hiv,</span>
@@ -320,7 +328,8 @@ NIPW:  ACE = 2.246</code></pre>
 <section id="nested-rebalancing-weights" class="level3">
 <h3 class="anchored" data-anchor-id="nested-rebalancing-weights">Nested rebalancing weights</h3>
 <p>The ANIPW estimator builds <strong>nested rebalancing weights</strong> through the intrinsic kernel of each modified district. After reweighting, propensity and outcome regression are estimated by weighted GLM.</p>
-<div id="3073e828" class="cell" data-execution_count="6">
+<p>The practical interpretation is similar to ordinary IPW but with more graph structure. Ordinary IPW balances treatment groups with respect to measured confounders. Nested rebalancing weights balance the pieces of the observed law that appear in the nested identification formula. This is why nested-fixable estimation is available even when neither a single adjustment set nor a front-door mediator formula is valid.</p>
+<div id="65e41820" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>rw <span class="op">=</span> res_hiv[<span class="op">:</span>rw]</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Rebalancing weights — min: %.3f  max: %.3f  mean: %.3f</span><span class="sc">\n</span><span class="st">"</span>,</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">minimum</span>(rw), <span class="fu">maximum</span>(rw), <span class="fu">mean</span>(rw))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -334,9 +343,17 @@ NIPW:  ACE = 2.246</code></pre>
 <section id="part-2-missing-data-with-mdags" class="level2">
 <h2 class="anchored" data-anchor-id="part-2-missing-data-with-mdags">Part 2: Missing Data with mDAGs</h2>
 <p>When covariates are <strong>missing at random</strong> (MAR), CausalGraphs.jl identifies and estimates the missing-data propensity scores, producing per-row IPW weights for <code>estimate_causal()</code>.</p>
+<p>An <strong>mDAG</strong> extends a causal graph with missingness indicators. A variable such as <code>X</code> has an indicator <code>R_X</code> showing whether <code>X</code> is observed. Edges into <code>R_X</code> encode the missingness mechanism. For example, <code>T -&gt; R_X</code> says treatment status affects whether <code>X</code> is observed; <code>X -&gt; R_X</code> says missingness depends on the value of <code>X</code> itself.</p>
+<p>The key identification question is whether the target full-data law can be recovered from the observed-data law. If the missingness process is recoverable, the package estimates observation probabilities and forms inverse probability weights. Those weights can then be passed to the causal estimator, so the causal analysis is performed on complete cases weighted back toward the target population.</p>
+<p>This separates two assumptions:</p>
+<ul>
+<li>the <strong>causal ADMG</strong> says how treatment, outcome, and covariates relate;</li>
+<li>the <strong>mDAG</strong> says how values become missing.</li>
+</ul>
+<p>Both matter. A causal effect may be identified with complete data but not recoverable under a given missingness graph.</p>
 <section id="workflow" class="level3">
 <h3 class="anchored" data-anchor-id="workflow">Workflow</h3>
-<div id="91bd9b18" class="cell" data-execution_count="7">
+<div id="a3d89c5c" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Define the missingness DAG (mDAG)</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>mdag <span class="op">=</span> <span class="fu">make_mdag</span>(</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    obs_variables      <span class="op">=</span> [<span class="st">"T"</span>, <span class="st">"CD4"</span>],</span>
@@ -365,7 +382,7 @@ NIPW:  ACE = 2.246</code></pre>
 <section id="g2-graph" class="level3">
 <h3 class="anchored" data-anchor-id="g2-graph">G2 graph</h3>
 <p>The G2 example has six variables with complex dependent missingness patterns.</p>
-<div id="56785bb3" class="cell" data-execution_count="8">
+<div id="26b58ad0" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>G2 <span class="op">=</span> <span class="fu">make_mdag</span>(</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    obs_variables<span class="op">=</span>[], missing_variables<span class="op">=</span>[<span class="st">"X1"</span>,<span class="st">"X2"</span>,<span class="st">"X3"</span>,<span class="st">"X4"</span>,<span class="st">"X5"</span>,<span class="st">"X6"</span>],</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    missing_indicators<span class="op">=</span>[<span class="st">"R1"</span>,<span class="st">"R2"</span>,<span class="st">"R3"</span>,<span class="st">"R4"</span>,<span class="st">"R5"</span>,<span class="st">"R6"</span>],</span>

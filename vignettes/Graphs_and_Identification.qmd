@@ -11,6 +11,14 @@ This vignette introduces the ADMG graph layer and the `identify()` function.
 It uses small canonical ADMG examples to show how graph structure drives
 identification.
 
+The central idea is that a graph is not just a picture. It is a compact
+statement of the causal assumptions under which an interventional quantity,
+such as `E[Y(a)]` or `E[Y(1)-Y(0)]`, can be written in terms of the observed
+data distribution. `identify()` takes an ADMG, a treatment, and an outcome, and
+asks whether the package knows such a translation. If it does, estimation can
+proceed; if it does not, the data alone do not justify the requested effect
+under the graph.
+
 ## Setup
 
 ```{julia}
@@ -25,6 +33,18 @@ An **acyclic directed mixed graph (ADMG)** has two edge types:
 
 - **Directed** `A → B`: A causally affects B.
 - **Bidirected** `A ↔ B`: A and B share an unmeasured common cause.
+
+"Acyclic" means that following directed arrows never brings you back to the
+same variable. "Mixed" means that the graph contains both directed and
+bidirected edges. ADMGs are useful because they let us represent hidden
+variables without drawing them explicitly: instead of adding an unobserved `U`
+with `U -> A` and `U -> Y`, we draw `A <-> Y`.
+
+This distinction matters for identification. A directed path from `A` to `Y`
+is a possible causal pathway. A bidirected path is a warning that some
+association is due to latent common causes. Identification is about separating
+the directed causal part from the associational part using the structure of the
+graph.
 
 ```{julia}
 # Frontdoor graph: A → M → Y, A ↔ Y (hidden U affects both A and Y)
@@ -61,6 +81,12 @@ println("```")
 ```
 
 ## Graph Properties
+
+Graph properties are the vocabulary used by identification algorithms. Parents
+and children describe direct arrows. Ancestors and descendants describe all
+directed upstream or downstream variables. Districts describe latent
+confounding. Markov blankets and Markov pillows are local adjustment sets used
+by the estimators.
 
 ### Parents, children, descendants, ancestors
 
@@ -115,6 +141,27 @@ Three fixability conditions determine which estimator is appropriate:
 | **p-fixable** (front-door) | `dist(A) ∩ ch(A) = {}` | NPS-TMLE |
 | **nested-fixable** | One-Line ID passes | ANIPW |
 
+These conditions are graph-theoretic versions of familiar identification
+arguments:
+
+- **a-fixable** covers backdoor-style identification. After removing incoming
+  arrows into the treatment, the treatment is not in the same hidden-confounding
+  district as any of its descendants. The effect can be estimated by adjusting
+  for the treatment's Markov pillow.
+- **p-fixable** covers front-door and related primal-fixable/NPS settings. The
+  treatment may be confounded with the outcome, but none of its children are in
+  the treatment's hidden-confounding district. This allows the effect to be
+  recovered through post-treatment variables without conditioning away the
+  causal pathway.
+- **nested-fixable** covers harder ADMGs where neither simple adjustment nor
+  p-fixability is enough, but a One-Line ID style fixing sequence still
+  identifies the interventional distribution.
+
+If all three checks fail, the package reports `:not_identified`. That does not
+prove the effect is mathematically impossible in every possible model; it says
+the implemented identification criteria do not justify estimation for this
+graph.
+
 ```{julia}
 println("Backdoor graph:")
 println("  is_fix(:A)   = ", is_fix(g_bd, :A))
@@ -129,6 +176,12 @@ println("  is_p_fix(:A) = ", is_p_fix(g_fd, :A))
 
 `identify()` checks all three conditions in order and returns the routing
 strategy plus any metadata the estimator needs.
+
+The order is practical. If a graph is a-fixable, the package can use the
+standard backdoor estimators. If not, it checks p-fixability and routes to the
+front-door/NPS estimators. If that also fails, it tries the nested-fixable
+route. The returned `strategy` is therefore both an identification statement
+and an estimation instruction.
 
 ```{julia}
 id_bd = identify(g_bd, :A, :Y)

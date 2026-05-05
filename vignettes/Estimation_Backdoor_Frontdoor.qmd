@@ -11,6 +11,16 @@ This vignette covers estimation for the two most common identification
 strategies: a-fixable (backdoor) and p-fixable (front-door / NPS).
 It uses simulated examples where the true effect is known.
 
+Both examples follow the same workflow:
+
+1. write down the ADMG that encodes the causal assumptions;
+2. call `identify()` to check whether the target effect is identified;
+3. call `estimate_causal()` only after the graph justifies estimation.
+
+The estimand in this vignette is the average causal effect
+`E[Y(1) - Y(0)]`. The graph determines whether this estimand can be estimated
+by covariate adjustment, by a front-door/NPS functional, or not at all.
+
 ## Setup
 
 ```{julia}
@@ -24,6 +34,22 @@ logistic(x) = inv(1 + exp(-x))
 ---
 
 ## 1. Backdoor Adjustment (a-fixable)
+
+Backdoor identification applies when all noncausal paths from treatment `A` to
+outcome `Y` are blocked by observed pre-treatment variables. In the graph below,
+`X` affects both treatment and outcome. If we compare treated and untreated
+units without adjusting for `X`, the comparison mixes the effect of `A` with
+baseline differences in `X`.
+
+The adjustment formula is:
+
+```text
+E[Y(a)] = sum_x E[Y | A=a, X=x] P(X=x)
+```
+
+For continuous `X`, the summation is an integral. In the package, the
+a-fixable check identifies the Markov pillow of the treatment as the adjustment
+set and routes to backdoor estimators.
 
 ### Graph
 
@@ -56,6 +82,19 @@ first(df_bd, 3)
 ```
 
 ### Estimation
+
+`estimate_causal()` returns several estimators for a-fixable graphs:
+
+- **G-computation** models the outcome regression `E[Y | A, X]` and averages
+  predicted counterfactual outcomes.
+- **IPW** models the propensity score `P(A | X)` and reweights observations to
+  mimic randomized treatment.
+- **One-step/AIPW** combines outcome and propensity nuisance models.
+- **TMLE** updates the outcome regression using the propensity score so that
+  the final estimate solves the efficient influence-function equation.
+
+They estimate the same identified target under the graph, but they use
+different nuisance-modeling strategies.
 
 ```{julia}
 res_bd = estimate_causal(a=[1,0], data=df_bd, graph=g_bd,
@@ -94,6 +133,28 @@ res0 = estimate_causal(a=0, data=df_bd, graph=g_bd, treatment=:A, outcome=:Y)
 
 ## 2. Front-Door / NPS Adjustment (p-fixable)
 
+Front-door identification is useful when treatment and outcome are confounded,
+but the causal effect flows through observed post-treatment variables. In the
+pure front-door graph, `A <-> Y` says treatment and outcome share an unmeasured
+cause, so ordinary backdoor adjustment fails. The mediator `M` helps because:
+
+1. `A` causes `M`;
+2. `M` causes `Y`;
+3. the relevant confounding around `A -> M` and `M -> Y` is controlled by the
+   observed graph structure.
+
+The classical front-door functional is:
+
+```text
+E[Y(a)] = sum_m P(M=m | A=a) sum_a' E[Y | M=m, A=a'] P(A=a')
+```
+
+`CausalGraphs.jl` implements this class through the broader p-fixable/NPS
+route. A treatment is p-fixable when none of its children are in its
+bidirected-connected district. Intuitively, treatment may be confounded with
+the outcome, but the immediate causal children of treatment are not themselves
+hidden-confounded with treatment.
+
 ### Graph
 
 ```
@@ -128,6 +189,12 @@ first(df_fd, 3)
 ```
 
 ### Estimation
+
+For p-fixable graphs, `estimate_causal()` routes to front-door/NPS estimators.
+The returned estimators are TMLE and one-step variants for the identified NPS
+functional. These estimators use nuisance models for the treatment mechanism,
+mediator or intermediate-variable mechanisms, and outcome regression implied by
+the graph.
 
 ```{julia}
 res_fd = estimate_causal(a=[1,0], data=df_fd, graph=g_fd,

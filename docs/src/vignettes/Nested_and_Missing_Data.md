@@ -8,7 +8,22 @@ This vignette shows the two pieces that go beyond standard backdoor/front-door
 workflows: nested-fixable effects and missing-data weighting. All datasets are
 simulated.
 
+The common theme is identification before estimation. The graph determines
+whether the target law can be represented using observed data. Only after that
+step does the package construct weights and nuisance regressions.
+
 ## Nested-Fixable Effects
+
+A treatment is nested-fixable when the target effect is identified by a
+One-Line ID style fixing sequence, but the treatment is neither a-fixable nor
+p-fixable. This happens in ADMGs where hidden-confounding structure is too
+complex for ordinary backdoor adjustment or a front-door/NPS argument.
+
+The word "nested" comes from nested Markov models for ADMGs. Identification is
+described by repeatedly "fixing" variables: moving a variable from random to
+fixed status and updating the kernel for the remaining random variables. If a
+valid fixing sequence isolates the target counterfactual distribution, the
+effect is identified.
 
 ```@example nested_missing
 using CausalGraphs, DataFrames, Random
@@ -40,6 +55,11 @@ draw_graph(graph; direction="TB")
 For nested-fixable effects, `estimate_causal()` returns augmented nested IPW
 (ANIPW) and nested IPW (NIPW) estimates.
 
+Nested rebalancing weights are analogous to ordinary IPW, but they balance the
+pieces of the observed law that appear in the nested identification formula.
+ANIPW augments those weights with outcome regression terms, in the same spirit
+that AIPW augments ordinary IPW.
+
 ```@example nested_missing
 Random.seed!(42)
 n = 500
@@ -62,6 +82,19 @@ r = x -> round(x, sigdigits=4)
 ```
 
 ## Missing-Data Weighting
+
+An mDAG extends a causal graph with missingness indicators. A variable such as
+`X` has an indicator `Rx` showing whether `X` is observed. Edges into `Rx`
+encode the missingness mechanism.
+
+The key identification question is whether the target full-data law can be
+recovered from the observed-data law. If it can, the package estimates
+observation probabilities and forms inverse-probability weights. Those weights
+can be passed to `estimate_causal(...; sample_weights=wts)` so complete cases
+are weighted back toward the target population.
+
+This separates two assumptions: the causal ADMG describes treatment, outcome,
+and covariates; the mDAG describes how values become missing.
 
 ```@example nested_missing
 mdag = make_mdag(

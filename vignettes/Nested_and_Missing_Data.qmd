@@ -7,6 +7,17 @@ format:
 jupyter: julia-1.12
 ---
 
+This vignette covers two situations where simple backdoor and front-door
+workflows are not enough:
+
+1. **nested-fixable effects** in ADMGs with more complicated hidden-confounding
+   structure;
+2. **missing-data weighting** using missingness DAGs (mDAGs).
+
+The common theme is identification before estimation. The graph determines
+whether the target law can be represented using observed data. Only after that
+step does the package construct weights and nuisance regressions.
+
 ## Setup
 
 ```{julia}
@@ -31,6 +42,19 @@ A treatment is **nested-fixable** when the effect is identified by the
 One-Line ID algorithm, but is **neither a-fixable nor p-fixable**. This
 occurs when a *child* of the treatment shares a hidden common cause with
 the treatment — so neither backdoor nor front-door adjustment is sufficient.
+
+The word "nested" comes from nested Markov models for ADMGs. In these models,
+identification is described by repeatedly "fixing" variables: moving a
+variable from random to fixed status and updating the kernel that describes the
+remaining random variables. If a valid fixing sequence isolates the target
+counterfactual distribution, the effect is identified even though no ordinary
+adjustment set or classical front-door formula exists.
+
+Operationally, `identify()` uses a One-Line ID style check. If it passes,
+`estimate_causal()` routes to nested IPW estimators. These estimators construct
+rebalancing weights associated with the intrinsic kernels of the relevant
+districts. ANIPW augments those weights with outcome regression terms, in the
+same spirit that AIPW augments ordinary IPW.
 
 ### Example: HIV treatment graph
 
@@ -131,6 +155,13 @@ The ANIPW estimator builds **nested rebalancing weights** through the
 intrinsic kernel of each modified district. After reweighting, propensity
 and outcome regression are estimated by weighted GLM.
 
+The practical interpretation is similar to ordinary IPW but with more graph
+structure. Ordinary IPW balances treatment groups with respect to measured
+confounders. Nested rebalancing weights balance the pieces of the observed law
+that appear in the nested identification formula. This is why nested-fixable
+estimation is available even when neither a single adjustment set nor a
+front-door mediator formula is valid.
+
 ```{julia}
 rw = res_hiv[:rw]
 @printf("Rebalancing weights — min: %.3f  max: %.3f  mean: %.3f\n",
@@ -144,6 +175,27 @@ rw = res_hiv[:rw]
 When covariates are **missing at random** (MAR), CausalGraphs.jl identifies and
 estimates the missing-data propensity scores, producing per-row IPW weights for
 `estimate_causal()`.
+
+An **mDAG** extends a causal graph with missingness indicators. A variable such
+as `X` has an indicator `R_X` showing whether `X` is observed. Edges into
+`R_X` encode the missingness mechanism. For example, `T -> R_X` says treatment
+status affects whether `X` is observed; `X -> R_X` says missingness depends on
+the value of `X` itself.
+
+The key identification question is whether the target full-data law can be
+recovered from the observed-data law. If the missingness process is
+recoverable, the package estimates observation probabilities and forms inverse
+probability weights. Those weights can then be passed to the causal estimator,
+so the causal analysis is performed on complete cases weighted back toward the
+target population.
+
+This separates two assumptions:
+
+- the **causal ADMG** says how treatment, outcome, and covariates relate;
+- the **mDAG** says how values become missing.
+
+Both matter. A causal effect may be identified with complete data but not
+recoverable under a given missingness graph.
 
 ### Workflow
 

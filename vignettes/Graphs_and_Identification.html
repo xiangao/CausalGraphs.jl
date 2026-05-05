@@ -126,9 +126,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>This vignette introduces the ADMG graph layer and the <code>identify()</code> function. It uses small canonical ADMG examples to show how graph structure drives identification.</p>
+<p>The central idea is that a graph is not just a picture. It is a compact statement of the causal assumptions under which an interventional quantity, such as <code>E[Y(a)]</code> or <code>E[Y(1)-Y(0)]</code>, can be written in terms of the observed data distribution. <code>identify()</code> takes an ADMG, a treatment, and an outcome, and asks whether the package knows such a translation. If it does, estimation can proceed; if it does not, the data alone do not justify the requested effect under the graph.</p>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="d91c94d9" class="cell" data-execution_count="1">
+<div id="1262abc9" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">CausalGraphs</span>, <span class="bu">DataFrames</span>, <span class="bu">Random</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -141,7 +142,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Directed</strong> <code>A → B</code>: A causally affects B.</li>
 <li><strong>Bidirected</strong> <code>A ↔︎ B</code>: A and B share an unmeasured common cause.</li>
 </ul>
-<div id="33768996" class="cell" data-execution_count="2">
+<p>“Acyclic” means that following directed arrows never brings you back to the same variable. “Mixed” means that the graph contains both directed and bidirected edges. ADMGs are useful because they let us represent hidden variables without drawing them explicitly: instead of adding an unobserved <code>U</code> with <code>U -&gt; A</code> and <code>U -&gt; Y</code>, we draw <code>A &lt;-&gt; Y</code>.</p>
+<p>This distinction matters for identification. A directed path from <code>A</code> to <code>Y</code> is a possible causal pathway. A bidirected path is a warning that some association is due to latent common causes. Identification is about separating the directed causal part from the associational part using the structure of the graph.</p>
+<div id="02f31641" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Frontdoor graph: A → M → Y, A ↔ Y (hidden U affects both A and Y)</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>g_fd <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>A, <span class="op">:</span>M, <span class="op">:</span>Y],</span>
@@ -177,7 +180,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="f587d8af" class="cell" data-execution_count="4">
+<div id="9bd7c6d1" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Backdoor graph: X → A → Y, X → Y  (X is an observed confounder)</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>g_bd <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>X, <span class="op">:</span>A, <span class="op">:</span>Y],</span>
@@ -216,9 +219,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="graph-properties" class="level2">
 <h2 class="anchored" data-anchor-id="graph-properties">Graph Properties</h2>
+<p>Graph properties are the vocabulary used by identification algorithms. Parents and children describe direct arrows. Ancestors and descendants describe all directed upstream or downstream variables. Districts describe latent confounding. Markov blankets and Markov pillows are local adjustment sets used by the estimators.</p>
 <section id="parents-children-descendants-ancestors" class="level3">
 <h3 class="anchored" data-anchor-id="parents-children-descendants-ancestors">Parents, children, descendants, ancestors</h3>
-<div id="4cd84e90" class="cell" data-execution_count="6">
+<div id="bde578f8" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"parents(:M)     = "</span>, <span class="fu">parents</span>(g_fd, <span class="op">:</span>M))</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"children(:A)    = "</span>, <span class="fu">children</span>(g_fd, <span class="op">:</span>A))</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"descendants(:A) = "</span>, <span class="fu">descendants</span>(g_fd, [<span class="op">:</span>A]))</span>
@@ -234,7 +238,7 @@ ancestors(:Y)   = [:Y, :M, :A]</code></pre>
 <section id="districts-bidirected-connected-components" class="level3">
 <h3 class="anchored" data-anchor-id="districts-bidirected-connected-components">Districts (bidirected-connected components)</h3>
 <p>The <strong>district</strong> of a vertex is the set of vertices reachable by bidirected paths — encoding which variables share hidden common causes.</p>
-<div id="6383e702" class="cell" data-execution_count="7">
+<div id="e9bfe399" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"district(:A) in frontdoor = "</span>, <span class="fu">district</span>(g_fd, <span class="op">:</span>A))</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"district(:M) in frontdoor = "</span>, <span class="fu">district</span>(g_fd, <span class="op">:</span>M))</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -254,7 +258,7 @@ All districts in frontdoor graph:
 </section>
 <section id="markov-blanket-and-markov-pillow" class="level3">
 <h3 class="anchored" data-anchor-id="markov-blanket-and-markov-pillow">Markov blanket and Markov pillow</h3>
-<div id="e34117ee" class="cell" data-execution_count="8">
+<div id="a70fc8ba" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"markov_blanket(:A) = "</span>, <span class="fu">markov_blanket</span>(g_fd, <span class="op">:</span>A))</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"markov_pillow(:A)  = "</span>, <span class="fu">markov_pillow</span>(g_fd, <span class="op">:</span>A; treatment<span class="op">=:</span>A))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
@@ -266,7 +270,7 @@ markov_pillow(:A)  = Symbol[]</code></pre>
 <section id="reachable-closure" class="level3">
 <h3 class="anchored" data-anchor-id="reachable-closure">Reachable closure</h3>
 <p>The <strong>reachable closure</strong> of a set S is the smallest superset of S such that every vertex outside it is sequentially a-fixable. It is the core operation underlying One-Line ID.</p>
-<div id="d8e0cf5a" class="cell" data-execution_count="9">
+<div id="6fb33c88" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>rc <span class="op">=</span> <span class="fu">reachable_closure</span>(g_fd, [<span class="op">:</span>Y])</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Reachable closure of {Y}: "</span>, rc.reachable_closure)</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Fixing order:              "</span>, rc.fixing_order)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -306,7 +310,14 @@ Fixing order:              [:M, :A]</code></pre>
 </tr>
 </tbody>
 </table>
-<div id="2d7719ee" class="cell" data-execution_count="10">
+<p>These conditions are graph-theoretic versions of familiar identification arguments:</p>
+<ul>
+<li><strong>a-fixable</strong> covers backdoor-style identification. After removing incoming arrows into the treatment, the treatment is not in the same hidden-confounding district as any of its descendants. The effect can be estimated by adjusting for the treatment’s Markov pillow.</li>
+<li><strong>p-fixable</strong> covers front-door and related primal-fixable/NPS settings. The treatment may be confounded with the outcome, but none of its children are in the treatment’s hidden-confounding district. This allows the effect to be recovered through post-treatment variables without conditioning away the causal pathway.</li>
+<li><strong>nested-fixable</strong> covers harder ADMGs where neither simple adjustment nor p-fixability is enough, but a One-Line ID style fixing sequence still identifies the interventional distribution.</li>
+</ul>
+<p>If all three checks fail, the package reports <code>:not_identified</code>. That does not prove the effect is mathematically impossible in every possible model; it says the implemented identification criteria do not justify estimation for this graph.</p>
+<div id="706d8ede" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Backdoor graph:"</span>)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"  is_fix(:A)   = "</span>, <span class="fu">is_fix</span>(g_bd, <span class="op">:</span>A))</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"  is_p_fix(:A) = "</span>, <span class="fu">is_p_fix</span>(g_bd, <span class="op">:</span>A))</span>
@@ -328,7 +339,8 @@ Frontdoor graph:
 <section id="identification-with-identify" class="level2">
 <h2 class="anchored" data-anchor-id="identification-with-identify">Identification with <code>identify()</code></h2>
 <p><code>identify()</code> checks all three conditions in order and returns the routing strategy plus any metadata the estimator needs.</p>
-<div id="1ff5febd" class="cell" data-execution_count="11">
+<p>The order is practical. If a graph is a-fixable, the package can use the standard backdoor estimators. If not, it checks p-fixability and routes to the front-door/NPS estimators. If that also fails, it tries the nested-fixable route. The returned <code>strategy</code> is therefore both an identification statement and an estimation instruction.</p>
+<div id="b98e6203" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>id_bd <span class="op">=</span> <span class="fu">identify</span>(g_bd, <span class="op">:</span>A, <span class="op">:</span>Y)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Backdoor:  "</span>, id_bd.strategy)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -342,7 +354,7 @@ Frontdoor: p_fixable</code></pre>
 <section id="non-identified-the-bow-graph" class="level3">
 <h3 class="anchored" data-anchor-id="non-identified-the-bow-graph">Non-identified: the bow graph</h3>
 <p>The <strong>bow graph</strong> (A → Y, A ↔︎ Y) is the classic non-identified case. The direct effect and the hidden confounder cannot be disentangled.</p>
-<div id="62d5cecb" class="cell" data-execution_count="12">
+<div id="763bb814" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>g_bow <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>A, <span class="op">:</span>Y],</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [(<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
@@ -357,7 +369,7 @@ Frontdoor: p_fixable</code></pre>
 <section id="nested-fixable-the-extended-front-door" class="level3">
 <h3 class="anchored" data-anchor-id="nested-fixable-the-extended-front-door">Nested-fixable: the extended front-door</h3>
 <p>When dist(A) and ch(A) overlap — i.e., A shares hidden common causes with one of its children — p-fixable fails. The One-Line ID algorithm can still identify the effect in more complex graphs. <code>identify()</code> checks this automatically.</p>
-<div id="e4ef0024" class="cell" data-execution_count="13">
+<div id="c72e32c7" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extended front-door: Z→A→M→Y, A↔M, Z→Y</span></span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co"># dist(A) = {A,M}  (A↔M bidirected), ch(A) = {M}  → NOT p-fixable</span></span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co"># But still identified by One-Line ID</span></span>
@@ -382,7 +394,7 @@ strategy     = not_identified</code></pre>
 </section>
 <section id="summary" class="level2">
 <h2 class="anchored" data-anchor-id="summary">Summary</h2>
-<div id="c56a6162" class="cell" data-execution_count="14">
+<div id="e3195dbd" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (name, g) <span class="kw">in</span> [(<span class="st">"backdoor"</span>, g_bd), (<span class="st">"frontdoor"</span>, g_fd),</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>                   (<span class="st">"bow (not ID)"</span>, g_bow), (<span class="st">"extended front-door"</span>, g_ext)]</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    id <span class="op">=</span> <span class="fu">identify</span>(g, <span class="op">:</span>A, <span class="op">:</span>Y)</span>

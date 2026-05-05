@@ -127,9 +127,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>This vignette covers estimation for the two most common identification strategies: a-fixable (backdoor) and p-fixable (front-door / NPS). It uses simulated examples where the true effect is known.</p>
+<p>Both examples follow the same workflow:</p>
+<ol type="1">
+<li>write down the ADMG that encodes the causal assumptions;</li>
+<li>call <code>identify()</code> to check whether the target effect is identified;</li>
+<li>call <code>estimate_causal()</code> only after the graph justifies estimation.</li>
+</ol>
+<p>The estimand in this vignette is the average causal effect <code>E[Y(1) - Y(0)]</code>. The graph determines whether this estimand can be estimated by covariate adjustment, by a front-door/NPS functional, or not at all.</p>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="e7920bdf" class="cell" data-execution_count="1">
+<div id="80a371e8" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">CausalGraphs</span>, <span class="bu">DataFrames</span>, <span class="bu">Random</span>, <span class="bu">Statistics</span>, <span class="bu">Printf</span></span>
@@ -143,16 +150,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="backdoor-adjustment-a-fixable" class="level2">
 <h2 class="anchored" data-anchor-id="backdoor-adjustment-a-fixable">1. Backdoor Adjustment (a-fixable)</h2>
+<p>Backdoor identification applies when all noncausal paths from treatment <code>A</code> to outcome <code>Y</code> are blocked by observed pre-treatment variables. In the graph below, <code>X</code> affects both treatment and outcome. If we compare treated and untreated units without adjusting for <code>X</code>, the comparison mixes the effect of <code>A</code> with baseline differences in <code>X</code>.</p>
+<p>The adjustment formula is:</p>
+<pre class="text"><code>E[Y(a)] = sum_x E[Y | A=a, X=x] P(X=x)</code></pre>
+<p>For continuous <code>X</code>, the summation is an integral. In the package, the a-fixable check identifies the Markov pillow of the treatment as the adjustment set and routes to backdoor estimators.</p>
 <section id="graph" class="level3">
 <h3 class="anchored" data-anchor-id="graph">Graph</h3>
 <pre><code>X → A → Y
 X → Y</code></pre>
-<div id="821e6752" class="cell" data-execution_count="2">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>g_bd <span class="op">=</span> <span class="fu">make_graph</span>(</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>X, <span class="op">:</span>A, <span class="op">:</span>Y],</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [(<span class="op">:</span>X, <span class="op">:</span>A), (<span class="op">:</span>X, <span class="op">:</span>Y), (<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, <span class="fu">identify</span>(g_bd, <span class="op">:</span>A, <span class="op">:</span>Y).strategy)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="d0ec6d82" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>g_bd <span class="op">=</span> <span class="fu">make_graph</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>X, <span class="op">:</span>A, <span class="op">:</span>Y],</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [(<span class="op">:</span>X, <span class="op">:</span>A), (<span class="op">:</span>X, <span class="op">:</span>Y), (<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, <span class="fu">identify</span>(g_bd, <span class="op">:</span>A, <span class="op">:</span>Y).strategy)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>strategy: a_fixable</code></pre>
 </div>
@@ -160,17 +171,17 @@ X → Y</code></pre>
 </section>
 <section id="data-true-ace-2.0" class="level3">
 <h3 class="anchored" data-anchor-id="data-true-ace-2.0">Data — true ACE = 2.0</h3>
-<div id="5f8c004c" class="cell" data-execution_count="3">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_backdoor</span>(n; seed<span class="op">=</span><span class="fl">1</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> <span class="fu">randn</span>(n)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> <span class="fu">Float64</span>.(<span class="fu">rand</span>(n) <span class="op">.&lt;</span> <span class="fu">logistic</span>.(<span class="fl">0.2</span> <span class="op">.+</span> <span class="fl">0.8</span> <span class="op">.*</span> X))</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> <span class="fl">1</span> <span class="op">.+</span> <span class="fl">2</span> <span class="op">.*</span> A <span class="op">.+</span> X <span class="op">.+</span> <span class="fu">randn</span>(n)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">DataFrame</span>(X<span class="op">=</span>X, A<span class="op">=</span>A, Y<span class="op">=</span>Y)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>df_bd <span class="op">=</span> <span class="fu">sim_backdoor</span>(<span class="fl">1_000</span>)</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="fu">first</span>(df_bd, <span class="fl">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="7b1666fc" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_backdoor</span>(n; seed<span class="op">=</span><span class="fl">1</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> <span class="fu">randn</span>(n)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> <span class="fu">Float64</span>.(<span class="fu">rand</span>(n) <span class="op">.&lt;</span> <span class="fu">logistic</span>.(<span class="fl">0.2</span> <span class="op">.+</span> <span class="fl">0.8</span> <span class="op">.*</span> X))</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> <span class="fl">1</span> <span class="op">.+</span> <span class="fl">2</span> <span class="op">.*</span> A <span class="op">.+</span> X <span class="op">.+</span> <span class="fu">randn</span>(n)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">DataFrame</span>(X<span class="op">=</span>X, A<span class="op">=</span>A, Y<span class="op">=</span>Y)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>df_bd <span class="op">=</span> <span class="fu">sim_backdoor</span>(<span class="fl">1_000</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="fu">first</span>(df_bd, <span class="fl">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="4">
 <div><div style="float: left;"><span>3×3 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame caption-top table table-sm table-striped small">
@@ -215,16 +226,24 @@ X → Y</code></pre>
 </section>
 <section id="estimation" class="level3">
 <h3 class="anchored" data-anchor-id="estimation">Estimation</h3>
-<div id="39fedd28" class="cell" data-execution_count="4">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>res_bd <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df_bd, graph<span class="op">=</span>g_bd,</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                          treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"True ACE = 2.0"</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE:    ACE = %.3f  95%% CI (%.3f, %.3f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        res_bd[<span class="op">:</span>TMLE].ACE, res_bd[<span class="op">:</span>TMLE].lower_ci, res_bd[<span class="op">:</span>TMLE].upper_ci)</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Onestep: ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_bd[<span class="op">:</span>Onestep].ACE)</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Gcomp:   ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_bd[<span class="op">:</span>Gcomp].ACE)</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"IPW:     ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_bd[<span class="op">:</span>IPW].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>estimate_causal()</code> returns several estimators for a-fixable graphs:</p>
+<ul>
+<li><strong>G-computation</strong> models the outcome regression <code>E[Y | A, X]</code> and averages predicted counterfactual outcomes.</li>
+<li><strong>IPW</strong> models the propensity score <code>P(A | X)</code> and reweights observations to mimic randomized treatment.</li>
+<li><strong>One-step/AIPW</strong> combines outcome and propensity nuisance models.</li>
+<li><strong>TMLE</strong> updates the outcome regression using the propensity score so that the final estimate solves the efficient influence-function equation.</li>
+</ul>
+<p>They estimate the same identified target under the graph, but they use different nuisance-modeling strategies.</p>
+<div id="82fc54ab" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>res_bd <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df_bd, graph<span class="op">=</span>g_bd,</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                          treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"True ACE = 2.0"</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE:    ACE = %.3f  95%% CI (%.3f, %.3f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        res_bd[<span class="op">:</span>TMLE].ACE, res_bd[<span class="op">:</span>TMLE].lower_ci, res_bd[<span class="op">:</span>TMLE].upper_ci)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Onestep: ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_bd[<span class="op">:</span>Onestep].ACE)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Gcomp:   ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_bd[<span class="op">:</span>Gcomp].ACE)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"IPW:     ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_bd[<span class="op">:</span>IPW].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <div class="ansi-escaped-output">
 <pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
@@ -242,22 +261,22 @@ IPW:     ACE = 1.952</code></pre>
 </section>
 <section id="with-superlearner" class="level3">
 <h3 class="anchored" data-anchor-id="with-superlearner">With SuperLearner</h3>
-<div id="52873177" class="cell" data-execution_count="5">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>res_sl <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df_bd, graph<span class="op">=</span>g_bd, treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    superlearner_Y<span class="op">=</span><span class="cn">true</span>, superlearner_A<span class="op">=</span><span class="cn">true</span>, crossfit<span class="op">=</span><span class="cn">true</span>, K<span class="op">=</span><span class="fl">5</span>,</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="dce831bf" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>res_sl <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df_bd, graph<span class="op">=</span>g_bd, treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    superlearner_Y<span class="op">=</span><span class="cn">true</span>, superlearner_A<span class="op">=</span><span class="cn">true</span>, crossfit<span class="op">=</span><span class="cn">true</span>, K<span class="op">=</span><span class="fl">5</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="scalar-a-ey1-and-ey0-separately" class="level3">
 <h3 class="anchored" data-anchor-id="scalar-a-ey1-and-ey0-separately">Scalar a — E[Y(1)] and E[Y(0)] separately</h3>
-<div id="3fab3896" class="cell" data-execution_count="6">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>res1 <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span><span class="fl">1</span>, data<span class="op">=</span>df_bd, graph<span class="op">=</span>g_bd, treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>res0 <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span><span class="fl">0</span>, data<span class="op">=</span>df_bd, graph<span class="op">=</span>g_bd, treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"E[Y(1)] = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res1[<span class="op">:</span>TMLE].EYa)</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"E[Y(0)] = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res0[<span class="op">:</span>TMLE].EYa)</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"ACE     = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res1[<span class="op">:</span>TMLE].EYa <span class="op">-</span> res0[<span class="op">:</span>TMLE].EYa)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="4055b218" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>res1 <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span><span class="fl">1</span>, data<span class="op">=</span>df_bd, graph<span class="op">=</span>g_bd, treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>res0 <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span><span class="fl">0</span>, data<span class="op">=</span>df_bd, graph<span class="op">=</span>g_bd, treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"E[Y(1)] = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res1[<span class="op">:</span>TMLE].EYa)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"E[Y(0)] = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res0[<span class="op">:</span>TMLE].EYa)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"ACE     = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res1[<span class="op">:</span>TMLE].EYa <span class="op">-</span> res0[<span class="op">:</span>TMLE].EYa)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <div class="ansi-escaped-output">
 <pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
@@ -277,18 +296,27 @@ ACE     = 2.007</code></pre>
 </section>
 <section id="front-door-nps-adjustment-p-fixable" class="level2">
 <h2 class="anchored" data-anchor-id="front-door-nps-adjustment-p-fixable">2. Front-Door / NPS Adjustment (p-fixable)</h2>
+<p>Front-door identification is useful when treatment and outcome are confounded, but the causal effect flows through observed post-treatment variables. In the pure front-door graph, <code>A &lt;-&gt; Y</code> says treatment and outcome share an unmeasured cause, so ordinary backdoor adjustment fails. The mediator <code>M</code> helps because:</p>
+<ol type="1">
+<li><code>A</code> causes <code>M</code>;</li>
+<li><code>M</code> causes <code>Y</code>;</li>
+<li>the relevant confounding around <code>A -&gt; M</code> and <code>M -&gt; Y</code> is controlled by the observed graph structure.</li>
+</ol>
+<p>The classical front-door functional is:</p>
+<pre class="text"><code>E[Y(a)] = sum_m P(M=m | A=a) sum_a' E[Y | M=m, A=a'] P(A=a')</code></pre>
+<p><code>CausalGraphs.jl</code> implements this class through the broader p-fixable/NPS route. A treatment is p-fixable when none of its children are in its bidirected-connected district. Intuitively, treatment may be confounded with the outcome, but the immediate causal children of treatment are not themselves hidden-confounded with treatment.</p>
 <section id="graph-1" class="level3">
 <h3 class="anchored" data-anchor-id="graph-1">Graph</h3>
 <pre><code>A → M → Y
 A ↔ Y   (hidden U confounds A and Y)
 X → A, X → Y, X → M</code></pre>
-<div id="0ad06e3a" class="cell" data-execution_count="7">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>g_fd <span class="op">=</span> <span class="fu">make_graph</span>(</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>X, <span class="op">:</span>A, <span class="op">:</span>M, <span class="op">:</span>Y],</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    bi_edges  <span class="op">=</span> [(<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [(<span class="op">:</span>X, <span class="op">:</span>A), (<span class="op">:</span>X, <span class="op">:</span>Y), (<span class="op">:</span>X, <span class="op">:</span>M), (<span class="op">:</span>A, <span class="op">:</span>M), (<span class="op">:</span>M, <span class="op">:</span>Y)],</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, <span class="fu">identify</span>(g_fd, <span class="op">:</span>A, <span class="op">:</span>Y).strategy)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="0f7facc2" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>g_fd <span class="op">=</span> <span class="fu">make_graph</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>X, <span class="op">:</span>A, <span class="op">:</span>M, <span class="op">:</span>Y],</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    bi_edges  <span class="op">=</span> [(<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [(<span class="op">:</span>X, <span class="op">:</span>A), (<span class="op">:</span>X, <span class="op">:</span>Y), (<span class="op">:</span>X, <span class="op">:</span>M), (<span class="op">:</span>A, <span class="op">:</span>M), (<span class="op">:</span>M, <span class="op">:</span>Y)],</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, <span class="fu">identify</span>(g_fd, <span class="op">:</span>A, <span class="op">:</span>Y).strategy)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>strategy: p_fixable</code></pre>
 </div>
@@ -296,18 +324,18 @@ X → A, X → Y, X → M</code></pre>
 </section>
 <section id="data-true-mediated-ace-1.8-1.2-1.5" class="level3">
 <h3 class="anchored" data-anchor-id="data-true-mediated-ace-1.8-1.2-1.5">Data — true mediated ACE ≈ 1.8 (= 1.2 × 1.5)</h3>
-<div id="0e7f35a6" class="cell" data-execution_count="8">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_frontdoor</span>(n; seed<span class="op">=</span><span class="fl">2</span>)</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> <span class="fu">randn</span>(n); U <span class="op">=</span> <span class="fu">randn</span>(n)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> <span class="fu">Float64</span>.(<span class="fu">rand</span>(n) <span class="op">.&lt;</span> <span class="fu">logistic</span>.(<span class="op">-</span><span class="fl">0.2</span> <span class="op">.+</span> <span class="fl">0.6</span> <span class="op">.*</span> X <span class="op">.+</span> <span class="fl">0.5</span> <span class="op">.*</span> U))</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    M <span class="op">=</span> <span class="fl">0.4</span> <span class="op">.+</span> <span class="fl">1.2</span> <span class="op">.*</span> A <span class="op">.+</span> <span class="fl">0.7</span> <span class="op">.*</span> X <span class="op">.+</span> <span class="fu">randn</span>(n)</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> <span class="fl">1.0</span> <span class="op">.+</span> <span class="fl">1.5</span> <span class="op">.*</span> M <span class="op">.+</span> X <span class="op">.+</span> U <span class="op">.+</span> <span class="fu">randn</span>(n)</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">DataFrame</span>(X<span class="op">=</span>X, A<span class="op">=</span>A, M<span class="op">=</span>M, Y<span class="op">=</span>Y)</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>df_fd <span class="op">=</span> <span class="fu">sim_frontdoor</span>(<span class="fl">800</span>)</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="fu">first</span>(df_fd, <span class="fl">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="0b0337cd" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_frontdoor</span>(n; seed<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> <span class="fu">randn</span>(n); U <span class="op">=</span> <span class="fu">randn</span>(n)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> <span class="fu">Float64</span>.(<span class="fu">rand</span>(n) <span class="op">.&lt;</span> <span class="fu">logistic</span>.(<span class="op">-</span><span class="fl">0.2</span> <span class="op">.+</span> <span class="fl">0.6</span> <span class="op">.*</span> X <span class="op">.+</span> <span class="fl">0.5</span> <span class="op">.*</span> U))</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    M <span class="op">=</span> <span class="fl">0.4</span> <span class="op">.+</span> <span class="fl">1.2</span> <span class="op">.*</span> A <span class="op">.+</span> <span class="fl">0.7</span> <span class="op">.*</span> X <span class="op">.+</span> <span class="fu">randn</span>(n)</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> <span class="fl">1.0</span> <span class="op">.+</span> <span class="fl">1.5</span> <span class="op">.*</span> M <span class="op">.+</span> X <span class="op">.+</span> U <span class="op">.+</span> <span class="fu">randn</span>(n)</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">DataFrame</span>(X<span class="op">=</span>X, A<span class="op">=</span>A, M<span class="op">=</span>M, Y<span class="op">=</span>Y)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>df_fd <span class="op">=</span> <span class="fu">sim_frontdoor</span>(<span class="fl">800</span>)</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="fu">first</span>(df_fd, <span class="fl">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="8">
 <div><div style="float: left;"><span>3×4 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame caption-top table table-sm table-striped small">
@@ -357,14 +385,15 @@ X → A, X → Y, X → M</code></pre>
 </section>
 <section id="estimation-1" class="level3">
 <h3 class="anchored" data-anchor-id="estimation-1">Estimation</h3>
-<div id="9010cfb6" class="cell" data-execution_count="9">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>res_fd <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df_fd, graph<span class="op">=</span>g_fd,</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>                          treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"True ACE ≈ 1.8  (= 1.2 × 1.5)"</span>)</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE:    ACE = %.3f  95%% CI (%.3f, %.3f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>        res_fd[<span class="op">:</span>TMLE].ACE, res_fd[<span class="op">:</span>TMLE].lower_ci, res_fd[<span class="op">:</span>TMLE].upper_ci)</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Onestep: ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_fd[<span class="op">:</span>Onestep].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>For p-fixable graphs, <code>estimate_causal()</code> routes to front-door/NPS estimators. The returned estimators are TMLE and one-step variants for the identified NPS functional. These estimators use nuisance models for the treatment mechanism, mediator or intermediate-variable mechanisms, and outcome regression implied by the graph.</p>
+<div id="e53ae61b" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>res_fd <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df_fd, graph<span class="op">=</span>g_fd,</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>                          treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"True ACE ≈ 1.8  (= 1.2 × 1.5)"</span>)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE:    ACE = %.3f  95%% CI (%.3f, %.3f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>        res_fd[<span class="op">:</span>TMLE].ACE, res_fd[<span class="op">:</span>TMLE].lower_ci, res_fd[<span class="op">:</span>TMLE].upper_ci)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Onestep: ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_fd[<span class="op">:</span>Onestep].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>True ACE ≈ 1.8  (= 1.2 × 1.5)</code></pre>
 </div>
@@ -382,28 +411,28 @@ Onestep: ACE = 1.682</code></pre>
 </section>
 <section id="pure-front-door-no-observed-confounders" class="level3">
 <h3 class="anchored" data-anchor-id="pure-front-door-no-observed-confounders">Pure front-door (no observed confounders)</h3>
-<div id="9d1084bc" class="cell" data-execution_count="10">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>g_fd_pure <span class="op">=</span> <span class="fu">make_graph</span>(</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>A, <span class="op">:</span>M, <span class="op">:</span>Y],</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    bi_edges  <span class="op">=</span> [(<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [(<span class="op">:</span>A, <span class="op">:</span>M), (<span class="op">:</span>M, <span class="op">:</span>Y)],</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_fd_pure</span>(n; seed<span class="op">=</span><span class="fl">3</span>)</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    U <span class="op">=</span> <span class="fu">randn</span>(n)</span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> <span class="fu">Float64</span>.(<span class="fu">rand</span>(n) <span class="op">.&lt;</span> <span class="fu">logistic</span>.(U))</span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    M <span class="op">=</span> <span class="fl">0.5</span> <span class="op">.*</span> A <span class="op">.+</span> <span class="fu">randn</span>(n)      <span class="co"># coefficient 0.5</span></span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> <span class="fl">0.3</span> <span class="op">.*</span> M <span class="op">.+</span> <span class="fl">0.4</span> <span class="op">.*</span> U <span class="op">.+</span> <span class="fu">randn</span>(n)  <span class="co"># true ACE = 0.5 × 0.3 = 0.15</span></span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">DataFrame</span>(A<span class="op">=</span>A, M<span class="op">=</span>M, Y<span class="op">=</span>Y)</span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>df_fd_pure <span class="op">=</span> <span class="fu">sim_fd_pure</span>(<span class="fl">1_200</span>)</span>
-<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>res_fd_pure <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df_fd_pure, graph<span class="op">=</span>g_fd_pure,</span>
-<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>                               treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
-<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"True ACE = 0.15"</span>)</span>
-<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE:    %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_fd_pure[<span class="op">:</span>TMLE].ACE)</span>
-<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Onestep: %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_fd_pure[<span class="op">:</span>Onestep].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="d33d7812" class="cell" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>g_fd_pure <span class="op">=</span> <span class="fu">make_graph</span>(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>A, <span class="op">:</span>M, <span class="op">:</span>Y],</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    bi_edges  <span class="op">=</span> [(<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [(<span class="op">:</span>A, <span class="op">:</span>M), (<span class="op">:</span>M, <span class="op">:</span>Y)],</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_fd_pure</span>(n; seed<span class="op">=</span><span class="fl">3</span>)</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    U <span class="op">=</span> <span class="fu">randn</span>(n)</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> <span class="fu">Float64</span>.(<span class="fu">rand</span>(n) <span class="op">.&lt;</span> <span class="fu">logistic</span>.(U))</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    M <span class="op">=</span> <span class="fl">0.5</span> <span class="op">.*</span> A <span class="op">.+</span> <span class="fu">randn</span>(n)      <span class="co"># coefficient 0.5</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> <span class="fl">0.3</span> <span class="op">.*</span> M <span class="op">.+</span> <span class="fl">0.4</span> <span class="op">.*</span> U <span class="op">.+</span> <span class="fu">randn</span>(n)  <span class="co"># true ACE = 0.5 × 0.3 = 0.15</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">DataFrame</span>(A<span class="op">=</span>A, M<span class="op">=</span>M, Y<span class="op">=</span>Y)</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>df_fd_pure <span class="op">=</span> <span class="fu">sim_fd_pure</span>(<span class="fl">1_200</span>)</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>res_fd_pure <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df_fd_pure, graph<span class="op">=</span>g_fd_pure,</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>                               treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"True ACE = 0.15"</span>)</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE:    %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_fd_pure[<span class="op">:</span>TMLE].ACE)</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Onestep: %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_fd_pure[<span class="op">:</span>Onestep].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <div class="ansi-escaped-output">
 <pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is p-fixable (front-door/NPS). Using NPS-TMLE.
@@ -421,30 +450,234 @@ Onestep: 0.145</code></pre>
 </section>
 <section id="simulation-comparison-tmle-vs-onestep-vs-ipw" class="level2">
 <h2 class="anchored" data-anchor-id="simulation-comparison-tmle-vs-onestep-vs-ipw">3. Simulation comparison: TMLE vs Onestep vs IPW</h2>
-<div id="a370f9ee" class="cell" data-execution_count="11">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_compare</span>(n_reps<span class="op">=</span><span class="fl">200</span>, n<span class="op">=</span><span class="fl">500</span>)</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    tmle <span class="op">=</span> <span class="dt">Float64</span>[]; aipw <span class="op">=</span> <span class="dt">Float64</span>[]; ipw <span class="op">=</span> <span class="dt">Float64</span>[]</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> seed <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span>n_reps</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        df  <span class="op">=</span> <span class="fu">sim_backdoor</span>(n; seed)</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>        res <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df, graph<span class="op">=</span>g_bd,</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>                              treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>        <span class="fu">push!</span>(tmle, res[<span class="op">:</span>TMLE].ACE)</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">push!</span>(aipw, res[<span class="op">:</span>Onestep].ACE)</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>        <span class="fu">push!</span>(ipw,  res[<span class="op">:</span>IPW].ACE)</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">println</span>(<span class="st">"n=</span><span class="sc">$</span>n<span class="st">, reps=</span><span class="sc">$</span>n_reps<span class="st">, true ACE=2.0"</span>)</span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">println</span>(<span class="st">"          Bias      RMSE"</span>)</span>
-<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (name, v) <span class="kw">in</span> [(<span class="st">"TMLE"</span>, tmle), (<span class="st">"Onestep"</span>, aipw), (<span class="st">"IPW"</span>, ipw)]</span>
-<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>        bias <span class="op">=</span> <span class="fu">mean</span>(v) <span class="op">-</span> <span class="fl">2.0</span></span>
-<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>        rmse <span class="op">=</span> <span class="fu">sqrt</span>(<span class="fu">mean</span>((v <span class="op">.-</span> <span class="fl">2.0</span>)<span class="op">.^</span><span class="fl">2</span>))</span>
-<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>        <span class="pp">@printf</span>(<span class="st">"  %-8s %+.4f   %.4f</span><span class="sc">\n</span><span class="st">"</span>, name, bias, rmse)</span>
-<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
-<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a><span class="fu">sim_compare</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="1f99c763" class="cell" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_compare</span>(n_reps<span class="op">=</span><span class="fl">200</span>, n<span class="op">=</span><span class="fl">500</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    tmle <span class="op">=</span> <span class="dt">Float64</span>[]; aipw <span class="op">=</span> <span class="dt">Float64</span>[]; ipw <span class="op">=</span> <span class="dt">Float64</span>[]</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> seed <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span>n_reps</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>        df  <span class="op">=</span> <span class="fu">sim_backdoor</span>(n; seed)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>        res <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df, graph<span class="op">=</span>g_bd,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>                              treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>        <span class="fu">push!</span>(tmle, res[<span class="op">:</span>TMLE].ACE)</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">push!</span>(aipw, res[<span class="op">:</span>Onestep].ACE)</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>        <span class="fu">push!</span>(ipw,  res[<span class="op">:</span>IPW].ACE)</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">println</span>(<span class="st">"n=</span><span class="sc">$</span>n<span class="st">, reps=</span><span class="sc">$</span>n_reps<span class="st">, true ACE=2.0"</span>)</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">println</span>(<span class="st">"          Bias      RMSE"</span>)</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (name, v) <span class="kw">in</span> [(<span class="st">"TMLE"</span>, tmle), (<span class="st">"Onestep"</span>, aipw), (<span class="st">"IPW"</span>, ipw)]</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>        bias <span class="op">=</span> <span class="fu">mean</span>(v) <span class="op">-</span> <span class="fl">2.0</span></span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>        rmse <span class="op">=</span> <span class="fu">sqrt</span>(<span class="fu">mean</span>((v <span class="op">.-</span> <span class="fl">2.0</span>)<span class="op">.^</span><span class="fl">2</span>))</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>        <span class="pp">@printf</span>(<span class="st">"  %-8s %+.4f   %.4f</span><span class="sc">\n</span><span class="st">"</span>, name, bias, rmse)</span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a><span class="fu">sim_compare</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <div class="ansi-escaped-output">
 <pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+
+<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
 
 <span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
 
@@ -646,218 +879,8 @@ Onestep: 0.145</code></pre>
 <pre><code>n=500, reps=200, true ACE=2.0
           Bias      RMSE
   TMLE     +0.0094   0.0924
-  Onestep  +0.0094   0.0925</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<div class="ansi-escaped-output">
-<pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-</pre>
-</div>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  IPW      +0.0147   0.1072</code></pre>
+  Onestep  +0.0094   0.0925
+  IPW      +0.0147   0.1072</code></pre>
 </div>
 </div>
 </section>
