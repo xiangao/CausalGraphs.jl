@@ -425,4 +425,52 @@ identify(selection_graph, :treat, :re78).strategy</code></pre><pre class="docume
 <polygon fill="red" stroke="red" points="196.9,-217.13 206.72,-213.17 196.57,-210.14 196.9,-217.13"/>
 </g>
 </g>
-</svg><p>With that additional assumption, <code>CausalGraphs.jl</code> reports the effect as not identified by the implemented criteria.</p><h2 id="Estimation"><a class="docs-heading-anchor" href="#Estimation">Estimation</a><a id="Estimation-1"></a><a class="docs-heading-anchor-permalink" href="#Estimation" title="Permalink"></a></h2><p>The full Quarto vignette downloads the NSW data from RDatasets and estimates the effect under both identified graphs. In a local run, the experimental graph gives a TMLE ACE of about 1794, while the baseline-adjusted observational graph gives a TMLE ACE of about 1638. The key point is not the small numerical difference in this sample, but that each estimate is tied to a different graph.</p><h2 id="Takeaway"><a class="docs-heading-anchor" href="#Takeaway">Takeaway</a><a id="Takeaway-1"></a><a class="docs-heading-anchor-permalink" href="#Takeaway" title="Permalink"></a></h2><p>The NSW example is useful because it makes the identifying assumptions visible:</p><ul><li>randomized assignment implies no adjustment;</li><li>measured selection implies adjustment for baseline covariates;</li><li>unmeasured selection makes the effect non-identified in this ADMG.</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Smoking_Cessation_NHEFS/">« Smoking Cessation NHEFS</a><a class="docs-footer-nextpage" href="../../reference/">Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 5 May 2026 15:13">Tuesday 5 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</svg><p>With that additional assumption, <code>CausalGraphs.jl</code> reports the effect as not identified by the implemented criteria.</p><h2 id="Estimation"><a class="docs-heading-anchor" href="#Estimation">Estimation</a><a id="Estimation-1"></a><a class="docs-heading-anchor-permalink" href="#Estimation" title="Permalink"></a></h2><p>The NSW data can be loaded directly from RDatasets. The estimate under the experimental graph uses only <code>treat</code> and <code>re78</code>, while the observational graph also adjusts for the baseline covariates through the Markov pillow of <code>treat</code>.</p><pre><code class="language-julia hljs">using DataFrames, DelimitedFiles, Downloads, Statistics
+
+function read_rdatasets_csv(url, cols)
+    local_file = Downloads.download(url; timeout=120)
+    x, header = readdlm(local_file, &#39;,&#39;, Any, &#39;\n&#39;; header=true)
+    raw = DataFrame(x, Symbol.(vec(header)))
+    DataFrame((c =&gt; Float64.(raw[!, c]) for c in cols)...)
+end
+
+url = &quot;https://vincentarelbundock.github.io/Rdatasets/csv/causaldata/nsw_mixtape.csv&quot;
+cols = [
+    :treat, :age, :educ, :black, :hisp, :marr, :nodegree,
+    :re74, :re75, :re78,
+]
+
+data = read_rdatasets_csv(url, cols)
+
+(n = nrow(data),
+ treated = Int(sum(data.treat .== 1)),
+ controls = Int(sum(data.treat .== 0)))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(n = 445, treated = 185, controls = 260)</code></pre><p>Under the experimental graph, no baseline adjustment is made.</p><pre><code class="language-julia hljs">raw_difference = mean(data.re78[data.treat .== 1]) -
+                 mean(data.re78[data.treat .== 0])
+
+experimental_res = estimate_causal(
+    a = [1, 0],
+    data = select(data, [:treat, :re78]),
+    graph = experimental_graph,
+    treatment = :treat,
+    outcome = :re78,
+)
+
+r = x -&gt; round(x, sigdigits=4)
+
+(raw_difference = r(raw_difference),
+ TMLE_ACE = r(experimental_res[:TMLE].ACE),
+ lower_ci = r(experimental_res[:TMLE].lower_ci),
+ upper_ci = r(experimental_res[:TMLE].upper_ci))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(raw_difference = 1794.0, TMLE_ACE = 1794.0, lower_ci = 482.5, upper_ci = 3106.0)</code></pre><p>Under the observational selection-on-observables graph, the estimator adjusts for the measured baseline variables.</p><pre><code class="language-julia hljs">observational_res = estimate_causal(
+    a = [1, 0],
+    data = data,
+    graph = observational_graph,
+    treatment = :treat,
+    outcome = :re78,
+)
+
+(TMLE_ACE = r(observational_res[:TMLE].ACE),
+ lower_ci = r(observational_res[:TMLE].lower_ci),
+ upper_ci = r(observational_res[:TMLE].upper_ci),
+ Onestep_ACE = r(observational_res[:Onestep].ACE),
+ Gcomp_ACE = r(observational_res[:Gcomp].ACE),
+ IPW_ACE = r(observational_res[:IPW].ACE))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(TMLE_ACE = 1638.0, lower_ci = 321.8, upper_ci = 2953.0, Onestep_ACE = 1638.0, Gcomp_ACE = 1676.0, IPW_ACE = 1613.0)</code></pre><p>The key point is not the small numerical difference in this sample. It is that each estimate is tied to a different graph. Under the unmeasured-selection graph above, the effect is not identified, so <code>estimate_causal</code> should not be run.</p><h2 id="Takeaway"><a class="docs-heading-anchor" href="#Takeaway">Takeaway</a><a id="Takeaway-1"></a><a class="docs-heading-anchor-permalink" href="#Takeaway" title="Permalink"></a></h2><p>The NSW example is useful because it makes the identifying assumptions visible:</p><ul><li>randomized assignment implies no adjustment;</li><li>measured selection implies adjustment for baseline covariates;</li><li>unmeasured selection makes the effect non-identified in this ADMG.</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Smoking_Cessation_NHEFS/">« Smoking Cessation NHEFS</a><a class="docs-footer-nextpage" href="../../reference/">Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 5 May 2026 15:24">Tuesday 5 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
