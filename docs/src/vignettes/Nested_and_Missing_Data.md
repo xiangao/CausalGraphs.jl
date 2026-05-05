@@ -32,6 +32,10 @@ graph = make_graph(
 identify(graph, :T, :CD4).strategy
 ```
 
+```@example nested_missing
+draw_graph(graph; direction="TB")
+```
+
 For nested-fixable effects, `estimate_causal()` returns nested IPW and augmented
 nested IPW estimates.
 
@@ -47,6 +51,10 @@ mdag = make_mdag(
 
 ID = ID_algorithm(mdag)
 ID.target.id_status
+```
+
+```@example nested_missing
+draw_graph(mdag)
 ```
 
 `compute_missing_weights()` estimates the identified missingness propensities

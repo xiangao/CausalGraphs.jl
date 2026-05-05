@@ -20,7 +20,7 @@ g_fd = make_graph(
     bi_edges = [(:A, :Y)],
 )
 
-to_mermaid(g_fd; direction="LR")
+draw_graph(g_fd; direction="LR")
 ```
 
 ```@example graphs_identification
@@ -29,7 +29,7 @@ g_bd = make_graph(
     di_edges = [(:X, :A), (:X, :Y), (:A, :Y)],
 )
 
-to_mermaid(g_bd; direction="LR")
+draw_graph(g_bd; direction="LR")
 ```
 
 ## Graph Properties
