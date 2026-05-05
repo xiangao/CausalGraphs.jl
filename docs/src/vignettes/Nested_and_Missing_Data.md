@@ -5,7 +5,8 @@ CurrentModule = CausalGraphs
 ```
 
 This vignette shows the two pieces that go beyond standard backdoor/front-door
-workflows: nested-fixable effects and missing-data weighting.
+workflows: nested-fixable effects and missing-data weighting. All datasets are
+simulated.
 
 ## Nested-Fixable Effects
 

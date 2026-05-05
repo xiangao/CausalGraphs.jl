@@ -91,7 +91,7 @@ draw_graph(sensitivity_graph; direction="TB")
 
 The purpose of the DAG is to make this assumption explicit before estimation.
 
-## Estimation
+## Estimation (Simulated Data)
 
 ```@example nhefs_graph
 using DataFrames, Random
