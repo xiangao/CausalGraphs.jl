@@ -35,6 +35,10 @@ identify(experimental_graph, :treat, :re78).strategy
 ```
 
 ```@example nsw_graph
+draw_graph(experimental_graph; direction="LR")
+```
+
+```@example nsw_graph
 markov_pillow(experimental_graph, :treat; treatment=:treat)
 ```
 
@@ -48,6 +52,15 @@ affect both program participation and later earnings:
 ```text
 X -> A -> Y
 X -----> Y
+```
+
+```@example nsw_graph
+conceptual_graph = make_graph(
+    vertices = [:X, :A, :Y],
+    di_edges = [(:X, :A), (:X, :Y), (:A, :Y)],
+)
+
+draw_graph(conceptual_graph; direction="LR")
 ```
 
 ```@example nsw_graph
@@ -65,6 +78,10 @@ edges = vcat(
 
 observational_graph = make_graph(vertices=vertices, di_edges=edges)
 identify(observational_graph, :treat, :re78).strategy
+```
+
+```@example nsw_graph
+draw_graph(observational_graph; direction="LR")
 ```
 
 ```@example nsw_graph
@@ -94,6 +111,10 @@ selection_graph = make_graph(
 )
 
 identify(selection_graph, :treat, :re78).strategy
+```
+
+```@example nsw_graph
+draw_graph(selection_graph; direction="LR")
 ```
 
 With that additional assumption, `CausalGraphs.jl` reports the effect as not
