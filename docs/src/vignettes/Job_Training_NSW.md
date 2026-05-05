@@ -122,11 +122,78 @@ identified by the implemented criteria.
 
 ## Estimation
 
-The full Quarto vignette downloads the NSW data from RDatasets and estimates the
-effect under both identified graphs. In a local run, the experimental graph
-gives a TMLE ACE of about 1794, while the baseline-adjusted observational graph
-gives a TMLE ACE of about 1638. The key point is not the small numerical
-difference in this sample, but that each estimate is tied to a different graph.
+The NSW data can be loaded directly from RDatasets. The estimate under the
+experimental graph uses only `treat` and `re78`, while the observational graph
+also adjusts for the baseline covariates through the Markov pillow of `treat`.
+
+```@example nsw_graph
+using DataFrames, DelimitedFiles, Downloads, Statistics
+
+function read_rdatasets_csv(url, cols)
+    local_file = Downloads.download(url; timeout=120)
+    x, header = readdlm(local_file, ',', Any, '\n'; header=true)
+    raw = DataFrame(x, Symbol.(vec(header)))
+    DataFrame((c => Float64.(raw[!, c]) for c in cols)...)
+end
+
+url = "https://vincentarelbundock.github.io/Rdatasets/csv/causaldata/nsw_mixtape.csv"
+cols = [
+    :treat, :age, :educ, :black, :hisp, :marr, :nodegree,
+    :re74, :re75, :re78,
+]
+
+data = read_rdatasets_csv(url, cols)
+
+(n = nrow(data),
+ treated = Int(sum(data.treat .== 1)),
+ controls = Int(sum(data.treat .== 0)))
+```
+
+Under the experimental graph, no baseline adjustment is made.
+
+```@example nsw_graph
+raw_difference = mean(data.re78[data.treat .== 1]) -
+                 mean(data.re78[data.treat .== 0])
+
+experimental_res = estimate_causal(
+    a = [1, 0],
+    data = select(data, [:treat, :re78]),
+    graph = experimental_graph,
+    treatment = :treat,
+    outcome = :re78,
+)
+
+r = x -> round(x, sigdigits=4)
+
+(raw_difference = r(raw_difference),
+ TMLE_ACE = r(experimental_res[:TMLE].ACE),
+ lower_ci = r(experimental_res[:TMLE].lower_ci),
+ upper_ci = r(experimental_res[:TMLE].upper_ci))
+```
+
+Under the observational selection-on-observables graph, the estimator adjusts
+for the measured baseline variables.
+
+```@example nsw_graph
+observational_res = estimate_causal(
+    a = [1, 0],
+    data = data,
+    graph = observational_graph,
+    treatment = :treat,
+    outcome = :re78,
+)
+
+(TMLE_ACE = r(observational_res[:TMLE].ACE),
+ lower_ci = r(observational_res[:TMLE].lower_ci),
+ upper_ci = r(observational_res[:TMLE].upper_ci),
+ Onestep_ACE = r(observational_res[:Onestep].ACE),
+ Gcomp_ACE = r(observational_res[:Gcomp].ACE),
+ IPW_ACE = r(observational_res[:IPW].ACE))
+```
+
+The key point is not the small numerical difference in this sample. It is that
+each estimate is tied to a different graph. Under the unmeasured-selection graph
+above, the effect is not identified, so `estimate_causal` should not be run.
 
 ## Takeaway
 
