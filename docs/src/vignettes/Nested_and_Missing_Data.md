@@ -36,8 +36,28 @@ identify(graph, :T, :CD4).strategy
 draw_graph(graph; direction="TB")
 ```
 
-For nested-fixable effects, `estimate_causal()` returns nested IPW and augmented
-nested IPW estimates.
+For nested-fixable effects, `estimate_causal()` returns augmented nested IPW
+(ANIPW) and nested IPW (NIPW) estimates.
+
+```@example nested_missing
+Random.seed!(42)
+n = 500
+U_EI = randn(n); U_ET = randn(n); U_ITox = randn(n)
+U_VA = randn(n); U_VCD4 = randn(n)
+ViralLoad = randn(n)
+Exercise  = randn(n) .+ 0.5 .* U_EI .+ 0.5 .* U_ET
+Income    = randn(n) .+ 0.4 .* ViralLoad .+ 0.4 .* U_EI .+ 0.4 .* U_ITox
+T         = Float64.(rand(n) .< 1 ./(1 .+ exp.(-(0.5 .* ViralLoad .+ 0.3 .* Income .+ 0.4 .* U_ET))))
+Toxicity  = randn(n) .+ 0.6 .* T .+ 0.3 .* U_ITox
+Adherence = randn(n) .+ 0.5 .* Toxicity .+ 0.3 .* U_VA
+CD4       = randn(n) .+ 0.4 .* T .+ 0.3 .* Adherence .+
+            0.2 .* Exercise .+ 0.3 .* ViralLoad .+ 0.3 .* U_VCD4 .+ 0.2 .* U_VA
+df = DataFrame(ViralLoad=ViralLoad, Income=Income, Exercise=Exercise,
+               T=T, Toxicity=Toxicity, Adherence=Adherence, CD4=CD4)
+
+res = estimate_causal(a=[1, 0], data=df, graph=graph, treatment=:T, outcome=:CD4)
+(ACE=res[:ANIPW].ACE, lower_ci=res[:ANIPW].lower_ci, upper_ci=res[:ANIPW].upper_ci)
+```
 
 ## Missing-Data Weighting
 
