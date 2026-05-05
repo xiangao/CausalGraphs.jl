@@ -5,10 +5,7 @@ makedocs(
     sitename = "CausalGraphs.jl",
     modules = [CausalGraphs],
     format = Documenter.HTML(
-        assets = [Documenter.asset(
-            "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js",
-            class = :js, islocal = false,
-        )],
+        assets = ["assets/mermaid-loader.js"],
     ),
     pages = [
         "Home" => "index.md",
