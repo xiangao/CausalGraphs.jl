@@ -18,43 +18,131 @@ graph = make_graph(
     ],
 )
 
-identify(graph, :T, :CD4).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:nested_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(graph; direction=&quot;TB&quot;)</code></pre><pre class="mermaid">
-flowchart TB
-  n1_ViralLoad[&quot;ViralLoad&quot;]
-  n2_Income[&quot;Income&quot;]
-  n3_Exercise[&quot;Exercise&quot;]
-  n4_T[&quot;T&quot;]
-  n5_Toxicity[&quot;Toxicity&quot;]
-  n6_Adherence[&quot;Adherence&quot;]
-  n7_CD4[&quot;CD4&quot;]
-  n1_ViralLoad --&gt; n4_T
-  n1_ViralLoad --&gt; n7_CD4
-  n2_Income --&gt; n4_T
-  n3_Exercise --&gt; n7_CD4
-  n4_T --&gt; n5_Toxicity
-  n4_T --&gt; n7_CD4
-  n5_Toxicity --&gt; n6_Adherence
-  n6_Adherence --&gt; n7_CD4
-  n2_Income &lt;--&gt; n5_Toxicity
-  n3_Exercise &lt;--&gt; n2_Income
-  n3_Exercise &lt;--&gt; n4_T
-  n1_ViralLoad &lt;--&gt; n6_Adherence
-  n1_ViralLoad &lt;--&gt; n7_CD4
-  classDef fixed stroke:#111827,stroke-width:2px
-  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 3 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 4 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 5 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 6 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 7 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 8 stroke:#dc2626,stroke-width:1.8px
-  linkStyle 9 stroke:#dc2626,stroke-width:1.8px
-  linkStyle 10 stroke:#dc2626,stroke-width:1.8px
-  linkStyle 11 stroke:#dc2626,stroke-width:1.8px
-  linkStyle 12 stroke:#dc2626,stroke-width:1.8px
-</pre><p>For nested-fixable effects, <code>estimate_causal()</code> returns nested IPW and augmented nested IPW estimates.</p><h2 id="Missing-Data-Weighting"><a class="docs-heading-anchor" href="#Missing-Data-Weighting">Missing-Data Weighting</a><a id="Missing-Data-Weighting-1"></a><a class="docs-heading-anchor-permalink" href="#Missing-Data-Weighting" title="Permalink"></a></h2><pre><code class="language-julia hljs">mdag = make_mdag(
+identify(graph, :T, :CD4).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:nested_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(graph; direction=&quot;TB&quot;)</code></pre><svg width="255pt" height="404pt"
+ viewBox="0.00 0.00 254.50 404.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 400)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-400 250.5,-400 250.5,4 -4,4"/>
+<!-- ViralLoad -->
+<g id="node1" class="node">
+<title>ViralLoad</title>
+<text text-anchor="middle" x="42.5" y="-302.3" font-family="Times,serif" font-size="14.00">ViralLoad</text>
+</g>
+<!-- T -->
+<g id="node4" class="node">
+<title>T</title>
+<text text-anchor="middle" x="190.5" y="-230.3" font-family="Times,serif" font-size="14.00">T</text>
+</g>
+<!-- ViralLoad&#45;&gt;T -->
+<g id="edge1" class="edge">
+<title>ViralLoad&#45;&gt;T</title>
+<path fill="none" stroke="blue" d="M78.7,-287.88C104.73,-275.57 139.28,-259.23 163.04,-247.99"/>
+<polygon fill="blue" stroke="blue" points="164.66,-251.09 172.2,-243.65 161.67,-244.77 164.66,-251.09"/>
+</g>
+<!-- Adherence -->
+<g id="node6" class="node">
+<title>Adherence</title>
+<text text-anchor="middle" x="125.5" y="-86.3" font-family="Times,serif" font-size="14.00">Adherence</text>
+</g>
+<!-- ViralLoad&#45;&gt;Adherence -->
+<g id="edge12" class="edge">
+<title>ViralLoad&#45;&gt;Adherence</title>
+<path fill="none" stroke="red" d="M50.92,-278.23C61.31,-245.98 80,-190.37 99.5,-144 103.2,-135.21 107.64,-125.82 111.8,-117.41"/>
+<polygon fill="red" stroke="red" points="47.57,-277.24 47.85,-287.83 54.23,-279.37 47.57,-277.24"/>
+<polygon fill="red" stroke="red" points="114.95,-118.94 116.31,-108.43 108.69,-115.79 114.95,-118.94"/>
+</g>
+<!-- CD4 -->
+<g id="node7" class="node">
+<title>CD4</title>
+<text text-anchor="middle" x="125.5" y="-14.3" font-family="Times,serif" font-size="14.00">CD4</text>
+</g>
+<!-- ViralLoad&#45;&gt;CD4 -->
+<g id="edge2" class="edge">
+<title>ViralLoad&#45;&gt;CD4</title>
+<path fill="none" stroke="blue" d="M36.18,-287.81C28.58,-247.65 24.92,-145.5 61.5,-72 68.6,-57.72 81.17,-45.17 93.43,-35.86"/>
+<polygon fill="blue" stroke="blue" points="95.65,-38.58 101.8,-29.96 91.61,-32.86 95.65,-38.58"/>
+</g>
+<!-- ViralLoad&#45;&gt;CD4 -->
+<g id="edge13" class="edge">
+<title>ViralLoad&#45;&gt;CD4</title>
+<path fill="none" stroke="red" d="M45.61,-277.59C46.26,-232.25 45.71,-139.9 79.5,-72 84.88,-61.18 93.4,-51.35 101.73,-43.18"/>
+<polygon fill="red" stroke="red" points="42.11,-277.74 45.4,-287.81 49.1,-277.88 42.11,-277.74"/>
+<polygon fill="red" stroke="red" points="104.33,-45.54 109.24,-36.15 99.55,-40.43 104.33,-45.54"/>
+</g>
+<!-- Income -->
+<g id="node2" class="node">
+<title>Income</title>
+<text text-anchor="middle" x="145.5" y="-302.3" font-family="Times,serif" font-size="14.00">Income</text>
+</g>
+<!-- Income&#45;&gt;T -->
+<g id="edge3" class="edge">
+<title>Income&#45;&gt;T</title>
+<path fill="none" stroke="blue" d="M156.62,-287.7C161.86,-279.56 168.2,-269.69 173.98,-260.7"/>
+<polygon fill="blue" stroke="blue" points="177.04,-262.41 179.5,-252.1 171.15,-258.62 177.04,-262.41"/>
+</g>
+<!-- Toxicity -->
+<g id="node5" class="node">
+<title>Toxicity</title>
+<text text-anchor="middle" x="144.5" y="-158.3" font-family="Times,serif" font-size="14.00">Toxicity</text>
+</g>
+<!-- Income&#45;&gt;Toxicity -->
+<g id="edge9" class="edge">
+<title>Income&#45;&gt;Toxicity</title>
+<path fill="none" stroke="red" d="M145.31,-277.68C145.13,-252.6 144.87,-215.63 144.69,-190.49"/>
+<polygon fill="red" stroke="red" points="141.81,-277.9 145.38,-287.87 148.81,-277.85 141.81,-277.9"/>
+<polygon fill="red" stroke="red" points="148.19,-190.16 144.62,-180.19 141.19,-190.21 148.19,-190.16"/>
+</g>
+<!-- Exercise -->
+<g id="node3" class="node">
+<title>Exercise</title>
+<text text-anchor="middle" x="207.5" y="-374.3" font-family="Times,serif" font-size="14.00">Exercise</text>
+</g>
+<!-- Exercise&#45;&gt;Income -->
+<g id="edge10" class="edge">
+<title>Exercise&#45;&gt;Income</title>
+<path fill="none" stroke="red" d="M185.53,-352.2C179.61,-345.52 173.21,-338.29 167.3,-331.62"/>
+<polygon fill="red" stroke="red" points="182.92,-354.53 192.17,-359.7 188.16,-349.89 182.92,-354.53"/>
+<polygon fill="red" stroke="red" points="169.9,-329.27 160.65,-324.1 164.66,-333.91 169.9,-329.27"/>
+</g>
+<!-- Exercise&#45;&gt;T -->
+<g id="edge11" class="edge">
+<title>Exercise&#45;&gt;T</title>
+<path fill="none" stroke="red" d="M204.23,-349.68C201.21,-324.49 196.76,-287.3 193.75,-262.16"/>
+<polygon fill="red" stroke="red" points="200.79,-350.36 205.45,-359.87 207.74,-349.53 200.79,-350.36"/>
+<polygon fill="red" stroke="red" points="197.22,-261.7 192.56,-252.19 190.27,-262.53 197.22,-261.7"/>
+</g>
+<!-- Exercise&#45;&gt;CD4 -->
+<g id="edge4" class="edge">
+<title>Exercise&#45;&gt;CD4</title>
+<path fill="none" stroke="blue" d="M215.39,-359.93C226.79,-333.67 246.5,-281.53 246.5,-235 246.5,-235 246.5,-235 246.5,-161 246.5,-106.21 193.67,-61.83 157.82,-38.02"/>
+<polygon fill="blue" stroke="blue" points="159.42,-34.89 149.12,-32.42 155.63,-40.77 159.42,-34.89"/>
+</g>
+<!-- T&#45;&gt;Toxicity -->
+<g id="edge5" class="edge">
+<title>T&#45;&gt;Toxicity</title>
+<path fill="none" stroke="blue" d="M179.13,-215.7C173.78,-207.56 167.3,-197.69 161.39,-188.7"/>
+<polygon fill="blue" stroke="blue" points="164.16,-186.54 155.74,-180.1 158.31,-190.38 164.16,-186.54"/>
+</g>
+<!-- T&#45;&gt;CD4 -->
+<g id="edge6" class="edge">
+<title>T&#45;&gt;CD4</title>
+<path fill="none" stroke="blue" d="M193.6,-215.9C198.29,-185.22 204.32,-119.58 180.5,-72 174.89,-60.79 165.92,-50.63 156.84,-42.28"/>
+<polygon fill="blue" stroke="blue" points="159.11,-39.61 149.26,-35.7 154.52,-44.9 159.11,-39.61"/>
+</g>
+<!-- Toxicity&#45;&gt;Adherence -->
+<g id="edge7" class="edge">
+<title>Toxicity&#45;&gt;Adherence</title>
+<path fill="none" stroke="blue" d="M139.8,-143.7C137.69,-135.9 135.14,-126.51 132.78,-117.83"/>
+<polygon fill="blue" stroke="blue" points="136.14,-116.84 130.14,-108.1 129.38,-118.67 136.14,-116.84"/>
+</g>
+<!-- Adherence&#45;&gt;CD4 -->
+<g id="edge8" class="edge">
+<title>Adherence&#45;&gt;CD4</title>
+<path fill="none" stroke="blue" d="M125.5,-71.7C125.5,-63.98 125.5,-54.71 125.5,-46.11"/>
+<polygon fill="blue" stroke="blue" points="129,-46.1 125.5,-36.1 122,-46.1 129,-46.1"/>
+</g>
+</g>
+</svg><p>For nested-fixable effects, <code>estimate_causal()</code> returns nested IPW and augmented nested IPW estimates.</p><h2 id="Missing-Data-Weighting"><a class="docs-heading-anchor" href="#Missing-Data-Weighting">Missing-Data Weighting</a><a id="Missing-Data-Weighting-1"></a><a class="docs-heading-anchor-permalink" href="#Missing-Data-Weighting" title="Permalink"></a></h2><pre><code class="language-julia hljs">mdag = make_mdag(
     obs_variables = [&quot;A&quot;, &quot;Y&quot;],
     missing_variables = [&quot;X&quot;],
     missing_indicators = [&quot;Rx&quot;],
@@ -62,19 +150,54 @@ flowchart TB
 )
 
 ID = ID_algorithm(mdag)
-ID.target.id_status</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">false</code></pre><pre><code class="language-julia hljs">draw_graph(mdag)</code></pre><pre class="mermaid">
-flowchart LR
-  n1_A[&quot;A&quot;]
-  n2_Y[&quot;Y&quot;]
-  n3_X[&quot;X&quot;]
-  n4_Rx[&quot;Rx&quot;]
-  n3_X --&gt; n1_A
-  n3_X --&gt; n2_Y
-  n3_X --&gt; n4_Rx
-  n1_A --&gt; n2_Y
-  classDef fixed stroke:#111827,stroke-width:2px
-  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 3 stroke:#2563eb,stroke-width:1.8px
-</pre><p><code>compute_missing_weights()</code> estimates the identified missingness propensities and returns inverse-probability weights that can be passed to <code>estimate_causal(...; sample_weights=wts)</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Estimation_Backdoor_Frontdoor/">« Estimation: Backdoor and Front-Door</a><a class="docs-footer-nextpage" href="../Smoking_Cessation_NHEFS/">Smoking Cessation NHEFS »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 5 May 2026 02:41">Tuesday 5 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ID.target.id_status</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">false</code></pre><pre><code class="language-julia hljs">draw_graph(mdag)</code></pre><svg width="188pt" height="136pt"
+ viewBox="0.00 0.00 188.00 136.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 132)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-132 184,-132 184,4 -4,4"/>
+<!-- A -->
+<g id="node1" class="node">
+<title>A</title>
+<text text-anchor="middle" x="90" y="-106.3" font-family="Times,serif" font-size="14.00">A</text>
+</g>
+<!-- Y -->
+<g id="node2" class="node">
+<title>Y</title>
+<text text-anchor="middle" x="162" y="-83.3" font-family="Times,serif" font-size="14.00">Y</text>
+</g>
+<!-- A&#45;&gt;Y -->
+<g id="edge4" class="edge">
+<title>A&#45;&gt;Y</title>
+<path fill="none" stroke="blue" d="M108.3,-104.31C116.1,-101.75 125.49,-98.67 134.17,-95.82"/>
+<polygon fill="blue" stroke="blue" points="135.49,-99.07 143.9,-92.62 133.3,-92.42 135.49,-99.07"/>
+</g>
+<!-- X -->
+<g id="node3" class="node">
+<title>X</title>
+<text text-anchor="middle" x="18" y="-60.3" font-family="Times,serif" font-size="14.00">X</text>
+</g>
+<!-- X&#45;&gt;A -->
+<g id="edge1" class="edge">
+<title>X&#45;&gt;A</title>
+<path fill="none" stroke="blue" d="M36.3,-75.37C44.44,-80.72 54.31,-87.2 63.3,-93.11"/>
+<polygon fill="blue" stroke="blue" points="61.62,-96.19 71.9,-98.76 65.46,-90.34 61.62,-96.19"/>
+</g>
+<!-- X&#45;&gt;Y -->
+<g id="edge2" class="edge">
+<title>X&#45;&gt;Y</title>
+<path fill="none" stroke="blue" d="M36.13,-66.77C60.33,-70.69 104.79,-77.9 133.61,-82.56"/>
+<polygon fill="blue" stroke="blue" points="133.38,-86.07 143.81,-84.22 134.5,-79.16 133.38,-86.07"/>
+</g>
+<!-- Rx -->
+<g id="node4" class="node">
+<title>Rx</title>
+<text text-anchor="middle" x="90" y="-14.3" font-family="Times,serif" font-size="14.00">Rx</text>
+</g>
+<!-- X&#45;&gt;Rx -->
+<g id="edge3" class="edge">
+<title>X&#45;&gt;Rx</title>
+<path fill="none" stroke="blue" d="M36.3,-52.63C44.44,-47.28 54.31,-40.8 63.3,-34.89"/>
+<polygon fill="blue" stroke="blue" points="65.46,-37.66 71.9,-29.24 61.62,-31.81 65.46,-37.66"/>
+</g>
+</g>
+</svg><p><code>compute_missing_weights()</code> estimates the identified missingness propensities and returns inverse-probability weights that can be passed to <code>estimate_causal(...; sample_weights=wts)</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Estimation_Backdoor_Frontdoor/">« Estimation: Backdoor and Front-Door</a><a class="docs-footer-nextpage" href="../Smoking_Cessation_NHEFS/">Smoking Cessation NHEFS »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 5 May 2026 02:43">Tuesday 5 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

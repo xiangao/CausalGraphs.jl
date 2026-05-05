@@ -13,19 +13,46 @@ graph = make_graph(
     di_edges = [(:X, :A), (:X, :Y), (:A, :Y)],
 )
 
-identify(graph, :A, :Y).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:a_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(graph)</code></pre><pre class="mermaid">
-flowchart LR
-  n1_X[&quot;X&quot;]
-  n2_A[&quot;A&quot;]
-  n3_Y[&quot;Y&quot;]
-  n1_X --&gt; n2_A
-  n1_X --&gt; n3_Y
-  n2_A --&gt; n3_Y
-  classDef fixed stroke:#111827,stroke-width:2px
-  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
-</pre><pre><code class="language-julia hljs">res = estimate_causal(
+identify(graph, :A, :Y).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:a_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(graph)</code></pre><svg width="188pt" height="67pt"
+ viewBox="0.00 0.00 188.00 67.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 63)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-63 184,-63 184,4 -4,4"/>
+<!-- X -->
+<g id="node1" class="node">
+<title>X</title>
+<text text-anchor="middle" x="18" y="-14.3" font-family="Times,serif" font-size="14.00">X</text>
+</g>
+<!-- A -->
+<g id="node2" class="node">
+<title>A</title>
+<text text-anchor="middle" x="90" y="-37.3" font-family="Times,serif" font-size="14.00">A</text>
+</g>
+<!-- X&#45;&gt;A -->
+<g id="edge1" class="edge">
+<title>X&#45;&gt;A</title>
+<path fill="none" stroke="blue" d="M36.3,-23.69C44.1,-26.25 53.49,-29.33 62.17,-32.18"/>
+<polygon fill="blue" stroke="blue" points="61.3,-35.58 71.9,-35.38 63.49,-28.93 61.3,-35.58"/>
+</g>
+<!-- Y -->
+<g id="node3" class="node">
+<title>Y</title>
+<text text-anchor="middle" x="162" y="-14.3" font-family="Times,serif" font-size="14.00">Y</text>
+</g>
+<!-- X&#45;&gt;Y -->
+<g id="edge2" class="edge">
+<title>X&#45;&gt;Y</title>
+<path fill="none" stroke="blue" d="M36.17,-16.38C46.53,-15.48 60.01,-14.45 72,-14 87.99,-13.4 92.01,-13.4 108,-14 116.33,-14.31 125.39,-14.91 133.62,-15.54"/>
+<polygon fill="blue" stroke="blue" points="133.58,-19.05 143.83,-16.38 134.15,-12.07 133.58,-19.05"/>
+</g>
+<!-- A&#45;&gt;Y -->
+<g id="edge3" class="edge">
+<title>A&#45;&gt;Y</title>
+<path fill="none" stroke="blue" d="M108.3,-35.31C116.1,-32.75 125.49,-29.67 134.17,-26.82"/>
+<polygon fill="blue" stroke="blue" points="135.49,-30.07 143.9,-23.62 133.3,-23.42 135.49,-30.07"/>
+</g>
+</g>
+</svg><pre><code class="language-julia hljs">res = estimate_causal(
     a = [1, 0],
     data = data,
     graph = graph,
@@ -46,19 +73,47 @@ fd_graph = make_graph(
     bi_edges = [(:A, :Y)],
 )
 
-identify(fd_graph, :A, :Y).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:p_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(fd_graph)</code></pre><pre class="mermaid">
-flowchart LR
-  n1_A[&quot;A&quot;]
-  n2_M[&quot;M&quot;]
-  n3_Y[&quot;Y&quot;]
-  n1_A --&gt; n2_M
-  n2_M --&gt; n3_Y
-  n1_A &lt;--&gt; n3_Y
-  classDef fixed stroke:#111827,stroke-width:2px
-  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 2 stroke:#dc2626,stroke-width:1.8px
-</pre><pre><code class="language-julia hljs">fd_res = estimate_causal(
+identify(fd_graph, :A, :Y).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:p_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(fd_graph)</code></pre><svg width="188pt" height="67pt"
+ viewBox="0.00 0.00 188.00 67.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 63)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-63 184,-63 184,4 -4,4"/>
+<!-- A -->
+<g id="node1" class="node">
+<title>A</title>
+<text text-anchor="middle" x="18" y="-14.3" font-family="Times,serif" font-size="14.00">A</text>
+</g>
+<!-- M -->
+<g id="node2" class="node">
+<title>M</title>
+<text text-anchor="middle" x="90" y="-37.3" font-family="Times,serif" font-size="14.00">M</text>
+</g>
+<!-- A&#45;&gt;M -->
+<g id="edge1" class="edge">
+<title>A&#45;&gt;M</title>
+<path fill="none" stroke="blue" d="M36.3,-23.69C44.1,-26.25 53.49,-29.33 62.17,-32.18"/>
+<polygon fill="blue" stroke="blue" points="61.3,-35.58 71.9,-35.38 63.49,-28.93 61.3,-35.58"/>
+</g>
+<!-- Y -->
+<g id="node3" class="node">
+<title>Y</title>
+<text text-anchor="middle" x="162" y="-14.3" font-family="Times,serif" font-size="14.00">Y</text>
+</g>
+<!-- A&#45;&gt;Y -->
+<g id="edge3" class="edge">
+<title>A&#45;&gt;Y</title>
+<path fill="none" stroke="red" d="M46.38,-15.54C54.61,-14.91 63.67,-14.31 72,-14 87.99,-13.4 92.01,-13.4 108,-14 116.33,-14.31 125.39,-14.91 133.62,-15.54"/>
+<polygon fill="red" stroke="red" points="45.85,-12.07 36.17,-16.38 46.42,-19.05 45.85,-12.07"/>
+<polygon fill="red" stroke="red" points="133.58,-19.05 143.83,-16.38 134.15,-12.07 133.58,-19.05"/>
+</g>
+<!-- M&#45;&gt;Y -->
+<g id="edge2" class="edge">
+<title>M&#45;&gt;Y</title>
+<path fill="none" stroke="blue" d="M108.3,-35.31C116.1,-32.75 125.49,-29.67 134.17,-26.82"/>
+<polygon fill="blue" stroke="blue" points="135.49,-30.07 143.9,-23.62 133.3,-23.42 135.49,-30.07"/>
+</g>
+</g>
+</svg><pre><code class="language-julia hljs">fd_res = estimate_causal(
     a = [1, 0],
     data = fd_data,
     graph = fd_graph,
@@ -66,4 +121,4 @@ flowchart LR
     outcome = :Y,
 )
 
-fd_res[:TMLE].ACE</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.210851508688629</code></pre><p>For a p-fixable graph, the package routes to the NPS/front-door style TMLE.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Graphs_and_Identification/">« Graphs and Identification</a><a class="docs-footer-nextpage" href="../Nested_and_Missing_Data/">Nested-Fixable and Missing Data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 5 May 2026 02:41">Tuesday 5 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+fd_res[:TMLE].ACE</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.210851508688629</code></pre><p>For a p-fixable graph, the package routes to the NPS/front-door style TMLE.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Graphs_and_Identification/">« Graphs and Identification</a><a class="docs-footer-nextpage" href="../Nested_and_Missing_Data/">Nested-Fixable and Missing Data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 5 May 2026 02:43">Tuesday 5 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

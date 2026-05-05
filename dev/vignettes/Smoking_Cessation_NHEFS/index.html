@@ -7,19 +7,46 @@ conceptual_graph = make_graph(
     di_edges = [(:X, :A), (:X, :Y), (:A, :Y)],
 )
 
-identify(conceptual_graph, :A, :Y).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:a_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(conceptual_graph)</code></pre><pre class="mermaid">
-flowchart LR
-  n1_X[&quot;X&quot;]
-  n2_A[&quot;A&quot;]
-  n3_Y[&quot;Y&quot;]
-  n1_X --&gt; n2_A
-  n1_X --&gt; n3_Y
-  n2_A --&gt; n3_Y
-  classDef fixed stroke:#111827,stroke-width:2px
-  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
-</pre><h2 id="Expanded-Graph"><a class="docs-heading-anchor" href="#Expanded-Graph">Expanded Graph</a><a id="Expanded-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Expanded-Graph" title="Permalink"></a></h2><p>For estimation, <code>X</code> is expanded into actual data columns:</p><pre><code class="language-julia hljs">vertices = [
+identify(conceptual_graph, :A, :Y).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:a_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(conceptual_graph)</code></pre><svg width="188pt" height="67pt"
+ viewBox="0.00 0.00 188.00 67.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 63)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-63 184,-63 184,4 -4,4"/>
+<!-- X -->
+<g id="node1" class="node">
+<title>X</title>
+<text text-anchor="middle" x="18" y="-14.3" font-family="Times,serif" font-size="14.00">X</text>
+</g>
+<!-- A -->
+<g id="node2" class="node">
+<title>A</title>
+<text text-anchor="middle" x="90" y="-37.3" font-family="Times,serif" font-size="14.00">A</text>
+</g>
+<!-- X&#45;&gt;A -->
+<g id="edge1" class="edge">
+<title>X&#45;&gt;A</title>
+<path fill="none" stroke="blue" d="M36.3,-23.69C44.1,-26.25 53.49,-29.33 62.17,-32.18"/>
+<polygon fill="blue" stroke="blue" points="61.3,-35.58 71.9,-35.38 63.49,-28.93 61.3,-35.58"/>
+</g>
+<!-- Y -->
+<g id="node3" class="node">
+<title>Y</title>
+<text text-anchor="middle" x="162" y="-14.3" font-family="Times,serif" font-size="14.00">Y</text>
+</g>
+<!-- X&#45;&gt;Y -->
+<g id="edge2" class="edge">
+<title>X&#45;&gt;Y</title>
+<path fill="none" stroke="blue" d="M36.17,-16.38C46.53,-15.48 60.01,-14.45 72,-14 87.99,-13.4 92.01,-13.4 108,-14 116.33,-14.31 125.39,-14.91 133.62,-15.54"/>
+<polygon fill="blue" stroke="blue" points="133.58,-19.05 143.83,-16.38 134.15,-12.07 133.58,-19.05"/>
+</g>
+<!-- A&#45;&gt;Y -->
+<g id="edge3" class="edge">
+<title>A&#45;&gt;Y</title>
+<path fill="none" stroke="blue" d="M108.3,-35.31C116.1,-32.75 125.49,-29.67 134.17,-26.82"/>
+<polygon fill="blue" stroke="blue" points="135.49,-30.07 143.9,-23.62 133.3,-23.42 135.49,-30.07"/>
+</g>
+</g>
+</svg><h2 id="Expanded-Graph"><a class="docs-heading-anchor" href="#Expanded-Graph">Expanded Graph</a><a id="Expanded-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Expanded-Graph" title="Permalink"></a></h2><p>For estimation, <code>X</code> is expanded into actual data columns:</p><pre><code class="language-julia hljs">vertices = [
     :sex, :race, :age, :school,
     :smokeintensity, :smokeyrs,
     :exercise, :active, :wt71,
@@ -34,116 +61,367 @@ edges = vcat(
 )
 
 graph = make_graph(vertices=vertices, di_edges=edges)
-identify(graph, :qsmk, :wt82_71).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:a_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(graph; direction=&quot;TB&quot;)</code></pre><pre class="mermaid">
-flowchart TB
-  n1_sex[&quot;sex&quot;]
-  n2_race[&quot;race&quot;]
-  n3_age[&quot;age&quot;]
-  n4_school[&quot;school&quot;]
-  n5_smokeintensity[&quot;smokeintensity&quot;]
-  n6_smokeyrs[&quot;smokeyrs&quot;]
-  n7_exercise[&quot;exercise&quot;]
-  n8_active[&quot;active&quot;]
-  n9_wt71[&quot;wt71&quot;]
-  n10_qsmk[&quot;qsmk&quot;]
-  n11_wt82_71[&quot;wt82_71&quot;]
-  n1_sex --&gt; n10_qsmk
-  n2_race --&gt; n10_qsmk
-  n3_age --&gt; n10_qsmk
-  n4_school --&gt; n10_qsmk
-  n5_smokeintensity --&gt; n10_qsmk
-  n6_smokeyrs --&gt; n10_qsmk
-  n7_exercise --&gt; n10_qsmk
-  n8_active --&gt; n10_qsmk
-  n9_wt71 --&gt; n10_qsmk
-  n1_sex --&gt; n11_wt82_71
-  n2_race --&gt; n11_wt82_71
-  n3_age --&gt; n11_wt82_71
-  n4_school --&gt; n11_wt82_71
-  n5_smokeintensity --&gt; n11_wt82_71
-  n6_smokeyrs --&gt; n11_wt82_71
-  n7_exercise --&gt; n11_wt82_71
-  n8_active --&gt; n11_wt82_71
-  n9_wt71 --&gt; n11_wt82_71
-  n10_qsmk --&gt; n11_wt82_71
-  classDef fixed stroke:#111827,stroke-width:2px
-  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 3 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 4 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 5 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 6 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 7 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 8 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 9 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 10 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 11 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 12 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 13 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 14 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 15 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 16 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 17 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 18 stroke:#2563eb,stroke-width:1.8px
-</pre><h2 id="Sensitivity-Graph"><a class="docs-heading-anchor" href="#Sensitivity-Graph">Sensitivity Graph</a><a id="Sensitivity-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Sensitivity-Graph" title="Permalink"></a></h2><p>If we add an unmeasured common cause of quitting and weight change, the effect is not identified by the implemented criteria:</p><pre><code class="language-julia hljs">sensitivity_graph = make_graph(
+identify(graph, :qsmk, :wt82_71).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:a_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(graph; direction=&quot;TB&quot;)</code></pre><svg width="744pt" height="188pt"
+ viewBox="0.00 0.00 744.00 188.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 184)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-184 740,-184 740,4 -4,4"/>
+<!-- sex -->
+<g id="node1" class="node">
+<title>sex</title>
+<text text-anchor="middle" x="20.5" y="-158.3" font-family="Times,serif" font-size="14.00">sex</text>
+</g>
+<!-- qsmk -->
+<g id="node10" class="node">
+<title>qsmk</title>
+<text text-anchor="middle" x="344.5" y="-86.3" font-family="Times,serif" font-size="14.00">qsmk</text>
+</g>
+<!-- sex&#45;&gt;qsmk -->
+<g id="edge1" class="edge">
+<title>sex&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M41.3,-147.66C43.99,-146.28 46.76,-145.01 49.5,-144 138.18,-111.23 249.58,-98.28 306.78,-93.52"/>
+<polygon fill="blue" stroke="blue" points="307.12,-97 316.81,-92.72 306.57,-90.03 307.12,-97"/>
+</g>
+<!-- wt82_71 -->
+<g id="node11" class="node">
+<title>wt82_71</title>
+<text text-anchor="middle" x="316.5" y="-14.3" font-family="Times,serif" font-size="14.00">wt82_71</text>
+</g>
+<!-- sex&#45;&gt;wt82_71 -->
+<g id="edge10" class="edge">
+<title>sex&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M41.39,-143.83C66.13,-124.2 109.22,-92.18 150.5,-72 188.19,-53.58 233.75,-39.56 267.59,-30.59"/>
+<polygon fill="blue" stroke="blue" points="268.9,-33.86 277.7,-27.96 267.14,-27.09 268.9,-33.86"/>
+</g>
+<!-- race -->
+<g id="node2" class="node">
+<title>race</title>
+<text text-anchor="middle" x="82.5" y="-158.3" font-family="Times,serif" font-size="14.00">race</text>
+</g>
+<!-- race&#45;&gt;qsmk -->
+<g id="edge2" class="edge">
+<title>race&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M106.34,-147.85C109.37,-146.43 112.47,-145.11 115.5,-144 180.72,-120.08 260.47,-104.53 306.58,-96.8"/>
+<polygon fill="blue" stroke="blue" points="307.42,-100.21 316.72,-95.14 306.28,-93.31 307.42,-100.21"/>
+</g>
+<!-- race&#45;&gt;wt82_71 -->
+<g id="edge11" class="edge">
+<title>race&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M104.11,-143.72C128.26,-124.84 168.9,-94.32 206.5,-72 226.33,-60.23 249.16,-48.89 268.87,-39.75"/>
+<polygon fill="blue" stroke="blue" points="270.35,-42.92 277.98,-35.57 267.43,-36.56 270.35,-42.92"/>
+</g>
+<!-- age -->
+<g id="node3" class="node">
+<title>age</title>
+<text text-anchor="middle" x="145.5" y="-158.3" font-family="Times,serif" font-size="14.00">age</text>
+</g>
+<!-- age&#45;&gt;qsmk -->
+<g id="edge3" class="edge">
+<title>age&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M166.52,-148.36C169.49,-146.79 172.53,-145.29 175.5,-144 219.4,-124.94 272.38,-109.46 307.18,-100.26"/>
+<polygon fill="blue" stroke="blue" points="308.13,-103.63 316.93,-97.72 306.37,-96.86 308.13,-103.63"/>
+</g>
+<!-- age&#45;&gt;wt82_71 -->
+<g id="edge12" class="edge">
+<title>age&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M165.5,-143.78C186.52,-125.73 220.64,-96.64 250.5,-72 262.36,-62.22 275.55,-51.58 287,-42.42"/>
+<polygon fill="blue" stroke="blue" points="289.35,-45.02 294.98,-36.04 284.98,-39.55 289.35,-45.02"/>
+</g>
+<!-- school -->
+<g id="node4" class="node">
+<title>school</title>
+<text text-anchor="middle" x="215.5" y="-158.3" font-family="Times,serif" font-size="14.00">school</text>
+</g>
+<!-- school&#45;&gt;qsmk -->
+<g id="edge4" class="edge">
+<title>school&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M246.73,-144.05C265.14,-134.06 288.53,-121.37 307.81,-110.91"/>
+<polygon fill="blue" stroke="blue" points="309.51,-113.97 316.63,-106.12 306.17,-107.81 309.51,-113.97"/>
+</g>
+<!-- school&#45;&gt;wt82_71 -->
+<g id="edge13" class="edge">
+<title>school&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M227.68,-143.87C245.28,-119.14 277.92,-73.24 298.35,-44.51"/>
+<polygon fill="blue" stroke="blue" points="301.33,-46.37 304.27,-36.19 295.63,-42.31 301.33,-46.37"/>
+</g>
+<!-- smokeintensity -->
+<g id="node5" class="node">
+<title>smokeintensity</title>
+<text text-anchor="middle" x="327.5" y="-158.3" font-family="Times,serif" font-size="14.00">smokeintensity</text>
+</g>
+<!-- smokeintensity&#45;&gt;qsmk -->
+<g id="edge5" class="edge">
+<title>smokeintensity&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M331.7,-143.7C333.6,-135.9 335.88,-126.51 337.98,-117.83"/>
+<polygon fill="blue" stroke="blue" points="341.39,-118.65 340.35,-108.1 334.58,-117 341.39,-118.65"/>
+</g>
+<!-- smokeintensity&#45;&gt;wt82_71 -->
+<g id="edge14" class="edge">
+<title>smokeintensity&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M319.19,-143.79C314.76,-133.63 309.76,-120.38 307.5,-108 303.76,-87.5 306.41,-64.05 309.78,-46.36"/>
+<polygon fill="blue" stroke="blue" points="313.29,-46.68 311.92,-36.18 306.44,-45.24 313.29,-46.68"/>
+</g>
+<!-- smokeyrs -->
+<g id="node6" class="node">
+<title>smokeyrs</title>
+<text text-anchor="middle" x="450.5" y="-158.3" font-family="Times,serif" font-size="14.00">smokeyrs</text>
+</g>
+<!-- smokeyrs&#45;&gt;qsmk -->
+<g id="edge6" class="edge">
+<title>smokeyrs&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M424.57,-143.88C410.84,-134.81 393.79,-123.55 378.96,-113.76"/>
+<polygon fill="blue" stroke="blue" points="380.8,-110.78 370.53,-108.19 376.95,-116.62 380.8,-110.78"/>
+</g>
+<!-- smokeyrs&#45;&gt;wt82_71 -->
+<g id="edge15" class="edge">
+<title>smokeyrs&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M438.6,-143.72C425.41,-125.12 403.01,-95.08 380.5,-72 370.39,-61.63 358.36,-51.24 347.48,-42.44"/>
+<polygon fill="blue" stroke="blue" points="349.44,-39.53 339.43,-36.05 345.09,-45.01 349.44,-39.53"/>
+</g>
+<!-- exercise -->
+<g id="node7" class="node">
+<title>exercise</title>
+<text text-anchor="middle" x="549.5" y="-158.3" font-family="Times,serif" font-size="14.00">exercise</text>
+</g>
+<!-- exercise&#45;&gt;qsmk -->
+<g id="edge7" class="edge">
+<title>exercise&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M511.27,-147.4C507.96,-146.24 504.67,-145.1 501.5,-144 460.65,-129.87 413.68,-114.07 381.83,-103.43"/>
+<polygon fill="blue" stroke="blue" points="382.65,-100.01 372.05,-100.16 380.43,-106.65 382.65,-100.01"/>
+</g>
+<!-- exercise&#45;&gt;wt82_71 -->
+<g id="edge16" class="edge">
+<title>exercise&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M523.9,-144C496.21,-125.75 450.65,-96.15 410.5,-72 393.16,-61.57 373.72,-50.51 357.04,-41.2"/>
+<polygon fill="blue" stroke="blue" points="358.53,-38.03 348.09,-36.23 355.13,-44.15 358.53,-38.03"/>
+</g>
+<!-- active -->
+<g id="node8" class="node">
+<title>active</title>
+<text text-anchor="middle" x="635.5" y="-158.3" font-family="Times,serif" font-size="14.00">active</text>
+</g>
+<!-- active&#45;&gt;qsmk -->
+<g id="edge8" class="edge">
+<title>active&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M605.93,-147.37C602.78,-146.14 599.6,-144.99 596.5,-144 522.15,-120.25 432.01,-104.24 382.19,-96.47"/>
+<polygon fill="blue" stroke="blue" points="382.61,-92.99 372.2,-94.93 381.55,-99.91 382.61,-92.99"/>
+</g>
+<!-- active&#45;&gt;wt82_71 -->
+<g id="edge17" class="edge">
+<title>active&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M605.92,-145.56C570.2,-127.15 508.13,-95.87 453.5,-72 424.36,-59.27 391.11,-46.36 364.66,-36.48"/>
+<polygon fill="blue" stroke="blue" points="365.84,-33.18 355.24,-32.98 363.4,-39.74 365.84,-33.18"/>
+</g>
+<!-- wt71 -->
+<g id="node9" class="node">
+<title>wt71</title>
+<text text-anchor="middle" x="709.5" y="-158.3" font-family="Times,serif" font-size="14.00">wt71</text>
+</g>
+<!-- wt71&#45;&gt;qsmk -->
+<g id="edge9" class="edge">
+<title>wt71&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M682.69,-147.01C679.97,-145.89 677.21,-144.85 674.5,-144 571.71,-111.56 444.35,-98.29 382.19,-93.45"/>
+<polygon fill="blue" stroke="blue" points="382.31,-89.95 372.07,-92.7 381.78,-96.93 382.31,-89.95"/>
+</g>
+<!-- wt71&#45;&gt;wt82_71 -->
+<g id="edge18" class="edge">
+<title>wt71&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M682.81,-147.87C680.01,-146.54 677.2,-145.23 674.5,-144 600.2,-110.15 582.52,-99.08 505.5,-72 458.58,-55.5 403.72,-40.59 365.23,-30.82"/>
+<polygon fill="blue" stroke="blue" points="365.88,-27.37 355.32,-28.32 364.17,-34.16 365.88,-27.37"/>
+</g>
+<!-- qsmk&#45;&gt;wt82_71 -->
+<g id="edge19" class="edge">
+<title>qsmk&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M337.58,-71.7C334.43,-63.81 330.62,-54.3 327.12,-45.55"/>
+<polygon fill="blue" stroke="blue" points="330.31,-44.09 323.34,-36.1 323.81,-46.69 330.31,-44.09"/>
+</g>
+</g>
+</svg><h2 id="Sensitivity-Graph"><a class="docs-heading-anchor" href="#Sensitivity-Graph">Sensitivity Graph</a><a id="Sensitivity-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Sensitivity-Graph" title="Permalink"></a></h2><p>If we add an unmeasured common cause of quitting and weight change, the effect is not identified by the implemented criteria:</p><pre><code class="language-julia hljs">sensitivity_graph = make_graph(
     vertices = vertices,
     di_edges = edges,
     bi_edges = [(:qsmk, :wt82_71)],
 )
 
-identify(sensitivity_graph, :qsmk, :wt82_71).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:not_identified</code></pre><pre><code class="language-julia hljs">draw_graph(sensitivity_graph; direction=&quot;TB&quot;)</code></pre><pre class="mermaid">
-flowchart TB
-  n1_sex[&quot;sex&quot;]
-  n2_race[&quot;race&quot;]
-  n3_age[&quot;age&quot;]
-  n4_school[&quot;school&quot;]
-  n5_smokeintensity[&quot;smokeintensity&quot;]
-  n6_smokeyrs[&quot;smokeyrs&quot;]
-  n7_exercise[&quot;exercise&quot;]
-  n8_active[&quot;active&quot;]
-  n9_wt71[&quot;wt71&quot;]
-  n10_qsmk[&quot;qsmk&quot;]
-  n11_wt82_71[&quot;wt82_71&quot;]
-  n1_sex --&gt; n10_qsmk
-  n2_race --&gt; n10_qsmk
-  n3_age --&gt; n10_qsmk
-  n4_school --&gt; n10_qsmk
-  n5_smokeintensity --&gt; n10_qsmk
-  n6_smokeyrs --&gt; n10_qsmk
-  n7_exercise --&gt; n10_qsmk
-  n8_active --&gt; n10_qsmk
-  n9_wt71 --&gt; n10_qsmk
-  n1_sex --&gt; n11_wt82_71
-  n2_race --&gt; n11_wt82_71
-  n3_age --&gt; n11_wt82_71
-  n4_school --&gt; n11_wt82_71
-  n5_smokeintensity --&gt; n11_wt82_71
-  n6_smokeyrs --&gt; n11_wt82_71
-  n7_exercise --&gt; n11_wt82_71
-  n8_active --&gt; n11_wt82_71
-  n9_wt71 --&gt; n11_wt82_71
-  n10_qsmk --&gt; n11_wt82_71
-  n10_qsmk &lt;--&gt; n11_wt82_71
-  classDef fixed stroke:#111827,stroke-width:2px
-  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 3 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 4 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 5 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 6 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 7 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 8 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 9 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 10 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 11 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 12 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 13 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 14 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 15 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 16 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 17 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 18 stroke:#2563eb,stroke-width:1.8px
-  linkStyle 19 stroke:#dc2626,stroke-width:1.8px
-</pre><p>The purpose of the DAG is to make this assumption explicit before estimation.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Nested_and_Missing_Data/">« Nested-Fixable and Missing Data</a><a class="docs-footer-nextpage" href="../../reference/">Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 5 May 2026 02:41">Tuesday 5 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+identify(sensitivity_graph, :qsmk, :wt82_71).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:not_identified</code></pre><pre><code class="language-julia hljs">draw_graph(sensitivity_graph; direction=&quot;TB&quot;)</code></pre><svg width="744pt" height="188pt"
+ viewBox="0.00 0.00 744.00 188.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 184)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-184 740,-184 740,4 -4,4"/>
+<!-- sex -->
+<g id="node1" class="node">
+<title>sex</title>
+<text text-anchor="middle" x="20.5" y="-158.3" font-family="Times,serif" font-size="14.00">sex</text>
+</g>
+<!-- qsmk -->
+<g id="node10" class="node">
+<title>qsmk</title>
+<text text-anchor="middle" x="344.5" y="-86.3" font-family="Times,serif" font-size="14.00">qsmk</text>
+</g>
+<!-- sex&#45;&gt;qsmk -->
+<g id="edge1" class="edge">
+<title>sex&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M41.3,-147.66C43.99,-146.28 46.76,-145.01 49.5,-144 138.18,-111.23 249.58,-98.28 306.78,-93.52"/>
+<polygon fill="blue" stroke="blue" points="307.12,-97 316.81,-92.72 306.57,-90.03 307.12,-97"/>
+</g>
+<!-- wt82_71 -->
+<g id="node11" class="node">
+<title>wt82_71</title>
+<text text-anchor="middle" x="344.5" y="-14.3" font-family="Times,serif" font-size="14.00">wt82_71</text>
+</g>
+<!-- sex&#45;&gt;wt82_71 -->
+<g id="edge10" class="edge">
+<title>sex&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M40.43,-143.84C64.53,-123.91 107.03,-91.31 148.5,-72 196.37,-49.71 255.33,-35.36 296.01,-27.29"/>
+<polygon fill="blue" stroke="blue" points="296.79,-30.7 305.94,-25.37 295.46,-23.83 296.79,-30.7"/>
+</g>
+<!-- race -->
+<g id="node2" class="node">
+<title>race</title>
+<text text-anchor="middle" x="82.5" y="-158.3" font-family="Times,serif" font-size="14.00">race</text>
+</g>
+<!-- race&#45;&gt;qsmk -->
+<g id="edge2" class="edge">
+<title>race&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M106.34,-147.85C109.37,-146.43 112.47,-145.11 115.5,-144 180.72,-120.08 260.47,-104.53 306.58,-96.8"/>
+<polygon fill="blue" stroke="blue" points="307.42,-100.21 316.72,-95.14 306.28,-93.31 307.42,-100.21"/>
+</g>
+<!-- race&#45;&gt;wt82_71 -->
+<g id="edge11" class="edge">
+<title>race&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M103.51,-143.92C127.91,-124.66 169.88,-93.27 209.5,-72 237.14,-57.16 269.85,-44.21 296.15,-34.83"/>
+<polygon fill="blue" stroke="blue" points="297.61,-38.03 305.89,-31.41 295.3,-31.42 297.61,-38.03"/>
+</g>
+<!-- age -->
+<g id="node3" class="node">
+<title>age</title>
+<text text-anchor="middle" x="145.5" y="-158.3" font-family="Times,serif" font-size="14.00">age</text>
+</g>
+<!-- age&#45;&gt;qsmk -->
+<g id="edge3" class="edge">
+<title>age&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M166.52,-148.36C169.49,-146.79 172.53,-145.29 175.5,-144 219.4,-124.94 272.38,-109.46 307.18,-100.26"/>
+<polygon fill="blue" stroke="blue" points="308.13,-103.63 316.93,-97.72 306.37,-96.86 308.13,-103.63"/>
+</g>
+<!-- age&#45;&gt;wt82_71 -->
+<g id="edge12" class="edge">
+<title>age&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M166.89,-143.7C189.86,-125.34 227.62,-95.75 261.5,-72 276.34,-61.6 293.12,-50.72 307.69,-41.55"/>
+<polygon fill="blue" stroke="blue" points="309.82,-44.35 316.44,-36.08 306.11,-38.41 309.82,-44.35"/>
+</g>
+<!-- school -->
+<g id="node4" class="node">
+<title>school</title>
+<text text-anchor="middle" x="215.5" y="-158.3" font-family="Times,serif" font-size="14.00">school</text>
+</g>
+<!-- school&#45;&gt;qsmk -->
+<g id="edge4" class="edge">
+<title>school&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M246.73,-144.05C265.14,-134.06 288.53,-121.37 307.81,-110.91"/>
+<polygon fill="blue" stroke="blue" points="309.51,-113.97 316.63,-106.12 306.17,-107.81 309.51,-113.97"/>
+</g>
+<!-- school&#45;&gt;wt82_71 -->
+<g id="edge13" class="edge">
+<title>school&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M231.06,-143.87C253.72,-118.92 295.94,-72.45 322,-43.77"/>
+<polygon fill="blue" stroke="blue" points="324.75,-45.94 328.88,-36.19 319.57,-41.24 324.75,-45.94"/>
+</g>
+<!-- smokeintensity -->
+<g id="node5" class="node">
+<title>smokeintensity</title>
+<text text-anchor="middle" x="327.5" y="-158.3" font-family="Times,serif" font-size="14.00">smokeintensity</text>
+</g>
+<!-- smokeintensity&#45;&gt;qsmk -->
+<g id="edge5" class="edge">
+<title>smokeintensity&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M331.7,-143.7C333.6,-135.9 335.88,-126.51 337.98,-117.83"/>
+<polygon fill="blue" stroke="blue" points="341.39,-118.65 340.35,-108.1 334.58,-117 341.39,-118.65"/>
+</g>
+<!-- smokeintensity&#45;&gt;wt82_71 -->
+<g id="edge14" class="edge">
+<title>smokeintensity&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M318.28,-143.71C309.86,-125.61 299.8,-96.47 307.5,-72 310.6,-62.15 316.25,-52.53 322.22,-44.25"/>
+<polygon fill="blue" stroke="blue" points="325.13,-46.21 328.46,-36.15 319.59,-41.94 325.13,-46.21"/>
+</g>
+<!-- smokeyrs -->
+<g id="node6" class="node">
+<title>smokeyrs</title>
+<text text-anchor="middle" x="450.5" y="-158.3" font-family="Times,serif" font-size="14.00">smokeyrs</text>
+</g>
+<!-- smokeyrs&#45;&gt;qsmk -->
+<g id="edge6" class="edge">
+<title>smokeyrs&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M424.57,-143.88C410.84,-134.81 393.79,-123.55 378.96,-113.76"/>
+<polygon fill="blue" stroke="blue" points="380.8,-110.78 370.53,-108.19 376.95,-116.62 380.8,-110.78"/>
+</g>
+<!-- smokeyrs&#45;&gt;wt82_71 -->
+<g id="edge15" class="edge">
+<title>smokeyrs&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M437.71,-143.87C419.25,-119.14 384.99,-73.24 363.54,-44.51"/>
+<polygon fill="blue" stroke="blue" points="366.12,-42.11 357.33,-36.19 360.51,-46.3 366.12,-42.11"/>
+</g>
+<!-- exercise -->
+<g id="node7" class="node">
+<title>exercise</title>
+<text text-anchor="middle" x="549.5" y="-158.3" font-family="Times,serif" font-size="14.00">exercise</text>
+</g>
+<!-- exercise&#45;&gt;qsmk -->
+<g id="edge7" class="edge">
+<title>exercise&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M511.27,-147.4C507.96,-146.24 504.67,-145.1 501.5,-144 460.65,-129.87 413.68,-114.07 381.83,-103.43"/>
+<polygon fill="blue" stroke="blue" points="382.65,-100.01 372.05,-100.16 380.43,-106.65 382.65,-100.01"/>
+</g>
+<!-- exercise&#45;&gt;wt82_71 -->
+<g id="edge16" class="edge">
+<title>exercise&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M524.77,-143.87C487.99,-118.39 418.78,-70.45 377.65,-41.96"/>
+<polygon fill="blue" stroke="blue" points="379.53,-39.01 369.32,-36.19 375.54,-44.76 379.53,-39.01"/>
+</g>
+<!-- active -->
+<g id="node8" class="node">
+<title>active</title>
+<text text-anchor="middle" x="635.5" y="-158.3" font-family="Times,serif" font-size="14.00">active</text>
+</g>
+<!-- active&#45;&gt;qsmk -->
+<g id="edge8" class="edge">
+<title>active&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M605.93,-147.37C602.78,-146.14 599.6,-144.99 596.5,-144 522.15,-120.25 432.01,-104.24 382.19,-96.47"/>
+<polygon fill="blue" stroke="blue" points="382.61,-92.99 372.2,-94.93 381.55,-99.91 382.61,-92.99"/>
+</g>
+<!-- active&#45;&gt;wt82_71 -->
+<g id="edge17" class="edge">
+<title>active&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M605.85,-145.29C571.39,-127.16 512.7,-96.67 461.5,-72 438.93,-61.12 413.63,-49.58 392.34,-40.06"/>
+<polygon fill="blue" stroke="blue" points="393.74,-36.85 383.18,-35.97 390.89,-43.24 393.74,-36.85"/>
+</g>
+<!-- wt71 -->
+<g id="node9" class="node">
+<title>wt71</title>
+<text text-anchor="middle" x="709.5" y="-158.3" font-family="Times,serif" font-size="14.00">wt71</text>
+</g>
+<!-- wt71&#45;&gt;qsmk -->
+<g id="edge9" class="edge">
+<title>wt71&#45;&gt;qsmk</title>
+<path fill="none" stroke="blue" d="M682.69,-147.01C679.97,-145.89 677.21,-144.85 674.5,-144 571.71,-111.56 444.35,-98.29 382.19,-93.45"/>
+<polygon fill="blue" stroke="blue" points="382.31,-89.95 372.07,-92.7 381.78,-96.93 382.31,-89.95"/>
+</g>
+<!-- wt71&#45;&gt;wt82_71 -->
+<g id="edge18" class="edge">
+<title>wt71&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M682.79,-147.91C680,-146.58 677.2,-145.25 674.5,-144 603.05,-110.78 586.19,-99.9 512.5,-72 472.8,-56.97 426.76,-42.66 392.93,-32.7"/>
+<polygon fill="blue" stroke="blue" points="393.87,-29.33 383.29,-29.89 391.91,-36.05 393.87,-29.33"/>
+</g>
+<!-- qsmk&#45;&gt;wt82_71 -->
+<g id="edge19" class="edge">
+<title>qsmk&#45;&gt;wt82_71</title>
+<path fill="none" stroke="blue" d="M338.58,-71.7C337.79,-63.98 337.56,-54.71 337.9,-46.11"/>
+<polygon fill="blue" stroke="blue" points="341.4,-46.32 338.6,-36.1 334.42,-45.84 341.4,-46.32"/>
+</g>
+<!-- qsmk&#45;&gt;wt82_71 -->
+<g id="edge20" class="edge">
+<title>qsmk&#45;&gt;wt82_71</title>
+<path fill="none" stroke="red" d="M351.1,-61.67C351.3,-56.55 351.3,-51.21 351.09,-46.1"/>
+<polygon fill="red" stroke="red" points="347.61,-61.48 350.42,-71.7 354.59,-61.96 347.61,-61.48"/>
+<polygon fill="red" stroke="red" points="354.58,-45.84 350.4,-36.1 347.6,-46.32 354.58,-45.84"/>
+</g>
+</g>
+</svg><p>The purpose of the DAG is to make this assumption explicit before estimation.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Nested_and_Missing_Data/">« Nested-Fixable and Missing Data</a><a class="docs-footer-nextpage" href="../../reference/">Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 5 May 2026 02:43">Tuesday 5 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
