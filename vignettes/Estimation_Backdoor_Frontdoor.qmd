@@ -51,6 +51,14 @@ For continuous `X`, the summation is an integral. In the package, the
 a-fixable check identifies the Markov pillow of the treatment as the adjustment
 set and routes to backdoor estimators.
 
+Why does this identify the effect? In this graph, the only noncausal path from
+`A` to `Y` is `A <- X -> Y`. Conditioning on `X` blocks that path. After
+conditioning on `X`, treatment variation is treated as if randomized within
+levels of `X`, so `E[Y | A=a, X=x]` is used as the conditional counterfactual
+mean for units with covariate value `x`. Averaging those conditional means over
+the observed distribution of `X` gives the target population mean under
+`do(A=a)`.
+
 ### Graph
 
 ```
@@ -100,7 +108,10 @@ different nuisance-modeling strategies.
 res_bd = estimate_causal(a=[1,0], data=df_bd, graph=g_bd,
                           treatment=:A, outcome=:Y)
 
+raw_bd = mean(df_bd.Y[df_bd.A .== 1]) - mean(df_bd.Y[df_bd.A .== 0])
+
 println("True ACE = 2.0")
+@printf("Unadjusted difference: %.3f\n", raw_bd)
 @printf("TMLE:    ACE = %.3f  95%% CI (%.3f, %.3f)\n",
         res_bd[:TMLE].ACE, res_bd[:TMLE].lower_ci, res_bd[:TMLE].upper_ci)
 @printf("Onestep: ACE = %.3f\n", res_bd[:Onestep].ACE)
@@ -155,6 +166,12 @@ bidirected-connected district. Intuitively, treatment may be confounded with
 the outcome, but the immediate causal children of treatment are not themselves
 hidden-confounded with treatment.
 
+In the example below, `A` is in the same district as `Y` because of `A <-> Y`,
+so backdoor adjustment is not available. But the child `M` is not in that
+district. The graph lets us learn the effect of `A` on `M` from `P(M | A, X)`
+and the effect of `M` on `Y` by averaging over the treatment distribution in a
+way that removes the `A <-> Y` confounding from the mediator-outcome part.
+
 ### Graph
 
 ```
@@ -170,6 +187,9 @@ g_fd = make_graph(
     di_edges  = [(:X, :A), (:X, :Y), (:X, :M), (:A, :M), (:M, :Y)],
 )
 println("strategy: ", identify(g_fd, :A, :Y).strategy)
+println("district(A): ", district(g_fd, :A))
+println("children(A): ", children(g_fd, :A))
+println("p-fixable:   ", is_p_fix(g_fd, :A))
 ```
 
 ### Data — true mediated ACE ≈ 1.8 (= 1.2 × 1.5)

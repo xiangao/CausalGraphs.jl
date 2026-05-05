@@ -4,6 +4,11 @@
 semiparametric effect estimation, and missing-data weighting in acyclic directed
 mixed graphs (ADMGs) and missingness DAGs (mDAGs).
 
+It brings together ideas and workflows from Anna Guo and Razieh Nabi's R
+packages [`flexCausal`](https://github.com/annaguo-bios/flexCausal) and
+[`flexMissing`](https://github.com/annaguo-bios/flexMissing), rewritten and
+adapted for Julia.
+
 ## Installation
 
 ```julia
@@ -64,3 +69,13 @@ result[:TMLE].ACE
 - `make_mdag`
 - `ID_algorithm`
 - `compute_missing_weights`
+
+## References
+
+- Anna Guo and Razieh Nabi,
+  [`flexCausal`](https://github.com/annaguo-bios/flexCausal): causal effect
+  estimation in ADMGs with hidden variables.
+- Anna Guo and Razieh Nabi,
+  [`flexMissing`](https://github.com/annaguo-bios/flexMissing):
+  weighting-based identification and estimation in graphical models of missing
+  data.

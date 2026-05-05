@@ -106,3 +106,17 @@ These strategies correspond to different identification arguments:
 
 The returned strategy is both an identification statement and an estimation
 instruction for `estimate_causal()`.
+
+For the backdoor graph, the a-fixability condition holds because `A` is not in
+the same hidden-confounding district as any descendant other than itself. The
+Markov pillow is `X`, which becomes the adjustment set.
+
+```@example graphs_identification
+(descendants_A = descendants(g_bd, [:A]),
+ district_A = district(g_bd, :A),
+ markov_pillow_A = markov_pillow(g_bd, :A; treatment=:A))
+```
+
+If a graph has both `A -> Y` and `A <-> Y`, the directed causal effect and the
+hidden common cause are entangled. That bow graph is the simplest
+non-identified case.

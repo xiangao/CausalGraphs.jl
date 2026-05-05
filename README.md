@@ -19,6 +19,11 @@ routing, backdoor TMLE, front-door/NPS TMLE, nested ANIPW/NIPW, default
 parametric nuisance fits, MLJ-based SuperLearner ensembles, mDAG missing-data
 identification, missingness propensity estimation, and missing-data weighting.
 
+`CausalGraphs.jl` brings together ideas and workflows from Anna Guo and Razieh
+Nabi's R packages [`flexCausal`](https://github.com/annaguo-bios/flexCausal)
+and [`flexMissing`](https://github.com/annaguo-bios/flexMissing), rewritten and
+adapted for Julia.
+
 ## Install/Load Locally
 
 From this directory:
@@ -298,4 +303,14 @@ The implementation is based on ideas from:
   Recursive Semi-Markovian Causal Models*.
 - Richardson, Robins, and Shpitser. *Nested Markov Properties for Acyclic
   Directed Mixed Graphs*.
-- Earlier prototype implementations of these workflows.
+- Guo and Nabi. *Average Causal Effect Estimation in DAGs with Hidden
+  Variables: Extensions of Back-Door and Front-Door Criteria*.
+- Guo and Nabi. *Weighting-Based Identification and Estimation in Graphical
+  Models of Missing Data*.
+- Anna Guo and Razieh Nabi's R package
+  [`flexCausal`](https://github.com/annaguo-bios/flexCausal), for causal effect
+  estimation in ADMGs with hidden variables.
+- Anna Guo and Razieh Nabi's R package
+  [`flexMissing`](https://github.com/annaguo-bios/flexMissing), for
+  weighting-based identification and estimation in graphical models of missing
+  data.

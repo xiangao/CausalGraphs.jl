@@ -49,6 +49,12 @@ identify(graph, :T, :CD4).strategy
 ```
 
 ```@example nested_missing
+(district_T = district(graph, :T),
+ children_T = children(graph, :T),
+ p_fixable = is_p_fix(graph, :T))
+```
+
+```@example nested_missing
 draw_graph(graph; direction="TB")
 ```
 
@@ -59,6 +65,11 @@ Nested rebalancing weights are analogous to ordinary IPW, but they balance the
 pieces of the observed law that appear in the nested identification formula.
 ANIPW augments those weights with outcome regression terms, in the same spirit
 that AIPW augments ordinary IPW.
+
+In this example, `Toxicity` is both a child of `T` and in the same district as
+`T`, so p-fixability fails. The nested route is needed because the effect is
+identified by a fixing sequence rather than by one adjustment set or one
+front-door mediator formula.
 
 ```@example nested_missing
 Random.seed!(42)
@@ -95,6 +106,12 @@ are weighted back toward the target population.
 
 This separates two assumptions: the causal ADMG describes treatment, outcome,
 and covariates; the mDAG describes how values become missing.
+
+For a simple MAR graph, if the probability of observing `X` depends only on
+fully observed variables, complete cases can be weighted by the inverse
+observation probability. If missingness depends directly on the unobserved
+value of `X`, the target law may not be recoverable without additional graph
+structure.
 
 ```@example nested_missing
 mdag = make_mdag(

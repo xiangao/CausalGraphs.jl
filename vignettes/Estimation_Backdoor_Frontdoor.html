@@ -136,7 +136,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The estimand in this vignette is the average causal effect <code>E[Y(1) - Y(0)]</code>. The graph determines whether this estimand can be estimated by covariate adjustment, by a front-door/NPS functional, or not at all.</p>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="80a371e8" class="cell" data-execution_count="1">
+<div id="7ae63bfc" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">CausalGraphs</span>, <span class="bu">DataFrames</span>, <span class="bu">Random</span>, <span class="bu">Statistics</span>, <span class="bu">Printf</span></span>
@@ -154,11 +154,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The adjustment formula is:</p>
 <pre class="text"><code>E[Y(a)] = sum_x E[Y | A=a, X=x] P(X=x)</code></pre>
 <p>For continuous <code>X</code>, the summation is an integral. In the package, the a-fixable check identifies the Markov pillow of the treatment as the adjustment set and routes to backdoor estimators.</p>
+<p>Why does this identify the effect? In this graph, the only noncausal path from <code>A</code> to <code>Y</code> is <code>A &lt;- X -&gt; Y</code>. Conditioning on <code>X</code> blocks that path. After conditioning on <code>X</code>, treatment variation is treated as if randomized within levels of <code>X</code>, so <code>E[Y | A=a, X=x]</code> is used as the conditional counterfactual mean for units with covariate value <code>x</code>. Averaging those conditional means over the observed distribution of <code>X</code> gives the target population mean under <code>do(A=a)</code>.</p>
 <section id="graph" class="level3">
 <h3 class="anchored" data-anchor-id="graph">Graph</h3>
 <pre><code>X → A → Y
 X → Y</code></pre>
-<div id="d0ec6d82" class="cell" data-execution_count="2">
+<div id="c995b948" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>g_bd <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>X, <span class="op">:</span>A, <span class="op">:</span>Y],</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [(<span class="op">:</span>X, <span class="op">:</span>A), (<span class="op">:</span>X, <span class="op">:</span>Y), (<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
@@ -171,7 +172,7 @@ X → Y</code></pre>
 </section>
 <section id="data-true-ace-2.0" class="level3">
 <h3 class="anchored" data-anchor-id="data-true-ace-2.0">Data — true ACE = 2.0</h3>
-<div id="7b1666fc" class="cell" data-execution_count="3">
+<div id="2bbfa275" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_backdoor</span>(n; seed<span class="op">=</span><span class="fl">1</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> <span class="fu">randn</span>(n)</span>
@@ -234,16 +235,19 @@ X → Y</code></pre>
 <li><strong>TMLE</strong> updates the outcome regression using the propensity score so that the final estimate solves the efficient influence-function equation.</li>
 </ul>
 <p>They estimate the same identified target under the graph, but they use different nuisance-modeling strategies.</p>
-<div id="82fc54ab" class="cell" data-execution_count="4">
+<div id="64617e35" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>res_bd <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df_bd, graph<span class="op">=</span>g_bd,</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                          treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"True ACE = 2.0"</span>)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE:    ACE = %.3f  95%% CI (%.3f, %.3f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        res_bd[<span class="op">:</span>TMLE].ACE, res_bd[<span class="op">:</span>TMLE].lower_ci, res_bd[<span class="op">:</span>TMLE].upper_ci)</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Onestep: ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_bd[<span class="op">:</span>Onestep].ACE)</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Gcomp:   ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_bd[<span class="op">:</span>Gcomp].ACE)</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"IPW:     ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_bd[<span class="op">:</span>IPW].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>raw_bd <span class="op">=</span> <span class="fu">mean</span>(df_bd.Y[df_bd.A <span class="op">.==</span> <span class="fl">1</span>]) <span class="op">-</span> <span class="fu">mean</span>(df_bd.Y[df_bd.A <span class="op">.==</span> <span class="fl">0</span>])</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"True ACE = 2.0"</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Unadjusted difference: %.3f</span><span class="sc">\n</span><span class="st">"</span>, raw_bd)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE:    ACE = %.3f  95%% CI (%.3f, %.3f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        res_bd[<span class="op">:</span>TMLE].ACE, res_bd[<span class="op">:</span>TMLE].lower_ci, res_bd[<span class="op">:</span>TMLE].upper_ci)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Onestep: ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_bd[<span class="op">:</span>Onestep].ACE)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Gcomp:   ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_bd[<span class="op">:</span>Gcomp].ACE)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"IPW:     ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_bd[<span class="op">:</span>IPW].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <div class="ansi-escaped-output">
 <pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
@@ -252,6 +256,7 @@ X → Y</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>True ACE = 2.0
+Unadjusted difference: 2.708
 TMLE:    ACE = 2.007  95% CI (1.867, 2.147)
 Onestep: ACE = 2.006
 Gcomp:   ACE = 2.027
@@ -261,7 +266,7 @@ IPW:     ACE = 1.952</code></pre>
 </section>
 <section id="with-superlearner" class="level3">
 <h3 class="anchored" data-anchor-id="with-superlearner">With SuperLearner</h3>
-<div id="dce831bf" class="cell" data-execution_count="5">
+<div id="7d4f9196" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>res_sl <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df_bd, graph<span class="op">=</span>g_bd, treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y,</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    superlearner_Y<span class="op">=</span><span class="cn">true</span>, superlearner_A<span class="op">=</span><span class="cn">true</span>, crossfit<span class="op">=</span><span class="cn">true</span>, K<span class="op">=</span><span class="fl">5</span>,</span>
@@ -270,7 +275,7 @@ IPW:     ACE = 1.952</code></pre>
 </section>
 <section id="scalar-a-ey1-and-ey0-separately" class="level3">
 <h3 class="anchored" data-anchor-id="scalar-a-ey1-and-ey0-separately">Scalar a — E[Y(1)] and E[Y(0)] separately</h3>
-<div id="4055b218" class="cell" data-execution_count="6">
+<div id="81e4134d" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>res1 <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span><span class="fl">1</span>, data<span class="op">=</span>df_bd, graph<span class="op">=</span>g_bd, treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>res0 <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span><span class="fl">0</span>, data<span class="op">=</span>df_bd, graph<span class="op">=</span>g_bd, treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -305,26 +310,33 @@ ACE     = 2.007</code></pre>
 <p>The classical front-door functional is:</p>
 <pre class="text"><code>E[Y(a)] = sum_m P(M=m | A=a) sum_a' E[Y | M=m, A=a'] P(A=a')</code></pre>
 <p><code>CausalGraphs.jl</code> implements this class through the broader p-fixable/NPS route. A treatment is p-fixable when none of its children are in its bidirected-connected district. Intuitively, treatment may be confounded with the outcome, but the immediate causal children of treatment are not themselves hidden-confounded with treatment.</p>
+<p>In the example below, <code>A</code> is in the same district as <code>Y</code> because of <code>A &lt;-&gt; Y</code>, so backdoor adjustment is not available. But the child <code>M</code> is not in that district. The graph lets us learn the effect of <code>A</code> on <code>M</code> from <code>P(M | A, X)</code> and the effect of <code>M</code> on <code>Y</code> by averaging over the treatment distribution in a way that removes the <code>A &lt;-&gt; Y</code> confounding from the mediator-outcome part.</p>
 <section id="graph-1" class="level3">
 <h3 class="anchored" data-anchor-id="graph-1">Graph</h3>
 <pre><code>A → M → Y
 A ↔ Y   (hidden U confounds A and Y)
 X → A, X → Y, X → M</code></pre>
-<div id="0f7facc2" class="cell" data-execution_count="7">
+<div id="6b5f15a1" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>g_fd <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>X, <span class="op">:</span>A, <span class="op">:</span>M, <span class="op">:</span>Y],</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    bi_edges  <span class="op">=</span> [(<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [(<span class="op">:</span>X, <span class="op">:</span>A), (<span class="op">:</span>X, <span class="op">:</span>Y), (<span class="op">:</span>X, <span class="op">:</span>M), (<span class="op">:</span>A, <span class="op">:</span>M), (<span class="op">:</span>M, <span class="op">:</span>Y)],</span>
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, <span class="fu">identify</span>(g_fd, <span class="op">:</span>A, <span class="op">:</span>Y).strategy)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, <span class="fu">identify</span>(g_fd, <span class="op">:</span>A, <span class="op">:</span>Y).strategy)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"district(A): "</span>, <span class="fu">district</span>(g_fd, <span class="op">:</span>A))</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"children(A): "</span>, <span class="fu">children</span>(g_fd, <span class="op">:</span>A))</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"p-fixable:   "</span>, <span class="fu">is_p_fix</span>(g_fd, <span class="op">:</span>A))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>strategy: p_fixable</code></pre>
+<pre><code>strategy: p_fixable
+district(A): [:A, :Y]
+children(A): [:M]
+p-fixable:   true</code></pre>
 </div>
 </div>
 </section>
 <section id="data-true-mediated-ace-1.8-1.2-1.5" class="level3">
 <h3 class="anchored" data-anchor-id="data-true-mediated-ace-1.8-1.2-1.5">Data — true mediated ACE ≈ 1.8 (= 1.2 × 1.5)</h3>
-<div id="0b0337cd" class="cell" data-execution_count="8">
+<div id="f5af2255" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_frontdoor</span>(n; seed<span class="op">=</span><span class="fl">2</span>)</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> <span class="fu">randn</span>(n); U <span class="op">=</span> <span class="fu">randn</span>(n)</span>
@@ -386,7 +398,7 @@ X → A, X → Y, X → M</code></pre>
 <section id="estimation-1" class="level3">
 <h3 class="anchored" data-anchor-id="estimation-1">Estimation</h3>
 <p>For p-fixable graphs, <code>estimate_causal()</code> routes to front-door/NPS estimators. The returned estimators are TMLE and one-step variants for the identified NPS functional. These estimators use nuisance models for the treatment mechanism, mediator or intermediate-variable mechanisms, and outcome regression implied by the graph.</p>
-<div id="e53ae61b" class="cell" data-execution_count="9">
+<div id="2e399758" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>res_fd <span class="op">=</span> <span class="fu">estimate_causal</span>(a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span>df_fd, graph<span class="op">=</span>g_fd,</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>                          treatment<span class="op">=:</span>A, outcome<span class="op">=:</span>Y)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -411,7 +423,7 @@ Onestep: ACE = 1.682</code></pre>
 </section>
 <section id="pure-front-door-no-observed-confounders" class="level3">
 <h3 class="anchored" data-anchor-id="pure-front-door-no-observed-confounders">Pure front-door (no observed confounders)</h3>
-<div id="d33d7812" class="cell" data-execution_count="10">
+<div id="28ba6a22" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>g_fd_pure <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>A, <span class="op">:</span>M, <span class="op">:</span>Y],</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    bi_edges  <span class="op">=</span> [(<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
@@ -450,7 +462,7 @@ Onestep: 0.145</code></pre>
 </section>
 <section id="simulation-comparison-tmle-vs-onestep-vs-ipw" class="level2">
 <h2 class="anchored" data-anchor-id="simulation-comparison-tmle-vs-onestep-vs-ipw">3. Simulation comparison: TMLE vs Onestep vs IPW</h2>
-<div id="1f99c763" class="cell" data-execution_count="11">
+<div id="c700e381" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_compare</span>(n_reps<span class="op">=</span><span class="fl">200</span>, n<span class="op">=</span><span class="fl">500</span>)</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    tmle <span class="op">=</span> <span class="dt">Float64</span>[]; aipw <span class="op">=</span> <span class="dt">Float64</span>[]; ipw <span class="op">=</span> <span class="dt">Float64</span>[]</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> seed <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span>n_reps</span>
@@ -732,8 +744,18 @@ Onestep: 0.145</code></pre>
 <span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
 
 <span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-
-<span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+</pre>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>n=500, reps=200, true ACE=2.0
+          Bias      RMSE
+  TMLE     +0.0094   0.0924
+  Onestep  +0.0094   0.0925</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<div class="ansi-escaped-output">
+<pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
 
 <span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
 
@@ -876,11 +898,7 @@ Onestep: 0.145</code></pre>
 </div>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>n=500, reps=200, true ACE=2.0
-          Bias      RMSE
-  TMLE     +0.0094   0.0924
-  Onestep  +0.0094   0.0925
-  IPW      +0.0147   0.1072</code></pre>
+<pre><code>  IPW      +0.0147   0.1072</code></pre>
 </div>
 </div>
 </section>

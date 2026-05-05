@@ -25,8 +25,13 @@ E[Y(a)] = sum_x E[Y | A=a, X=x] P(X=x)
 The a-fixable check is the ADMG version of this adjustment logic. The package
 uses the treatment's Markov pillow as the adjustment set.
 
+In this example, the only noncausal path from `A` to `Y` is `A <- X -> Y`.
+Conditioning on `X` blocks that path. After conditioning on `X`, treatment
+variation is treated as if randomized within levels of `X`; averaging
+`E[Y | A=a, X]` over the observed distribution of `X` gives `E[Y(a)]`.
+
 ```@example backdoor_frontdoor
-using CausalGraphs, DataFrames, Random
+using CausalGraphs, DataFrames, Random, Statistics
 
 Random.seed!(1)
 n = 500
@@ -56,8 +61,12 @@ res = estimate_causal(
     outcome = :Y,
 )
 
+raw = mean(data.Y[data.A .== 1]) - mean(data.Y[data.A .== 0])
 r = x -> round(x, sigdigits=4)
-(ACE=r(res[:TMLE].ACE), lower_ci=r(res[:TMLE].lower_ci), upper_ci=r(res[:TMLE].upper_ci))
+(unadjusted = r(raw),
+ ACE = r(res[:TMLE].ACE),
+ lower_ci = r(res[:TMLE].lower_ci),
+ upper_ci = r(res[:TMLE].upper_ci))
 ```
 
 The true ACE is 2.0. For an a-fixable treatment, `estimate_causal()` uses the
@@ -87,6 +96,12 @@ none of its children are in its bidirected-connected district. Intuitively,
 treatment may be confounded with the outcome, but its immediate causal children
 are not hidden-confounded with treatment.
 
+Here `A` is in the same district as `Y`, so backdoor adjustment fails. But `M`,
+the child of `A`, is not in that district. The graph identifies the effect by
+combining the treatment-mediator relationship with the mediator-outcome
+relationship while averaging over treatment to remove the `A <-> Y`
+confounding.
+
 ```@example backdoor_frontdoor
 Random.seed!(2)
 n = 700
@@ -102,6 +117,12 @@ fd_graph = make_graph(
 )
 
 identify(fd_graph, :A, :Y).strategy
+```
+
+```@example backdoor_frontdoor
+(district_A = district(fd_graph, :A),
+ children_A = children(fd_graph, :A),
+ p_fixable = is_p_fix(fd_graph, :A))
 ```
 
 ```@example backdoor_frontdoor

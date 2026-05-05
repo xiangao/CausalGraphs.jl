@@ -132,7 +132,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The common theme is identification before estimation. The graph determines whether the target law can be represented using observed data. Only after that step does the package construct weights and nuisance regressions.</p>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="cee1d41d" class="cell" data-execution_count="1">
+<div id="bceebe55" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">CausalGraphs</span>, <span class="bu">DataFrames</span>, <span class="bu">Random</span>, <span class="bu">Statistics</span>, <span class="bu">Printf</span></span>
@@ -156,7 +156,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-hiv-treatment-graph" class="level3">
 <h3 class="anchored" data-anchor-id="example-hiv-treatment-graph">Example: HIV treatment graph</h3>
 <p>A drug treatment T affects CD4 count (outcome), mediated partly through Toxicity and Adherence. Hidden common causes link several variables.</p>
-<div id="41b3d996" class="cell" data-execution_count="2">
+<div id="2339d1b2" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>g_hiv <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>ViralLoad, <span class="op">:</span>Income, <span class="op">:</span>Exercise, <span class="op">:</span>T, <span class="op">:</span>Toxicity, <span class="op">:</span>Adherence, <span class="op">:</span>CD4],</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    di_edges  <span class="op">=</span> [</span>
@@ -178,7 +178,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>Toxicity is a <strong>child</strong> of T and also in T’s <strong>district</strong> (through the chain Exercise ↔︎ Income ↔︎ Toxicity), making T not p-fixable:</p>
-<div id="d144b485" class="cell" data-execution_count="3">
+<div id="15ef3538" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"district(T)  = "</span>, <span class="fu">district</span>(g_hiv, <span class="op">:</span>T))</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"children(T)  = "</span>, <span class="fu">children</span>(g_hiv, <span class="op">:</span>T))</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>()</span>
@@ -196,45 +196,55 @@ is_p_fix(:T) = false
 strategy     = nested_fixable</code></pre>
 </div>
 </div>
+<p>This is the kind of example where nested-fixability matters. Backdoor adjustment is not enough because hidden common causes connect treatment-related variables. Classical front-door is not enough because a child of treatment, <code>Toxicity</code>, lies in the same district as treatment. But the graph still has enough structure for a valid fixing sequence: the outcome-relevant part of the graph can be isolated after repeatedly fixing variables outside the target kernel.</p>
+<div id="2ab684e7" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>rc_hiv <span class="op">=</span> <span class="fu">reachable_closure</span>(g_hiv, [<span class="op">:</span>CD4])</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"reachable closure of CD4: "</span>, rc_hiv.reachable_closure)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"one valid fixing order:   "</span>, rc_hiv.fixing_order)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>reachable closure of CD4: [:ViralLoad, :Adherence, :CD4]
+one valid fixing order:   [:Exercise, :T, :Income, :Toxicity]</code></pre>
+</div>
+</div>
 </section>
 <section id="simulate-data-from-the-dgp" class="level3">
 <h3 class="anchored" data-anchor-id="simulate-data-from-the-dgp">Simulate data from the DGP</h3>
-<div id="ab5b46de" class="cell" data-execution_count="4">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_hiv</span>(n; seed<span class="op">=</span><span class="fl">42</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Latent hidden common causes</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    U_EI   <span class="op">=</span> <span class="fu">randn</span>(n)   <span class="co"># Exercise ↔ Income</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    U_ET   <span class="op">=</span> <span class="fu">randn</span>(n)   <span class="co"># Exercise ↔ T</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    U_ITox <span class="op">=</span> <span class="fu">randn</span>(n)   <span class="co"># Income ↔ Toxicity</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    U_VA   <span class="op">=</span> <span class="fu">randn</span>(n)   <span class="co"># ViralLoad ↔ Adherence</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    U_VCD4 <span class="op">=</span> <span class="fu">randn</span>(n)   <span class="co"># ViralLoad ↔ CD4</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    ViralLoad <span class="op">=</span> <span class="fu">randn</span>(n)</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    Exercise  <span class="op">=</span> <span class="fu">randn</span>(n) <span class="op">.+</span> <span class="fl">0.5</span> <span class="op">.*</span> U_EI <span class="op">.+</span> <span class="fl">0.5</span> <span class="op">.*</span> U_ET</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    Income    <span class="op">=</span> <span class="fu">randn</span>(n) <span class="op">.+</span> <span class="fl">0.4</span> <span class="op">.*</span> ViralLoad <span class="op">.+</span> <span class="fl">0.4</span> <span class="op">.*</span> U_EI <span class="op">.+</span> <span class="fl">0.4</span> <span class="op">.*</span> U_ITox</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    T         <span class="op">=</span> <span class="fu">Float64</span>.(<span class="fu">rand</span>(n) <span class="op">.&lt;</span> <span class="fu">logistic</span>.(<span class="fl">0.5</span> <span class="op">.*</span> ViralLoad <span class="op">.+</span> <span class="fl">0.3</span> <span class="op">.*</span> Income <span class="op">.+</span> <span class="fl">0.4</span> <span class="op">.*</span> U_ET))</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    Toxicity  <span class="op">=</span> <span class="fu">randn</span>(n) <span class="op">.+</span> <span class="fl">0.6</span> <span class="op">.*</span> T <span class="op">.+</span> <span class="fl">0.3</span> <span class="op">.*</span> U_ITox</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    Adherence <span class="op">=</span> <span class="fu">randn</span>(n) <span class="op">.+</span> <span class="fl">0.5</span> <span class="op">.*</span> Toxicity <span class="op">.+</span> <span class="fl">0.3</span> <span class="op">.*</span> U_VA</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    CD4       <span class="op">=</span> <span class="fu">randn</span>(n) <span class="op">.+</span> <span class="fl">0.4</span> <span class="op">.*</span> T <span class="op">.+</span> <span class="fl">0.3</span> <span class="op">.*</span> Adherence <span class="op">.+</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>                            <span class="fl">0.2</span> <span class="op">.*</span> Exercise <span class="op">.+</span> <span class="fl">0.3</span> <span class="op">.*</span> ViralLoad <span class="op">.+</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>                            <span class="fl">0.3</span> <span class="op">.*</span> U_VCD4 <span class="op">.+</span> <span class="fl">0.2</span> <span class="op">.*</span> U_VA</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># True ACE(T=1 vs T=0):</span></span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Direct: 0.4</span></span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Indirect T→Tox→Adh→CD4: 0.6 × 0.5 × 0.3 = 0.09</span></span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Total ≈ 0.49</span></span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">DataFrame</span>(ViralLoad<span class="op">=</span>ViralLoad, Income<span class="op">=</span>Income, Exercise<span class="op">=</span>Exercise,</span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>              T<span class="op">=</span>T, Toxicity<span class="op">=</span>Toxicity, Adherence<span class="op">=</span>Adherence, CD4<span class="op">=</span>CD4)</span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>df_hiv <span class="op">=</span> <span class="fu">sim_hiv</span>(<span class="fl">2_000</span>)</span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"True ACE ≈ 0.49  (0.4 direct + 0.09 through Adherence)"</span>)</span>
-<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a><span class="fu">first</span>(df_hiv, <span class="fl">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="17835576" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sim_hiv</span>(n; seed<span class="op">=</span><span class="fl">42</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Random</span>.<span class="fu">seed!</span>(seed)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Latent hidden common causes</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    U_EI   <span class="op">=</span> <span class="fu">randn</span>(n)   <span class="co"># Exercise ↔ Income</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    U_ET   <span class="op">=</span> <span class="fu">randn</span>(n)   <span class="co"># Exercise ↔ T</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    U_ITox <span class="op">=</span> <span class="fu">randn</span>(n)   <span class="co"># Income ↔ Toxicity</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    U_VA   <span class="op">=</span> <span class="fu">randn</span>(n)   <span class="co"># ViralLoad ↔ Adherence</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    U_VCD4 <span class="op">=</span> <span class="fu">randn</span>(n)   <span class="co"># ViralLoad ↔ CD4</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    ViralLoad <span class="op">=</span> <span class="fu">randn</span>(n)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    Exercise  <span class="op">=</span> <span class="fu">randn</span>(n) <span class="op">.+</span> <span class="fl">0.5</span> <span class="op">.*</span> U_EI <span class="op">.+</span> <span class="fl">0.5</span> <span class="op">.*</span> U_ET</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    Income    <span class="op">=</span> <span class="fu">randn</span>(n) <span class="op">.+</span> <span class="fl">0.4</span> <span class="op">.*</span> ViralLoad <span class="op">.+</span> <span class="fl">0.4</span> <span class="op">.*</span> U_EI <span class="op">.+</span> <span class="fl">0.4</span> <span class="op">.*</span> U_ITox</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    T         <span class="op">=</span> <span class="fu">Float64</span>.(<span class="fu">rand</span>(n) <span class="op">.&lt;</span> <span class="fu">logistic</span>.(<span class="fl">0.5</span> <span class="op">.*</span> ViralLoad <span class="op">.+</span> <span class="fl">0.3</span> <span class="op">.*</span> Income <span class="op">.+</span> <span class="fl">0.4</span> <span class="op">.*</span> U_ET))</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    Toxicity  <span class="op">=</span> <span class="fu">randn</span>(n) <span class="op">.+</span> <span class="fl">0.6</span> <span class="op">.*</span> T <span class="op">.+</span> <span class="fl">0.3</span> <span class="op">.*</span> U_ITox</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    Adherence <span class="op">=</span> <span class="fu">randn</span>(n) <span class="op">.+</span> <span class="fl">0.5</span> <span class="op">.*</span> Toxicity <span class="op">.+</span> <span class="fl">0.3</span> <span class="op">.*</span> U_VA</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    CD4       <span class="op">=</span> <span class="fu">randn</span>(n) <span class="op">.+</span> <span class="fl">0.4</span> <span class="op">.*</span> T <span class="op">.+</span> <span class="fl">0.3</span> <span class="op">.*</span> Adherence <span class="op">.+</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>                            <span class="fl">0.2</span> <span class="op">.*</span> Exercise <span class="op">.+</span> <span class="fl">0.3</span> <span class="op">.*</span> ViralLoad <span class="op">.+</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>                            <span class="fl">0.3</span> <span class="op">.*</span> U_VCD4 <span class="op">.+</span> <span class="fl">0.2</span> <span class="op">.*</span> U_VA</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># True ACE(T=1 vs T=0):</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Direct: 0.4</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Indirect T→Tox→Adh→CD4: 0.6 × 0.5 × 0.3 = 0.09</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Total ≈ 0.49</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">DataFrame</span>(ViralLoad<span class="op">=</span>ViralLoad, Income<span class="op">=</span>Income, Exercise<span class="op">=</span>Exercise,</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>              T<span class="op">=</span>T, Toxicity<span class="op">=</span>Toxicity, Adherence<span class="op">=</span>Adherence, CD4<span class="op">=</span>CD4)</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>df_hiv <span class="op">=</span> <span class="fu">sim_hiv</span>(<span class="fl">2_000</span>)</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"True ACE ≈ 0.49  (0.4 direct + 0.09 through Adherence)"</span>)</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a><span class="fu">first</span>(df_hiv, <span class="fl">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>True ACE ≈ 0.49  (0.4 direct + 0.09 through Adherence)</code></pre>
 </div>
-<div class="cell-output cell-output-display" data-execution_count="5">
+<div class="cell-output cell-output-display" data-execution_count="6">
 <div><div style="float: left;"><span>3×7 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame caption-top table table-sm table-striped small">
 <thead>
@@ -299,19 +309,19 @@ strategy     = nested_fixable</code></pre>
 <section id="estimation" class="level3">
 <h3 class="anchored" data-anchor-id="estimation">Estimation</h3>
 <p><code>estimate_causal()</code> detects nested-fixable and routes to ANIPW.</p>
-<div id="926546ee" class="cell" data-execution_count="5">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>res_hiv <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    a         <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    data      <span class="op">=</span> df_hiv,</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    graph     <span class="op">=</span> g_hiv,</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    treatment <span class="op">=</span> <span class="op">:</span>T,</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    outcome   <span class="op">=</span> <span class="op">:</span>CD4,</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"True ACE ≈ 0.49"</span>)</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"ANIPW: ACE = %.3f  95%% CI (%.3f, %.3f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>        res_hiv[<span class="op">:</span>ANIPW].ACE, res_hiv[<span class="op">:</span>ANIPW].lower_ci, res_hiv[<span class="op">:</span>ANIPW].upper_ci)</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"NIPW:  ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_hiv[<span class="op">:</span>NIPW].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="d38c5474" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>res_hiv <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    a         <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    data      <span class="op">=</span> df_hiv,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    graph     <span class="op">=</span> g_hiv,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    treatment <span class="op">=</span> <span class="op">:</span>T,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    outcome   <span class="op">=</span> <span class="op">:</span>CD4,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"True ACE ≈ 0.49"</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"ANIPW: ACE = %.3f  95%% CI (%.3f, %.3f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>        res_hiv[<span class="op">:</span>ANIPW].ACE, res_hiv[<span class="op">:</span>ANIPW].lower_ci, res_hiv[<span class="op">:</span>ANIPW].upper_ci)</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"NIPW:  ACE = %.3f</span><span class="sc">\n</span><span class="st">"</span>, res_hiv[<span class="op">:</span>NIPW].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <div class="ansi-escaped-output">
 <pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is nested-fixable. Using ANIPW.
@@ -329,10 +339,10 @@ NIPW:  ACE = 2.246</code></pre>
 <h3 class="anchored" data-anchor-id="nested-rebalancing-weights">Nested rebalancing weights</h3>
 <p>The ANIPW estimator builds <strong>nested rebalancing weights</strong> through the intrinsic kernel of each modified district. After reweighting, propensity and outcome regression are estimated by weighted GLM.</p>
 <p>The practical interpretation is similar to ordinary IPW but with more graph structure. Ordinary IPW balances treatment groups with respect to measured confounders. Nested rebalancing weights balance the pieces of the observed law that appear in the nested identification formula. This is why nested-fixable estimation is available even when neither a single adjustment set nor a front-door mediator formula is valid.</p>
-<div id="65e41820" class="cell" data-execution_count="6">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>rw <span class="op">=</span> res_hiv[<span class="op">:</span>rw]</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Rebalancing weights — min: %.3f  max: %.3f  mean: %.3f</span><span class="sc">\n</span><span class="st">"</span>,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">minimum</span>(rw), <span class="fu">maximum</span>(rw), <span class="fu">mean</span>(rw))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="e39f1b41" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>rw <span class="op">=</span> res_hiv[<span class="op">:</span>rw]</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Rebalancing weights — min: %.3f  max: %.3f  mean: %.3f</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">minimum</span>(rw), <span class="fu">maximum</span>(rw), <span class="fu">mean</span>(rw))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rebalancing weights — min: 0.000  max: 7.297  mean: 1.000</code></pre>
 </div>
@@ -351,50 +361,51 @@ NIPW:  ACE = 2.246</code></pre>
 <li>the <strong>mDAG</strong> says how values become missing.</li>
 </ul>
 <p>Both matter. A causal effect may be identified with complete data but not recoverable under a given missingness graph.</p>
+<p>For a simple MAR graph, suppose <code>X</code> is sometimes missing and the probability of observing <code>X</code> depends on fully observed variables <code>A</code> and <code>Y</code>, but not on the unobserved value of <code>X</code> after conditioning on them. Then complete cases can be weighted by <code>1 / P(R_X=1 | A, Y)</code> to recover full-data averages. If instead <code>X -&gt; R_X</code> is present and no other structure helps, complete cases can be systematically different in a way that ordinary complete-case analysis and simple MAR weighting cannot repair.</p>
 <section id="workflow" class="level3">
 <h3 class="anchored" data-anchor-id="workflow">Workflow</h3>
-<div id="a3d89c5c" class="cell" data-execution_count="7">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Define the missingness DAG (mDAG)</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>mdag <span class="op">=</span> <span class="fu">make_mdag</span>(</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    obs_variables      <span class="op">=</span> [<span class="st">"T"</span>, <span class="st">"CD4"</span>],</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    missing_variables  <span class="op">=</span> [<span class="st">"ViralLoad"</span>],</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    missing_indicators <span class="op">=</span> [<span class="st">"R_VL"</span>],</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="st">"ViralLoad"</span>,<span class="st">"T"</span>), (<span class="st">"ViralLoad"</span>,<span class="st">"CD4"</span>), (<span class="st">"ViralLoad"</span>,<span class="st">"R_VL"</span>),</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>                (<span class="st">"T"</span>,<span class="st">"CD4"</span>)],</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Identify and estimate missing-data propensities</span></span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>ID    <span class="op">=</span> <span class="fu">ID_algorithm</span>(mdag)</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>props <span class="op">=</span> <span class="fu">propensity</span>(mdag, data_with_missing, ID; law<span class="op">=:</span>target)</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Build IPW weights on complete cases</span></span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>obs <span class="op">=</span> .!<span class="fu">ismissing</span>.(data_with_missing.ViralLoad)</span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>wts <span class="op">=</span> <span class="fl">1.0</span> <span class="op">./</span> <span class="fu">coalesce</span>.(props[<span class="st">"R_VL"</span>].pred[obs], <span class="fl">1.0</span>)</span>
-<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Estimate causal effect using IPW-weighted complete cases</span></span>
-<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
-<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span><span class="fu">dropmissing</span>(data_with_missing),</span>
-<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    graph<span class="op">=</span>g_hiv, treatment<span class="op">=:</span>T, outcome<span class="op">=:</span>CD4,</span>
-<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>    sample_weights<span class="op">=</span>wts,</span>
-<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="9c5b1356" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Define the missingness DAG (mDAG)</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>mdag <span class="op">=</span> <span class="fu">make_mdag</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    obs_variables      <span class="op">=</span> [<span class="st">"T"</span>, <span class="st">"CD4"</span>],</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    missing_variables  <span class="op">=</span> [<span class="st">"ViralLoad"</span>],</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    missing_indicators <span class="op">=</span> [<span class="st">"R_VL"</span>],</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="st">"ViralLoad"</span>,<span class="st">"T"</span>), (<span class="st">"ViralLoad"</span>,<span class="st">"CD4"</span>), (<span class="st">"ViralLoad"</span>,<span class="st">"R_VL"</span>),</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>                (<span class="st">"T"</span>,<span class="st">"CD4"</span>)],</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Identify and estimate missing-data propensities</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>ID    <span class="op">=</span> <span class="fu">ID_algorithm</span>(mdag)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>props <span class="op">=</span> <span class="fu">propensity</span>(mdag, data_with_missing, ID; law<span class="op">=:</span>target)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Build IPW weights on complete cases</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>obs <span class="op">=</span> .!<span class="fu">ismissing</span>.(data_with_missing.ViralLoad)</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>wts <span class="op">=</span> <span class="fl">1.0</span> <span class="op">./</span> <span class="fu">coalesce</span>.(props[<span class="st">"R_VL"</span>].pred[obs], <span class="fl">1.0</span>)</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Estimate causal effect using IPW-weighted complete cases</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    a<span class="op">=</span>[<span class="fl">1</span>,<span class="fl">0</span>], data<span class="op">=</span><span class="fu">dropmissing</span>(data_with_missing),</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>    graph<span class="op">=</span>g_hiv, treatment<span class="op">=:</span>T, outcome<span class="op">=:</span>CD4,</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    sample_weights<span class="op">=</span>wts,</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="g2-graph" class="level3">
 <h3 class="anchored" data-anchor-id="g2-graph">G2 graph</h3>
 <p>The G2 example has six variables with complex dependent missingness patterns.</p>
-<div id="26b58ad0" class="cell" data-execution_count="8">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>G2 <span class="op">=</span> <span class="fu">make_mdag</span>(</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    obs_variables<span class="op">=</span>[], missing_variables<span class="op">=</span>[<span class="st">"X1"</span>,<span class="st">"X2"</span>,<span class="st">"X3"</span>,<span class="st">"X4"</span>,<span class="st">"X5"</span>,<span class="st">"X6"</span>],</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    missing_indicators<span class="op">=</span>[<span class="st">"R1"</span>,<span class="st">"R2"</span>,<span class="st">"R3"</span>,<span class="st">"R4"</span>,<span class="st">"R5"</span>,<span class="st">"R6"</span>],</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    di_edges<span class="op">=</span>[</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"X1"</span>,<span class="st">"X2"</span>),(<span class="st">"X2"</span>,<span class="st">"X3"</span>),(<span class="st">"X3"</span>,<span class="st">"X4"</span>),(<span class="st">"X4"</span>,<span class="st">"X5"</span>),(<span class="st">"X5"</span>,<span class="st">"X6"</span>),</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"R6"</span>,<span class="st">"R5"</span>),(<span class="st">"R6"</span>,<span class="st">"R3"</span>),(<span class="st">"R5"</span>,<span class="st">"R3"</span>),(<span class="st">"R4"</span>,<span class="st">"R3"</span>),(<span class="st">"R3"</span>,<span class="st">"R2"</span>),(<span class="st">"R2"</span>,<span class="st">"R1"</span>),</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"X1"</span>,<span class="st">"R3"</span>),(<span class="st">"X3"</span>,<span class="st">"R4"</span>),(<span class="st">"X3"</span>,<span class="st">"R5"</span>),(<span class="st">"X3"</span>,<span class="st">"R6"</span>),</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"X4"</span>,<span class="st">"R1"</span>),(<span class="st">"X4"</span>,<span class="st">"R6"</span>),(<span class="st">"X5"</span>,<span class="st">"R2"</span>),(<span class="st">"X6"</span>,<span class="st">"R5"</span>),</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>id <span class="op">=</span> <span class="fu">ID_algorithm</span>(G2; fulllaw<span class="op">=</span><span class="cn">true</span>)</span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_ID</span>(id).target</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="2aed7e80" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>G2 <span class="op">=</span> <span class="fu">make_mdag</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    obs_variables<span class="op">=</span>[], missing_variables<span class="op">=</span>[<span class="st">"X1"</span>,<span class="st">"X2"</span>,<span class="st">"X3"</span>,<span class="st">"X4"</span>,<span class="st">"X5"</span>,<span class="st">"X6"</span>],</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    missing_indicators<span class="op">=</span>[<span class="st">"R1"</span>,<span class="st">"R2"</span>,<span class="st">"R3"</span>,<span class="st">"R4"</span>,<span class="st">"R5"</span>,<span class="st">"R6"</span>],</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    di_edges<span class="op">=</span>[</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"X1"</span>,<span class="st">"X2"</span>),(<span class="st">"X2"</span>,<span class="st">"X3"</span>),(<span class="st">"X3"</span>,<span class="st">"X4"</span>),(<span class="st">"X4"</span>,<span class="st">"X5"</span>),(<span class="st">"X5"</span>,<span class="st">"X6"</span>),</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"R6"</span>,<span class="st">"R5"</span>),(<span class="st">"R6"</span>,<span class="st">"R3"</span>),(<span class="st">"R5"</span>,<span class="st">"R3"</span>),(<span class="st">"R4"</span>,<span class="st">"R3"</span>),(<span class="st">"R3"</span>,<span class="st">"R2"</span>),(<span class="st">"R2"</span>,<span class="st">"R1"</span>),</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"X1"</span>,<span class="st">"R3"</span>),(<span class="st">"X3"</span>,<span class="st">"R4"</span>),(<span class="st">"X3"</span>,<span class="st">"R5"</span>),(<span class="st">"X3"</span>,<span class="st">"R6"</span>),</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"X4"</span>,<span class="st">"R1"</span>),(<span class="st">"X4"</span>,<span class="st">"R6"</span>),(<span class="st">"X5"</span>,<span class="st">"R2"</span>),(<span class="st">"X6"</span>,<span class="st">"R5"</span>),</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>id <span class="op">=</span> <span class="fu">ID_algorithm</span>(G2; fulllaw<span class="op">=</span><span class="cn">true</span>)</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_ID</span>(id).target</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <hr>
 </section>

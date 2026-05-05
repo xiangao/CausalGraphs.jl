@@ -94,6 +94,20 @@ id_hiv = identify(g_hiv, :T, :CD4)
 println("strategy     = ", id_hiv.strategy)
 ```
 
+This is the kind of example where nested-fixability matters. Backdoor
+adjustment is not enough because hidden common causes connect treatment-related
+variables. Classical front-door is not enough because a child of treatment,
+`Toxicity`, lies in the same district as treatment. But the graph still has
+enough structure for a valid fixing sequence: the outcome-relevant part of the
+graph can be isolated after repeatedly fixing variables outside the target
+kernel.
+
+```{julia}
+rc_hiv = reachable_closure(g_hiv, [:CD4])
+println("reachable closure of CD4: ", rc_hiv.reachable_closure)
+println("one valid fixing order:   ", rc_hiv.fixing_order)
+```
+
 ### Simulate data from the DGP
 
 ```{julia}
@@ -196,6 +210,14 @@ This separates two assumptions:
 
 Both matter. A causal effect may be identified with complete data but not
 recoverable under a given missingness graph.
+
+For a simple MAR graph, suppose `X` is sometimes missing and the probability of
+observing `X` depends on fully observed variables `A` and `Y`, but not on the
+unobserved value of `X` after conditioning on them. Then complete cases can be
+weighted by `1 / P(R_X=1 | A, Y)` to recover full-data averages. If instead
+`X -> R_X` is present and no other structure helps, complete cases can be
+systematically different in a way that ordinary complete-case analysis and
+simple MAR weighting cannot repair.
 
 ### Workflow
 

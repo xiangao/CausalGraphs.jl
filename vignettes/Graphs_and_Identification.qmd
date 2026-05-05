@@ -162,6 +162,24 @@ prove the effect is mathematically impossible in every possible model; it says
 the implemented identification criteria do not justify estimation for this
 graph.
 
+### A small a-fixability example
+
+In the backdoor graph, `A` has one descendant, `Y`. The treatment district is
+just `{A}` because there are no bidirected edges involving `A`. Therefore
+`desc(A) ∩ dist(A) = {A}`, which is the a-fixability condition. The Markov
+pillow is the observed confounder `X`, so the package adjusts for `X`.
+
+```{julia}
+println("descendants(A): ", descendants(g_bd, [:A]))
+println("district(A):    ", district(g_bd, :A))
+println("Markov pillow:  ", markov_pillow(g_bd, :A; treatment=:A))
+```
+
+In the bow graph below, `A` and `Y` are in the same district because of
+`A <-> Y`, and `Y` is also a descendant of `A`. The hidden confounding and the
+direct causal effect are entangled, so the package does not identify the
+effect.
+
 ```{julia}
 println("Backdoor graph:")
 println("  is_fix(:A)   = ", is_fix(g_bd, :A))
