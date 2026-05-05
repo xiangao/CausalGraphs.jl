@@ -39,6 +39,10 @@ conceptual_graph = make_graph(
 identify(conceptual_graph, :A, :Y).strategy
 ```
 
+```@example nhefs_graph
+draw_graph(conceptual_graph)
+```
+
 ## Expanded Graph
 
 For estimation, `X` is expanded into actual data columns:
@@ -62,6 +66,10 @@ graph = make_graph(vertices=vertices, di_edges=edges)
 identify(graph, :qsmk, :wt82_71).strategy
 ```
 
+```@example nhefs_graph
+draw_graph(graph; direction="TB")
+```
+
 ## Sensitivity Graph
 
 If we add an unmeasured common cause of quitting and weight change, the effect is
@@ -75,6 +83,10 @@ sensitivity_graph = make_graph(
 )
 
 identify(sensitivity_graph, :qsmk, :wt82_71).strategy
+```
+
+```@example nhefs_graph
+draw_graph(sensitivity_graph; direction="TB")
 ```
 
 The purpose of the DAG is to make this assumption explicit before estimation.

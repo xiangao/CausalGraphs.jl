@@ -28,6 +28,10 @@ identify(graph, :A, :Y).strategy
 ```
 
 ```@example backdoor_frontdoor
+draw_graph(graph)
+```
+
+```@example backdoor_frontdoor
 res = estimate_causal(
     a = [1, 0],
     data = data,
@@ -60,6 +64,10 @@ fd_graph = make_graph(
 )
 
 identify(fd_graph, :A, :Y).strategy
+```
+
+```@example backdoor_frontdoor
+draw_graph(fd_graph)
 ```
 
 ```@example backdoor_frontdoor

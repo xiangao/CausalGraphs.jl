@@ -4,6 +4,12 @@ using CausalGraphs
 makedocs(
     sitename = "CausalGraphs.jl",
     modules = [CausalGraphs],
+    format = Documenter.HTML(
+        assets = [Documenter.asset(
+            "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js",
+            class = :js, islocal = false,
+        )],
+    ),
     pages = [
         "Home" => "index.md",
         "Vignettes" => [
