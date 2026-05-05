@@ -18,7 +18,43 @@ graph = make_graph(
     ],
 )
 
-identify(graph, :T, :CD4).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:nested_fixable</code></pre><p>For nested-fixable effects, <code>estimate_causal()</code> returns nested IPW and augmented nested IPW estimates.</p><h2 id="Missing-Data-Weighting"><a class="docs-heading-anchor" href="#Missing-Data-Weighting">Missing-Data Weighting</a><a id="Missing-Data-Weighting-1"></a><a class="docs-heading-anchor-permalink" href="#Missing-Data-Weighting" title="Permalink"></a></h2><pre><code class="language-julia hljs">mdag = make_mdag(
+identify(graph, :T, :CD4).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:nested_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(graph; direction=&quot;TB&quot;)</code></pre><pre class="mermaid">
+flowchart TB
+  n1_ViralLoad[&quot;ViralLoad&quot;]
+  n2_Income[&quot;Income&quot;]
+  n3_Exercise[&quot;Exercise&quot;]
+  n4_T[&quot;T&quot;]
+  n5_Toxicity[&quot;Toxicity&quot;]
+  n6_Adherence[&quot;Adherence&quot;]
+  n7_CD4[&quot;CD4&quot;]
+  n1_ViralLoad --&gt; n4_T
+  n1_ViralLoad --&gt; n7_CD4
+  n2_Income --&gt; n4_T
+  n3_Exercise --&gt; n7_CD4
+  n4_T --&gt; n5_Toxicity
+  n4_T --&gt; n7_CD4
+  n5_Toxicity --&gt; n6_Adherence
+  n6_Adherence --&gt; n7_CD4
+  n2_Income &lt;--&gt; n5_Toxicity
+  n3_Exercise &lt;--&gt; n2_Income
+  n3_Exercise &lt;--&gt; n4_T
+  n1_ViralLoad &lt;--&gt; n6_Adherence
+  n1_ViralLoad &lt;--&gt; n7_CD4
+  classDef fixed stroke:#111827,stroke-width:2px
+  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 3 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 4 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 5 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 6 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 7 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 8 stroke:#dc2626,stroke-width:1.8px
+  linkStyle 9 stroke:#dc2626,stroke-width:1.8px
+  linkStyle 10 stroke:#dc2626,stroke-width:1.8px
+  linkStyle 11 stroke:#dc2626,stroke-width:1.8px
+  linkStyle 12 stroke:#dc2626,stroke-width:1.8px
+</pre><p>For nested-fixable effects, <code>estimate_causal()</code> returns nested IPW and augmented nested IPW estimates.</p><h2 id="Missing-Data-Weighting"><a class="docs-heading-anchor" href="#Missing-Data-Weighting">Missing-Data Weighting</a><a id="Missing-Data-Weighting-1"></a><a class="docs-heading-anchor-permalink" href="#Missing-Data-Weighting" title="Permalink"></a></h2><pre><code class="language-julia hljs">mdag = make_mdag(
     obs_variables = [&quot;A&quot;, &quot;Y&quot;],
     missing_variables = [&quot;X&quot;],
     missing_indicators = [&quot;Rx&quot;],
@@ -26,4 +62,19 @@ identify(graph, :T, :CD4).strategy</code></pre><pre class="documenter-example-ou
 )
 
 ID = ID_algorithm(mdag)
-ID.target.id_status</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">false</code></pre><p><code>compute_missing_weights()</code> estimates the identified missingness propensities and returns inverse-probability weights that can be passed to <code>estimate_causal(...; sample_weights=wts)</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Estimation_Backdoor_Frontdoor/">« Estimation: Backdoor and Front-Door</a><a class="docs-footer-nextpage" href="../Smoking_Cessation_NHEFS/">Smoking Cessation NHEFS »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 30 April 2026 18:53">Thursday 30 April 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ID.target.id_status</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">false</code></pre><pre><code class="language-julia hljs">draw_graph(mdag)</code></pre><pre class="mermaid">
+flowchart LR
+  n1_A[&quot;A&quot;]
+  n2_Y[&quot;Y&quot;]
+  n3_X[&quot;X&quot;]
+  n4_Rx[&quot;Rx&quot;]
+  n3_X --&gt; n1_A
+  n3_X --&gt; n2_Y
+  n3_X --&gt; n4_Rx
+  n1_A --&gt; n2_Y
+  classDef fixed stroke:#111827,stroke-width:2px
+  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 3 stroke:#2563eb,stroke-width:1.8px
+</pre><p><code>compute_missing_weights()</code> estimates the identified missingness propensities and returns inverse-probability weights that can be passed to <code>estimate_causal(...; sample_weights=wts)</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Estimation_Backdoor_Frontdoor/">« Estimation: Backdoor and Front-Door</a><a class="docs-footer-nextpage" href="../Smoking_Cessation_NHEFS/">Smoking Cessation NHEFS »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 5 May 2026 02:41">Tuesday 5 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

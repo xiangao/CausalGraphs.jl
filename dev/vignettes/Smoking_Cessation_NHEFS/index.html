@@ -7,7 +7,19 @@ conceptual_graph = make_graph(
     di_edges = [(:X, :A), (:X, :Y), (:A, :Y)],
 )
 
-identify(conceptual_graph, :A, :Y).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:a_fixable</code></pre><h2 id="Expanded-Graph"><a class="docs-heading-anchor" href="#Expanded-Graph">Expanded Graph</a><a id="Expanded-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Expanded-Graph" title="Permalink"></a></h2><p>For estimation, <code>X</code> is expanded into actual data columns:</p><pre><code class="language-julia hljs">vertices = [
+identify(conceptual_graph, :A, :Y).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:a_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(conceptual_graph)</code></pre><pre class="mermaid">
+flowchart LR
+  n1_X[&quot;X&quot;]
+  n2_A[&quot;A&quot;]
+  n3_Y[&quot;Y&quot;]
+  n1_X --&gt; n2_A
+  n1_X --&gt; n3_Y
+  n2_A --&gt; n3_Y
+  classDef fixed stroke:#111827,stroke-width:2px
+  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
+</pre><h2 id="Expanded-Graph"><a class="docs-heading-anchor" href="#Expanded-Graph">Expanded Graph</a><a id="Expanded-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Expanded-Graph" title="Permalink"></a></h2><p>For estimation, <code>X</code> is expanded into actual data columns:</p><pre><code class="language-julia hljs">vertices = [
     :sex, :race, :age, :school,
     :smokeintensity, :smokeyrs,
     :exercise, :active, :wt71,
@@ -22,10 +34,116 @@ edges = vcat(
 )
 
 graph = make_graph(vertices=vertices, di_edges=edges)
-identify(graph, :qsmk, :wt82_71).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:a_fixable</code></pre><h2 id="Sensitivity-Graph"><a class="docs-heading-anchor" href="#Sensitivity-Graph">Sensitivity Graph</a><a id="Sensitivity-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Sensitivity-Graph" title="Permalink"></a></h2><p>If we add an unmeasured common cause of quitting and weight change, the effect is not identified by the implemented criteria:</p><pre><code class="language-julia hljs">sensitivity_graph = make_graph(
+identify(graph, :qsmk, :wt82_71).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:a_fixable</code></pre><pre><code class="language-julia hljs">draw_graph(graph; direction=&quot;TB&quot;)</code></pre><pre class="mermaid">
+flowchart TB
+  n1_sex[&quot;sex&quot;]
+  n2_race[&quot;race&quot;]
+  n3_age[&quot;age&quot;]
+  n4_school[&quot;school&quot;]
+  n5_smokeintensity[&quot;smokeintensity&quot;]
+  n6_smokeyrs[&quot;smokeyrs&quot;]
+  n7_exercise[&quot;exercise&quot;]
+  n8_active[&quot;active&quot;]
+  n9_wt71[&quot;wt71&quot;]
+  n10_qsmk[&quot;qsmk&quot;]
+  n11_wt82_71[&quot;wt82_71&quot;]
+  n1_sex --&gt; n10_qsmk
+  n2_race --&gt; n10_qsmk
+  n3_age --&gt; n10_qsmk
+  n4_school --&gt; n10_qsmk
+  n5_smokeintensity --&gt; n10_qsmk
+  n6_smokeyrs --&gt; n10_qsmk
+  n7_exercise --&gt; n10_qsmk
+  n8_active --&gt; n10_qsmk
+  n9_wt71 --&gt; n10_qsmk
+  n1_sex --&gt; n11_wt82_71
+  n2_race --&gt; n11_wt82_71
+  n3_age --&gt; n11_wt82_71
+  n4_school --&gt; n11_wt82_71
+  n5_smokeintensity --&gt; n11_wt82_71
+  n6_smokeyrs --&gt; n11_wt82_71
+  n7_exercise --&gt; n11_wt82_71
+  n8_active --&gt; n11_wt82_71
+  n9_wt71 --&gt; n11_wt82_71
+  n10_qsmk --&gt; n11_wt82_71
+  classDef fixed stroke:#111827,stroke-width:2px
+  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 3 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 4 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 5 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 6 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 7 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 8 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 9 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 10 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 11 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 12 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 13 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 14 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 15 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 16 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 17 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 18 stroke:#2563eb,stroke-width:1.8px
+</pre><h2 id="Sensitivity-Graph"><a class="docs-heading-anchor" href="#Sensitivity-Graph">Sensitivity Graph</a><a id="Sensitivity-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Sensitivity-Graph" title="Permalink"></a></h2><p>If we add an unmeasured common cause of quitting and weight change, the effect is not identified by the implemented criteria:</p><pre><code class="language-julia hljs">sensitivity_graph = make_graph(
     vertices = vertices,
     di_edges = edges,
     bi_edges = [(:qsmk, :wt82_71)],
 )
 
-identify(sensitivity_graph, :qsmk, :wt82_71).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:not_identified</code></pre><p>The purpose of the DAG is to make this assumption explicit before estimation.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Nested_and_Missing_Data/">« Nested-Fixable and Missing Data</a><a class="docs-footer-nextpage" href="../../reference/">Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 30 April 2026 18:53">Thursday 30 April 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+identify(sensitivity_graph, :qsmk, :wt82_71).strategy</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">:not_identified</code></pre><pre><code class="language-julia hljs">draw_graph(sensitivity_graph; direction=&quot;TB&quot;)</code></pre><pre class="mermaid">
+flowchart TB
+  n1_sex[&quot;sex&quot;]
+  n2_race[&quot;race&quot;]
+  n3_age[&quot;age&quot;]
+  n4_school[&quot;school&quot;]
+  n5_smokeintensity[&quot;smokeintensity&quot;]
+  n6_smokeyrs[&quot;smokeyrs&quot;]
+  n7_exercise[&quot;exercise&quot;]
+  n8_active[&quot;active&quot;]
+  n9_wt71[&quot;wt71&quot;]
+  n10_qsmk[&quot;qsmk&quot;]
+  n11_wt82_71[&quot;wt82_71&quot;]
+  n1_sex --&gt; n10_qsmk
+  n2_race --&gt; n10_qsmk
+  n3_age --&gt; n10_qsmk
+  n4_school --&gt; n10_qsmk
+  n5_smokeintensity --&gt; n10_qsmk
+  n6_smokeyrs --&gt; n10_qsmk
+  n7_exercise --&gt; n10_qsmk
+  n8_active --&gt; n10_qsmk
+  n9_wt71 --&gt; n10_qsmk
+  n1_sex --&gt; n11_wt82_71
+  n2_race --&gt; n11_wt82_71
+  n3_age --&gt; n11_wt82_71
+  n4_school --&gt; n11_wt82_71
+  n5_smokeintensity --&gt; n11_wt82_71
+  n6_smokeyrs --&gt; n11_wt82_71
+  n7_exercise --&gt; n11_wt82_71
+  n8_active --&gt; n11_wt82_71
+  n9_wt71 --&gt; n11_wt82_71
+  n10_qsmk --&gt; n11_wt82_71
+  n10_qsmk &lt;--&gt; n11_wt82_71
+  classDef fixed stroke:#111827,stroke-width:2px
+  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 3 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 4 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 5 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 6 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 7 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 8 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 9 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 10 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 11 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 12 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 13 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 14 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 15 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 16 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 17 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 18 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 19 stroke:#dc2626,stroke-width:1.8px
+</pre><p>The purpose of the DAG is to make this assumption explicit before estimation.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Nested_and_Missing_Data/">« Nested-Fixable and Missing Data</a><a class="docs-footer-nextpage" href="../../reference/">Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 5 May 2026 02:41">Tuesday 5 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
