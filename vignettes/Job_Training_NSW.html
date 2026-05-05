@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Economics Example: Job Training and Earnings</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="Job_Training_NSW_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Job_Training_NSW_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Job_Training_NSW_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Job_Training_NSW_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="Job_Training_NSW_files/libs/quarto-html/popper.min.js"></script>
+<script src="Job_Training_NSW_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Job_Training_NSW_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Job_Training_NSW_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Job_Training_NSW_files/libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Job_Training_NSW_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Job_Training_NSW_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Job_Training_NSW_files/libs/bootstrap/bootstrap-3b89f8177b1a2a82b23d4c23e004c95e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="Job_Training_NSW_files/libs/quarto-diagram/mermaid.min.js"></script>
+<script src="Job_Training_NSW_files/libs/quarto-diagram/mermaid-init.js"></script>
+<link href="Job_Training_NSW_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#setup" id="toc-setup" class="nav-link active" data-scroll-target="#setup">Setup</a></li>
+  <li><a href="#load-nsw-data" id="toc-load-nsw-data" class="nav-link" data-scroll-target="#load-nsw-data">1. Load NSW Data</a></li>
+  <li><a href="#experimental-graph" id="toc-experimental-graph" class="nav-link" data-scroll-target="#experimental-graph">2. Experimental Graph</a></li>
+  <li><a href="#observational-selection-graph" id="toc-observational-selection-graph" class="nav-link" data-scroll-target="#observational-selection-graph">3. Observational Selection Graph</a></li>
+  <li><a href="#sensitivity-to-unmeasured-selection" id="toc-sensitivity-to-unmeasured-selection" class="nav-link" data-scroll-target="#sensitivity-to-unmeasured-selection">4. Sensitivity to Unmeasured Selection</a></li>
+  <li><a href="#optional-observational-counterpart" id="toc-optional-observational-counterpart" class="nav-link" data-scroll-target="#optional-observational-counterpart">5. Optional Observational Counterpart</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Economics Example: Job Training and Earnings</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This vignette uses the National Supported Work Demonstration (NSW) job-training data distributed through the <code>causaldata</code> example-data package and mirrored by RDatasets.</p>
+<p>The causal question is:</p>
+<pre class="text"><code>What is the effect of job-training participation on real earnings in 1978?</code></pre>
+<p>The example is useful because the same economic question can be represented by several graphs:</p>
+<ol type="1">
+<li>an experimental graph, where assignment is treated as randomized;</li>
+<li>an observational selection-on-observables graph, where baseline covariates confound participation and later earnings;</li>
+<li>a sensitivity graph with unmeasured selection, where the effect is no longer identified by the implemented criteria.</li>
+</ol>
+<section id="setup" class="level2">
+<h2 class="anchored" data-anchor-id="setup">Setup</h2>
+<div id="c0b61a99" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">CausalGraphs</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">DataFrames</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">DelimitedFiles</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Downloads</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Printf</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Statistics</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="load-nsw-data" class="level2">
+<h2 class="anchored" data-anchor-id="load-nsw-data">1. Load NSW Data</h2>
+<p>The treatment is <code>treat</code>, an indicator for participation in the job-training program. The outcome is <code>re78</code>, real earnings in 1978. The baseline variables are demographic characteristics and pre-treatment earnings in 1974 and 1975.</p>
+<div id="52a42341" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">read_rdatasets_csv</span>(url, cols)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    local_file <span class="op">=</span> <span class="bu">Downloads</span>.<span class="fu">download</span>(url; timeout<span class="op">=</span><span class="fl">120</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    x, header <span class="op">=</span> <span class="fu">readdlm</span>(local_file, <span class="ch">','</span>, <span class="dt">Any</span>, <span class="ch">'\n'</span>; header<span class="op">=</span><span class="cn">true</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    raw <span class="op">=</span> <span class="fu">DataFrame</span>(x, <span class="fu">Symbol</span>.(<span class="fu">vec</span>(header)))</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">DataFrame</span>((c <span class="op">=&gt;</span> <span class="fu">Float64</span>.(raw[!, c]) <span class="cf">for</span> c <span class="kw">in</span> cols)<span class="op">...</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="cf">end</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://vincentarelbundock.github.io/Rdatasets/csv/causaldata/nsw_mixtape.csv"</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>cols <span class="op">=</span> [</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span>treat, <span class="op">:</span>age, <span class="op">:</span>educ, <span class="op">:</span>black, <span class="op">:</span>hisp, <span class="op">:</span>marr, <span class="op">:</span>nodegree,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span>re74, <span class="op">:</span>re75, <span class="op">:</span>re78,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> <span class="fu">read_rdatasets_csv</span>(url, cols);</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"n = "</span>, <span class="fu">nrow</span>(data))</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"treated = "</span>, <span class="fu">Int</span>(<span class="fu">sum</span>(data.treat <span class="op">.==</span> <span class="fl">1</span>)))</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"controls = "</span>, <span class="fu">Int</span>(<span class="fu">sum</span>(data.treat <span class="op">.==</span> <span class="fl">0</span>)))</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="fu">first</span>(data, <span class="fl">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>n = 445
+treated = 185
+controls = 260</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="3">
+<div><div style="float: left;"><span>5×10 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="columnLabelRow header">
+<th class="stubheadLabel" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">treat</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">educ</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">black</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">hisp</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">marr</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">nodegree</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">re74</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">re75</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">re78</th>
+</tr>
+<tr class="columnLabelRow even">
+<th class="stubheadLabel" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+</tr>
+</thead>
+<tbody>
+<tr class="dataRow odd">
+<td class="rowLabel" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">37.0</td>
+<td style="text-align: right;">11.0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">9930.05</td>
+</tr>
+<tr class="dataRow even">
+<td class="rowLabel" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">22.0</td>
+<td style="text-align: right;">9.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">3595.89</td>
+</tr>
+<tr class="dataRow odd">
+<td class="rowLabel" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">30.0</td>
+<td style="text-align: right;">12.0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">24909.4</td>
+</tr>
+<tr class="dataRow even">
+<td class="rowLabel" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">27.0</td>
+<td style="text-align: right;">11.0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">7506.15</td>
+</tr>
+<tr class="dataRow odd">
+<td class="rowLabel" style="text-align: right; font-weight: bold;">5</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">33.0</td>
+<td style="text-align: right;">8.0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">289.79</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>This version of the data contains treated and control units from the NSW experiment. RDatasets also provides observational comparison samples, such as the Current Population Survey counterpart. We start with the experimental sample because it gives a clear baseline for the graph-based workflow.</p>
+</section>
+<section id="experimental-graph" class="level2">
+<h2 class="anchored" data-anchor-id="experimental-graph">2. Experimental Graph</h2>
+<p>In the randomized interpretation of the NSW experiment, assignment to training is not caused by baseline earnings, education, age, or other participant characteristics. The graph for the average effect of training on later earnings is therefore simple:</p>
+<pre class="text"><code>A -&gt; Y</code></pre>
+<p>where <code>A</code> is program participation and <code>Y</code> is real earnings in 1978.</p>
+<div id="f5a35a05" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>experimental_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>treat, <span class="op">:</span>re78],</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="op">:</span>treat, <span class="op">:</span>re78)],</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"```{mermaid}"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="fu">to_mermaid</span>(experimental_graph; direction<span class="op">=</span><span class="st">"LR"</span>))</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"```"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  n1_treat["treat"]
+  n2_re78["re78"]
+  n1_treat --&gt; n2_re78
+  classDef fixed stroke:#111827,stroke-width:2px
+  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>Identification is immediate. The Markov pillow of the treatment is empty, so the estimator does not adjust for baseline covariates.</p>
+<div id="40e82e2c" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>experimental_id <span class="op">=</span> <span class="fu">identify</span>(experimental_graph, <span class="op">:</span>treat, <span class="op">:</span>re78)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, experimental_id.strategy)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Markov pillow of treat: "</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">markov_pillow</span>(experimental_graph, <span class="op">:</span>treat; treatment<span class="op">=:</span>treat))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>strategy: a_fixable
+Markov pillow of treat: Symbol[]</code></pre>
+</div>
+</div>
+<div id="c5c00fc4" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>raw_difference <span class="op">=</span> <span class="fu">mean</span>(data.re78[data.treat <span class="op">.==</span> <span class="fl">1</span>]) <span class="op">-</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>                 <span class="fu">mean</span>(data.re78[data.treat <span class="op">.==</span> <span class="fl">0</span>])</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>experimental_res <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> <span class="fu">select</span>(data, [<span class="op">:</span>treat, <span class="op">:</span>re78]),</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    graph <span class="op">=</span> experimental_graph,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    treatment <span class="op">=</span> <span class="op">:</span>treat,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    outcome <span class="op">=</span> <span class="op">:</span>re78,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Raw difference in means: %.2f</span><span class="sc">\n</span><span class="st">"</span>, raw_difference)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE: ACE = %.2f  95%% CI (%.2f, %.2f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>        experimental_res[<span class="op">:</span>TMLE].ACE,</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>        experimental_res[<span class="op">:</span>TMLE].lower_ci,</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>        experimental_res[<span class="op">:</span>TMLE].upper_ci)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<div class="ansi-escaped-output">
+<pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+</pre>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Raw difference in means: 1794.34
+TMLE: ACE = 1794.34  95% CI (482.48, 3106.20)</code></pre>
+</div>
+</div>
+<p>In this simple randomized graph, the TMLE estimate is essentially the difference in sample means. The graph records the strong identifying assumption: treatment assignment is independent of potential earnings.</p>
+</section>
+<section id="observational-selection-graph" class="level2">
+<h2 class="anchored" data-anchor-id="observational-selection-graph">3. Observational Selection Graph</h2>
+<p>Suppose instead that we are analyzing a non-random comparison between trainees and non-trainees. Then baseline characteristics may affect both program participation and later earnings. A compact conceptual graph is:</p>
+<pre class="text"><code>X -&gt; A -&gt; Y
+X -----&gt; Y</code></pre>
+<p>Here <code>X</code> contains baseline age, education, race/ethnicity indicators, marital status, degree status, and pre-treatment earnings.</p>
+<div id="4b6e303a" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>conceptual_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>X, <span class="op">:</span>A, <span class="op">:</span>Y],</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="op">:</span>X, <span class="op">:</span>A), (<span class="op">:</span>X, <span class="op">:</span>Y), (<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"```{mermaid}"</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="fu">to_mermaid</span>(conceptual_graph; direction<span class="op">=</span><span class="st">"LR"</span>))</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"```"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  n1_X["X"]
+  n2_A["A"]
+  n3_Y["Y"]
+  n1_X --&gt; n2_A
+  n1_X --&gt; n3_Y
+  n2_A --&gt; n3_Y
+  classDef fixed stroke:#111827,stroke-width:2px
+  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>For estimation, the grouped node <code>X</code> is expanded into the actual data columns.</p>
+<div id="dbda6c66" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>vertices <span class="op">=</span> [</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span>age, <span class="op">:</span>educ, <span class="op">:</span>black, <span class="op">:</span>hisp, <span class="op">:</span>marr, <span class="op">:</span>nodegree,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span>re74, <span class="op">:</span>re75, <span class="op">:</span>treat, <span class="op">:</span>re78,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>baseline <span class="op">=</span> <span class="fu">setdiff</span>(vertices, [<span class="op">:</span>treat, <span class="op">:</span>re78])</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>edges <span class="op">=</span> <span class="fu">vcat</span>(</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    [(w, <span class="op">:</span>treat) for w <span class="kw">in</span> baseline],</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    [(w, <span class="op">:</span>re78) for w <span class="kw">in</span> baseline],</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    [(<span class="op">:</span>treat, <span class="op">:</span>re78)],</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>observational_graph <span class="op">=</span> <span class="fu">make_graph</span>(vertices<span class="op">=</span>vertices, di_edges<span class="op">=</span>edges);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"```{mermaid}"</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="fu">to_mermaid</span>(observational_graph; direction<span class="op">=</span><span class="st">"LR"</span>))</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"```"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  n1_age["age"]
+  n2_educ["educ"]
+  n3_black["black"]
+  n4_hisp["hisp"]
+  n5_marr["marr"]
+  n6_nodegree["nodegree"]
+  n7_re74["re74"]
+  n8_re75["re75"]
+  n9_treat["treat"]
+  n10_re78["re78"]
+  n1_age --&gt; n9_treat
+  n2_educ --&gt; n9_treat
+  n3_black --&gt; n9_treat
+  n4_hisp --&gt; n9_treat
+  n5_marr --&gt; n9_treat
+  n6_nodegree --&gt; n9_treat
+  n7_re74 --&gt; n9_treat
+  n8_re75 --&gt; n9_treat
+  n1_age --&gt; n10_re78
+  n2_educ --&gt; n10_re78
+  n3_black --&gt; n10_re78
+  n4_hisp --&gt; n10_re78
+  n5_marr --&gt; n10_re78
+  n6_nodegree --&gt; n10_re78
+  n7_re74 --&gt; n10_re78
+  n8_re75 --&gt; n10_re78
+  n9_treat --&gt; n10_re78
+  classDef fixed stroke:#111827,stroke-width:2px
+  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 3 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 4 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 5 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 6 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 7 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 8 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 9 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 10 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 11 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 12 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 13 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 14 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 15 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 16 stroke:#2563eb,stroke-width:1.8px
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>Under this graph, the effect is identified by adjustment for the measured baseline variables.</p>
+<div id="88bf0ee0" class="cell" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>observational_id <span class="op">=</span> <span class="fu">identify</span>(observational_graph, <span class="op">:</span>treat, <span class="op">:</span>re78)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, observational_id.strategy)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Markov pillow of treat: "</span>,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">markov_pillow</span>(observational_graph, <span class="op">:</span>treat; treatment<span class="op">=:</span>treat))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>strategy: a_fixable
+Markov pillow of treat: [:age, :educ, :black, :hisp, :marr, :nodegree, :re74, :re75]</code></pre>
+</div>
+</div>
+<div id="77e0b674" class="cell" data-execution_count="12">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>observational_res <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> data,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    graph <span class="op">=</span> observational_graph,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    treatment <span class="op">=</span> <span class="op">:</span>treat,</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    outcome <span class="op">=</span> <span class="op">:</span>re78,</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE:    ACE = %.2f  95%% CI (%.2f, %.2f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        observational_res[<span class="op">:</span>TMLE].ACE,</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>        observational_res[<span class="op">:</span>TMLE].lower_ci,</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>        observational_res[<span class="op">:</span>TMLE].upper_ci)</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Onestep: ACE = %.2f</span><span class="sc">\n</span><span class="st">"</span>, observational_res[<span class="op">:</span>Onestep].ACE)</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Gcomp:   ACE = %.2f</span><span class="sc">\n</span><span class="st">"</span>, observational_res[<span class="op">:</span>Gcomp].ACE)</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"IPW:     ACE = %.2f</span><span class="sc">\n</span><span class="st">"</span>, observational_res[<span class="op">:</span>IPW].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<div class="ansi-escaped-output">
+<pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+</pre>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>TMLE:    ACE = 1637.57  95% CI (321.76, 2953.37)
+Onestep: ACE = 1637.97
+Gcomp:   ACE = 1676.34
+IPW:     ACE = 1613.13</code></pre>
+</div>
+</div>
+<p>This adjusted estimate answers a different identifying story than the experimental estimate. It is the effect under the assumption that the listed baseline variables block all backdoor paths from training to 1978 earnings.</p>
+</section>
+<section id="sensitivity-to-unmeasured-selection" class="level2">
+<h2 class="anchored" data-anchor-id="sensitivity-to-unmeasured-selection">4. Sensitivity to Unmeasured Selection</h2>
+<p>In many economic applications, selection into training may depend on factors not recorded in the data: motivation, caseworker discretion, informal job networks, local labor-market opportunity, or health. A compact way to represent that concern is a bidirected edge between training and later earnings:</p>
+<pre class="text"><code>X -&gt; A -&gt; Y
+X -----&gt; Y
+A &lt;-&gt; Y</code></pre>
+<p>The bidirected edge says that <code>A</code> and <code>Y</code> share an unmeasured common cause after conditioning on the measured baseline variables.</p>
+<div id="39a89ce1" class="cell" data-execution_count="13">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>selection_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> vertices,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> edges,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    bi_edges <span class="op">=</span> [(<span class="op">:</span>treat, <span class="op">:</span>re78)],</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"```{mermaid}"</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="fu">to_mermaid</span>(selection_graph; direction<span class="op">=</span><span class="st">"LR"</span>))</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"```"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  n1_age["age"]
+  n2_educ["educ"]
+  n3_black["black"]
+  n4_hisp["hisp"]
+  n5_marr["marr"]
+  n6_nodegree["nodegree"]
+  n7_re74["re74"]
+  n8_re75["re75"]
+  n9_treat["treat"]
+  n10_re78["re78"]
+  n1_age --&gt; n9_treat
+  n2_educ --&gt; n9_treat
+  n3_black --&gt; n9_treat
+  n4_hisp --&gt; n9_treat
+  n5_marr --&gt; n9_treat
+  n6_nodegree --&gt; n9_treat
+  n7_re74 --&gt; n9_treat
+  n8_re75 --&gt; n9_treat
+  n1_age --&gt; n10_re78
+  n2_educ --&gt; n10_re78
+  n3_black --&gt; n10_re78
+  n4_hisp --&gt; n10_re78
+  n5_marr --&gt; n10_re78
+  n6_nodegree --&gt; n10_re78
+  n7_re74 --&gt; n10_re78
+  n8_re75 --&gt; n10_re78
+  n9_treat --&gt; n10_re78
+  n9_treat &lt;--&gt; n10_re78
+  classDef fixed stroke:#111827,stroke-width:2px
+  linkStyle 0 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 1 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 2 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 3 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 4 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 5 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 6 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 7 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 8 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 9 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 10 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 11 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 12 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 13 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 14 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 15 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 16 stroke:#2563eb,stroke-width:1.8px
+  linkStyle 17 stroke:#dc2626,stroke-width:1.8px
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div id="4907060c" class="cell" data-execution_count="15">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>selection_id <span class="op">=</span> <span class="fu">identify</span>(selection_graph, <span class="op">:</span>treat, <span class="op">:</span>re78)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy with unmeasured selection: "</span>, selection_id.strategy)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>strategy with unmeasured selection: not_identified</code></pre>
+</div>
+</div>
+<p>With this additional unmeasured-confounding assumption, <code>CausalGraphs.jl</code> reports the effect as not identified. That is the main lesson of the example: the identifying conclusion is conditional on the graph, and a substantively plausible change in the graph can change whether estimation is justified.</p>
+</section>
+<section id="optional-observational-counterpart" class="level2">
+<h2 class="anchored" data-anchor-id="optional-observational-counterpart">5. Optional Observational Counterpart</h2>
+<p>The same graph can be used with an observational comparison sample, such as the RDatasets <code>cps_mixtape</code> file. That dataset contains CPS nonparticipants as an observational control group for the NSW treated units. Running the same adjustment graph there is reasonable only under the stronger selection-on- observables assumption encoded above.</p>
+<div id="7e93f431" class="cell" data-execution_count="16">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>cps_url <span class="op">=</span> <span class="st">"https://vincentarelbundock.github.io/Rdatasets/csv/causaldata/cps_mixtape.csv"</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>cps_data <span class="op">=</span> <span class="fu">read_rdatasets_csv</span>(cps_url, cols)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>cps_res <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> cps_data,</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    graph <span class="op">=</span> observational_graph,</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    treatment <span class="op">=</span> <span class="op">:</span>treat,</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    outcome <span class="op">=</span> <span class="op">:</span>re78,</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>This optional extension is deliberately not the default estimate in the vignette. The point is to separate the graph for an experimental sample from the stronger graph required for an observational comparison.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>This example shows an applied economics workflow:</p>
+<ol type="1">
+<li>Draw the graph for the design or identifying assumption.</li>
+<li>Run <code>identify()</code> before estimating.</li>
+<li>Estimate only under graphs where the effect is identified.</li>
+<li>Compare candidate graphs to make identifying assumptions explicit.</li>
+</ol>
+<p>For the NSW data, the experimental graph and the measured-confounding graph both route to <code>:a_fixable</code>. Adding an unmeasured common cause of training and earnings changes the route to <code>:not_identified</code>.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

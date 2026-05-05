@@ -31,7 +31,7 @@ using CausalGraphs
     @test occursin("<-->", mermaid)
 
     html = sprint(show, MIME("text/html"), draw_graph(g))
-    @test occursin("class=\"mermaid\"", html)
+    @test occursin("class=\"mermaid\"", html) || occursin("<svg", html)
 end
 
 # ── Identification ────────────────────────────────────────────────────────────

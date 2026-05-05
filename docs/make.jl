@@ -11,6 +11,7 @@ makedocs(
             "Estimation: Backdoor and Front-Door" => "vignettes/Estimation_Backdoor_Frontdoor.md",
             "Nested-Fixable and Missing Data" => "vignettes/Nested_and_Missing_Data.md",
             "Smoking Cessation NHEFS" => "vignettes/Smoking_Cessation_NHEFS.md",
+            "Job Training NSW" => "vignettes/Job_Training_NSW.md",
         ],
         "Reference" => "reference.md",
     ],

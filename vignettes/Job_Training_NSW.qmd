@@ -1,0 +1,301 @@
+---
+title: "Economics Example: Job Training and Earnings"
+format:
+  html:
+    toc: true
+    code-fold: false
+jupyter: julia-1.12
+---
+
+This vignette uses the National Supported Work Demonstration (NSW)
+job-training data distributed through the `causaldata` example-data package and
+mirrored by RDatasets.
+
+The causal question is:
+
+```text
+What is the effect of job-training participation on real earnings in 1978?
+```
+
+The example is useful because the same economic question can be represented by
+several graphs:
+
+1. an experimental graph, where assignment is treated as randomized;
+2. an observational selection-on-observables graph, where baseline covariates
+   confound participation and later earnings;
+3. a sensitivity graph with unmeasured selection, where the effect is no longer
+   identified by the implemented criteria.
+
+## Setup
+
+```{julia}
+import Pkg
+Pkg.activate(joinpath(@__DIR__, ".."); io=devnull)
+
+using CausalGraphs
+using DataFrames
+using DelimitedFiles
+using Downloads
+using Printf
+using Statistics
+```
+
+## 1. Load NSW Data
+
+The treatment is `treat`, an indicator for participation in the job-training
+program. The outcome is `re78`, real earnings in 1978. The baseline variables
+are demographic characteristics and pre-treatment earnings in 1974 and 1975.
+
+```{julia}
+function read_rdatasets_csv(url, cols)
+    local_file = Downloads.download(url; timeout=120)
+    x, header = readdlm(local_file, ',', Any, '\n'; header=true)
+    raw = DataFrame(x, Symbol.(vec(header)))
+    DataFrame((c => Float64.(raw[!, c]) for c in cols)...)
+end
+
+url = "https://vincentarelbundock.github.io/Rdatasets/csv/causaldata/nsw_mixtape.csv"
+
+cols = [
+    :treat, :age, :educ, :black, :hisp, :marr, :nodegree,
+    :re74, :re75, :re78,
+]
+
+data = read_rdatasets_csv(url, cols);
+
+println("n = ", nrow(data))
+println("treated = ", Int(sum(data.treat .== 1)))
+println("controls = ", Int(sum(data.treat .== 0)))
+first(data, 5)
+```
+
+This version of the data contains treated and control units from the NSW
+experiment. RDatasets also provides observational comparison samples, such as
+the Current Population Survey counterpart. We start with the experimental
+sample because it gives a clear baseline for the graph-based workflow.
+
+## 2. Experimental Graph
+
+In the randomized interpretation of the NSW experiment, assignment to training
+is not caused by baseline earnings, education, age, or other participant
+characteristics. The graph for the average effect of training on later earnings
+is therefore simple:
+
+```text
+A -> Y
+```
+
+where `A` is program participation and `Y` is real earnings in 1978.
+
+```{julia}
+experimental_graph = make_graph(
+    vertices = [:treat, :re78],
+    di_edges = [(:treat, :re78)],
+);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(experimental_graph; direction="LR"))
+println("```")
+```
+
+Identification is immediate. The Markov pillow of the treatment is empty, so
+the estimator does not adjust for baseline covariates.
+
+```{julia}
+experimental_id = identify(experimental_graph, :treat, :re78)
+println("strategy: ", experimental_id.strategy)
+println("Markov pillow of treat: ",
+        markov_pillow(experimental_graph, :treat; treatment=:treat))
+```
+
+```{julia}
+raw_difference = mean(data.re78[data.treat .== 1]) -
+                 mean(data.re78[data.treat .== 0])
+
+experimental_res = estimate_causal(
+    a = [1, 0],
+    data = select(data, [:treat, :re78]),
+    graph = experimental_graph,
+    treatment = :treat,
+    outcome = :re78,
+);
+
+@printf("Raw difference in means: %.2f\n", raw_difference)
+@printf("TMLE: ACE = %.2f  95%% CI (%.2f, %.2f)\n",
+        experimental_res[:TMLE].ACE,
+        experimental_res[:TMLE].lower_ci,
+        experimental_res[:TMLE].upper_ci)
+```
+
+In this simple randomized graph, the TMLE estimate is essentially the difference
+in sample means. The graph records the strong identifying assumption: treatment
+assignment is independent of potential earnings.
+
+## 3. Observational Selection Graph
+
+Suppose instead that we are analyzing a non-random comparison between trainees
+and non-trainees. Then baseline characteristics may affect both program
+participation and later earnings. A compact conceptual graph is:
+
+```text
+X -> A -> Y
+X -----> Y
+```
+
+Here `X` contains baseline age, education, race/ethnicity indicators, marital
+status, degree status, and pre-treatment earnings.
+
+```{julia}
+conceptual_graph = make_graph(
+    vertices = [:X, :A, :Y],
+    di_edges = [(:X, :A), (:X, :Y), (:A, :Y)],
+);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(conceptual_graph; direction="LR"))
+println("```")
+```
+
+For estimation, the grouped node `X` is expanded into the actual data columns.
+
+```{julia}
+vertices = [
+    :age, :educ, :black, :hisp, :marr, :nodegree,
+    :re74, :re75, :treat, :re78,
+]
+
+baseline = setdiff(vertices, [:treat, :re78])
+
+edges = vcat(
+    [(w, :treat) for w in baseline],
+    [(w, :re78) for w in baseline],
+    [(:treat, :re78)],
+)
+
+observational_graph = make_graph(vertices=vertices, di_edges=edges);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(observational_graph; direction="LR"))
+println("```")
+```
+
+Under this graph, the effect is identified by adjustment for the measured
+baseline variables.
+
+```{julia}
+observational_id = identify(observational_graph, :treat, :re78)
+println("strategy: ", observational_id.strategy)
+println("Markov pillow of treat: ",
+        markov_pillow(observational_graph, :treat; treatment=:treat))
+```
+
+```{julia}
+observational_res = estimate_causal(
+    a = [1, 0],
+    data = data,
+    graph = observational_graph,
+    treatment = :treat,
+    outcome = :re78,
+);
+
+@printf("TMLE:    ACE = %.2f  95%% CI (%.2f, %.2f)\n",
+        observational_res[:TMLE].ACE,
+        observational_res[:TMLE].lower_ci,
+        observational_res[:TMLE].upper_ci)
+@printf("Onestep: ACE = %.2f\n", observational_res[:Onestep].ACE)
+@printf("Gcomp:   ACE = %.2f\n", observational_res[:Gcomp].ACE)
+@printf("IPW:     ACE = %.2f\n", observational_res[:IPW].ACE)
+```
+
+This adjusted estimate answers a different identifying story than the
+experimental estimate. It is the effect under the assumption that the listed
+baseline variables block all backdoor paths from training to 1978 earnings.
+
+## 4. Sensitivity to Unmeasured Selection
+
+In many economic applications, selection into training may depend on factors not
+recorded in the data: motivation, caseworker discretion, informal job networks,
+local labor-market opportunity, or health. A compact way to represent that
+concern is a bidirected edge between training and later earnings:
+
+```text
+X -> A -> Y
+X -----> Y
+A <-> Y
+```
+
+The bidirected edge says that `A` and `Y` share an unmeasured common cause after
+conditioning on the measured baseline variables.
+
+```{julia}
+selection_graph = make_graph(
+    vertices = vertices,
+    di_edges = edges,
+    bi_edges = [(:treat, :re78)],
+);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(selection_graph; direction="LR"))
+println("```")
+```
+
+```{julia}
+selection_id = identify(selection_graph, :treat, :re78)
+println("strategy with unmeasured selection: ", selection_id.strategy)
+```
+
+With this additional unmeasured-confounding assumption, `CausalGraphs.jl`
+reports the effect as not identified. That is the main lesson of the example:
+the identifying conclusion is conditional on the graph, and a substantively
+plausible change in the graph can change whether estimation is justified.
+
+## 5. Optional Observational Counterpart
+
+The same graph can be used with an observational comparison sample, such as the
+RDatasets `cps_mixtape` file. That dataset contains CPS nonparticipants as an
+observational control group for the NSW treated units. Running the same
+adjustment graph there is reasonable only under the stronger selection-on-
+observables assumption encoded above.
+
+```{julia}
+#| eval: false
+cps_url = "https://vincentarelbundock.github.io/Rdatasets/csv/causaldata/cps_mixtape.csv"
+cps_data = read_rdatasets_csv(cps_url, cols)
+
+cps_res = estimate_causal(
+    a = [1, 0],
+    data = cps_data,
+    graph = observational_graph,
+    treatment = :treat,
+    outcome = :re78,
+)
+```
+
+This optional extension is deliberately not the default estimate in the
+vignette. The point is to separate the graph for an experimental sample from
+the stronger graph required for an observational comparison.
+
+## Summary
+
+This example shows an applied economics workflow:
+
+1. Draw the graph for the design or identifying assumption.
+2. Run `identify()` before estimating.
+3. Estimate only under graphs where the effect is identified.
+4. Compare candidate graphs to make identifying assumptions explicit.
+
+For the NSW data, the experimental graph and the measured-confounding graph both
+route to `:a_fixable`. Adding an unmeasured common cause of training and
+earnings changes the route to `:not_identified`.

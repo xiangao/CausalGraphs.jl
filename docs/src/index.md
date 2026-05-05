@@ -51,6 +51,7 @@ result[:TMLE].ACE
 | [Estimation: Backdoor and Front-Door](vignettes/Estimation_Backdoor_Frontdoor.md) | Backdoor/a-fixable and front-door/p-fixable estimation workflows |
 | [Nested-Fixable and Missing Data](vignettes/Nested_and_Missing_Data.md) | Nested-fixable effects, ANIPW/NIPW, and missing-data weighting with mDAGs |
 | [Smoking Cessation NHEFS](vignettes/Smoking_Cessation_NHEFS.md) | End-to-end real-data workflow: hypothesize a graph, identify, estimate, and compare assumptions |
+| [Job Training NSW](vignettes/Job_Training_NSW.md) | Economics example: experimental assignment, measured selection, unmeasured selection, identification, and estimation |
 
 ## Core API
 
@@ -62,4 +63,3 @@ result[:TMLE].ACE
 - `make_mdag`
 - `ID_algorithm`
 - `compute_missing_weights`
-
