@@ -56,7 +56,8 @@ df = DataFrame(ViralLoad=ViralLoad, Income=Income, Exercise=Exercise,
                T=T, Toxicity=Toxicity, Adherence=Adherence, CD4=CD4)
 
 res = estimate_causal(a=[1, 0], data=df, graph=graph, treatment=:T, outcome=:CD4)
-(ACE=res[:ANIPW].ACE, lower_ci=res[:ANIPW].lower_ci, upper_ci=res[:ANIPW].upper_ci)
+r = x -> round(x, sigdigits=4)
+(ACE=r(res[:ANIPW].ACE), lower_ci=r(res[:ANIPW].lower_ci), upper_ci=r(res[:ANIPW].upper_ci))
 ```
 
 ## Missing-Data Weighting

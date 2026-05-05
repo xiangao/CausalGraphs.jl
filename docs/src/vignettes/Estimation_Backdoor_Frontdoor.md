@@ -40,7 +40,8 @@ res = estimate_causal(
     outcome = :Y,
 )
 
-res[:TMLE].ACE
+r = x -> round(x, sigdigits=4)
+(ACE=r(res[:TMLE].ACE), lower_ci=r(res[:TMLE].lower_ci), upper_ci=r(res[:TMLE].upper_ci))
 ```
 
 For an a-fixable treatment, `estimate_causal()` uses the Markov pillow of the
@@ -79,7 +80,8 @@ fd_res = estimate_causal(
     outcome = :Y,
 )
 
-fd_res[:TMLE].ACE
+r = x -> round(x, sigdigits=4)
+(ACE=r(fd_res[:TMLE].ACE), lower_ci=r(fd_res[:TMLE].lower_ci), upper_ci=r(fd_res[:TMLE].upper_ci))
 ```
 
 For a p-fixable graph, the package routes to the NPS/front-door style TMLE.

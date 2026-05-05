@@ -118,7 +118,8 @@ data = DataFrame(sex=sex, race=race, age=age, school=school,
 
 res = estimate_causal(a=[1, 0], data=data, graph=graph,
                       treatment=:qsmk, outcome=:wt82_71)
-(ACE=res[:TMLE].ACE, lower_ci=res[:TMLE].lower_ci, upper_ci=res[:TMLE].upper_ci)
+r = x -> round(x, sigdigits=4)
+(ACE=r(res[:TMLE].ACE), lower_ci=r(res[:TMLE].lower_ci), upper_ci=r(res[:TMLE].upper_ci))
 ```
 
 The true ACE in this simulation is 2.5 kg. On the real NHEFS data the
