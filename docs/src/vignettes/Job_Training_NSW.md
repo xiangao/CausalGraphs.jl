@@ -5,7 +5,12 @@ CurrentModule = CausalGraphs
 ```
 
 This vignette summarizes the National Supported Work (NSW) job-training
-example. The full Quarto source is in `vignettes/Job_Training_NSW.qmd`.
+example. NSW was a social experiment from the 1970s that targeted disadvantaged
+workers. Treated participants were offered a supported work placement for a
+limited period, and later earnings were measured from administrative records.
+The data are mirrored by
+[RDatasets](https://vincentarelbundock.github.io/Rdatasets/doc/causaldata/nsw_mixtape.html).
+The full Quarto source is in `vignettes/Job_Training_NSW.qmd`.
 
 ## Causal Question
 
@@ -14,6 +19,20 @@ What is the effect of job-training participation on real earnings in 1978?
 The treatment is `treat`, the outcome is `re78`, and the baseline covariates are
 age, education, race/ethnicity indicators, marital status, degree status, and
 pre-treatment real earnings in 1974 and 1975.
+
+## Data and Research Idea
+
+The research idea is the classic program-evaluation problem: can an employment
+and training program raise later earnings? NSW is useful because it connects an
+experimental benchmark to the observational problem economists often face. If
+assignment is randomized, a simple comparison can estimate the effect. If
+participation is analyzed as if it came from a non-random labor market or
+administrative process, baseline earnings, education, age, race, marital
+status, and degree status become part of the identifying story.
+
+The RDatasets file used here has 445 observations and 11 variables. The
+analysis below keeps the variables needed for the treatment, outcome, and
+baseline adjustment set.
 
 ## Experimental Graph
 

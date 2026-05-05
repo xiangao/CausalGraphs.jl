@@ -5,8 +5,13 @@ CurrentModule = CausalGraphs
 ```
 
 This vignette uses the JOBS II job-search intervention data from the
-`mediation` R package, mirrored by RDatasets. The full Quarto source is in
-`vignettes/Job_Search_Mediation_JOBS.qmd`.
+`mediation` R package, mirrored by
+[RDatasets](https://vincentarelbundock.github.io/Rdatasets/doc/mediation/jobs.html).
+JOBS II was a randomized field experiment for unemployed workers. The
+intervention offered job-skills workshops that taught job-search techniques and
+coping strategies for setbacks in the job-search process. The follow-up data
+record post-treatment depressive symptoms and employment-related measures. The
+full Quarto source is in `vignettes/Job_Search_Mediation_JOBS.qmd`.
 
 ## Causal Question
 
@@ -16,6 +21,19 @@ mediated by job-search self-efficacy?
 The treatment is `treat`, the mediator is `job_seek`, the outcome is
 `depress2`, and the baseline covariates are economic hardship, baseline
 depression, sex, age, and nonwhite race.
+
+## Data and Research Idea
+
+The research idea is economic as well as behavioral. A job-search program might
+affect mental health because it changes employment prospects, but it might also
+work by changing how participants approach the job search itself. The mediator
+`job_seek` captures job-search self-efficacy: whether participants feel more
+capable of conducting a successful search.
+
+The RDatasets version has 899 complete observations and is intended as an
+illustrative analysis file. Here the goal is to show a complete causal
+workflow: data, graph, identification, total-effect estimation, and a clearly
+labeled mediation decomposition.
 
 ## Mediation DAG
 
@@ -217,6 +235,31 @@ draw_graph(sensitivity_graph; direction="LR")
 The total effect of `treat` on `depress2` is still a treatment-effect question
 and can still be estimated under the baseline-adjustment assumptions above,
 because the total effect does not condition on or intervene on the mediator.
+`CausalGraphs.jl` therefore still identifies the total effect in this
+sensitivity graph:
+
+```@example jobs_mediation
+identify(sensitivity_graph, :treat, :depress2).strategy
+```
+
+```@example jobs_mediation
+markov_pillow(sensitivity_graph, :treat; treatment=:treat)
+```
+
+```@example jobs_mediation
+sensitivity_total_res = estimate_causal(
+    a = [1, 0],
+    data = data,
+    graph = sensitivity_graph,
+    treatment = :treat,
+    outcome = :depress2,
+)
+
+(TMLE_total_effect = r(sensitivity_total_res[:TMLE].ACE),
+ lower_ci = r(sensitivity_total_res[:TMLE].lower_ci),
+ upper_ci = r(sensitivity_total_res[:TMLE].upper_ci))
+```
+
 The natural direct and indirect effects, however, are no longer justified by
 the simple mediation g-formula because the `M -> Y` relationship is confounded
 after conditioning on `A` and `X`.

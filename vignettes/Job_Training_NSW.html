@@ -119,7 +119,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>This vignette uses the National Supported Work Demonstration (NSW) job-training data distributed through the <code>causaldata</code> example-data package and mirrored by RDatasets.</p>
+<p>This vignette uses the National Supported Work Demonstration (NSW) job-training data distributed through the <code>causaldata</code> example-data package and mirrored by <a href="https://vincentarelbundock.github.io/Rdatasets/doc/causaldata/nsw_mixtape.html">RDatasets</a>. NSW was a large social experiment from the 1970s that targeted disadvantaged workers. Treated participants were offered a supported work placement for a limited period, and later earnings were measured from administrative records.</p>
 <p>The causal question is:</p>
 <pre class="text"><code>What is the effect of job-training participation on real earnings in 1978?</code></pre>
 <p>The example is useful because the same economic question can be represented by several graphs:</p>
@@ -128,9 +128,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>an observational selection-on-observables graph, where baseline covariates confound participation and later earnings;</li>
 <li>a sensitivity graph with unmeasured selection, where the effect is no longer identified by the implemented criteria.</li>
 </ol>
+<p>The research idea is the classic program-evaluation problem: can an employment and training program raise later earnings? NSW is especially useful because it connects an experimental benchmark to the observational problem economists often face. If assignment is randomized, a simple comparison can estimate the effect. If participation is analyzed as if it came from a non-random labor market or administrative process, baseline earnings, education, age, race, marital status, and degree status become part of the identifying story. The DAG makes those alternative stories explicit before estimation.</p>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="c0b61a99" class="cell" data-execution_count="1">
+<div id="0707b2bc" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -144,8 +145,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="load-nsw-data" class="level2">
 <h2 class="anchored" data-anchor-id="load-nsw-data">1. Load NSW Data</h2>
-<p>The treatment is <code>treat</code>, an indicator for participation in the job-training program. The outcome is <code>re78</code>, real earnings in 1978. The baseline variables are demographic characteristics and pre-treatment earnings in 1974 and 1975.</p>
-<div id="52a42341" class="cell" data-execution_count="2">
+<p>The treatment is <code>treat</code>, an indicator for participation in the job-training program. The outcome is <code>re78</code>, real earnings in 1978. The baseline variables are demographic characteristics and pre-treatment earnings in 1974 and 1975. The RDatasets file used here has 445 observations and 11 variables. The analysis below keeps the variables needed for the treatment, outcome, and baseline adjustment set.</p>
+<div id="177e9c7c" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">read_rdatasets_csv</span>(url, cols)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    local_file <span class="op">=</span> <span class="bu">Downloads</span>.<span class="fu">download</span>(url; timeout<span class="op">=</span><span class="fl">120</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    x, header <span class="op">=</span> <span class="fu">readdlm</span>(local_file, <span class="ch">','</span>, <span class="dt">Any</span>, <span class="ch">'\n'</span>; header<span class="op">=</span><span class="cn">true</span>)</span>
@@ -280,7 +281,7 @@ controls = 260</code></pre>
 <p>In the randomized interpretation of the NSW experiment, assignment to training is not caused by baseline earnings, education, age, or other participant characteristics. The graph for the average effect of training on later earnings is therefore simple:</p>
 <pre class="text"><code>A -&gt; Y</code></pre>
 <p>where <code>A</code> is program participation and <code>Y</code> is real earnings in 1978.</p>
-<div id="f5a35a05" class="cell" data-execution_count="3">
+<div id="139cb761" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>experimental_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>treat, <span class="op">:</span>re78],</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="op">:</span>treat, <span class="op">:</span>re78)],</span>
@@ -307,7 +308,7 @@ controls = 260</code></pre>
 </div>
 </div>
 <p>Identification is immediate. The Markov pillow of the treatment is empty, so the estimator does not adjust for baseline covariates.</p>
-<div id="40e82e2c" class="cell" data-execution_count="5">
+<div id="06ce3de1" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>experimental_id <span class="op">=</span> <span class="fu">identify</span>(experimental_graph, <span class="op">:</span>treat, <span class="op">:</span>re78)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, experimental_id.strategy)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Markov pillow of treat: "</span>,</span>
@@ -317,7 +318,7 @@ controls = 260</code></pre>
 Markov pillow of treat: Symbol[]</code></pre>
 </div>
 </div>
-<div id="c5c00fc4" class="cell" data-execution_count="6">
+<div id="01ddf2be" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>raw_difference <span class="op">=</span> <span class="fu">mean</span>(data.re78[data.treat <span class="op">.==</span> <span class="fl">1</span>]) <span class="op">-</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>                 <span class="fu">mean</span>(data.re78[data.treat <span class="op">.==</span> <span class="fl">0</span>])</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -353,7 +354,7 @@ TMLE: ACE = 1794.34  95% CI (482.48, 3106.20)</code></pre>
 <pre class="text"><code>X -&gt; A -&gt; Y
 X -----&gt; Y</code></pre>
 <p>Here <code>X</code> contains baseline age, education, race/ethnicity indicators, marital status, degree status, and pre-treatment earnings.</p>
-<div id="4b6e303a" class="cell" data-execution_count="7">
+<div id="2f639342" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>conceptual_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>X, <span class="op">:</span>A, <span class="op">:</span>Y],</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="op">:</span>X, <span class="op">:</span>A), (<span class="op">:</span>X, <span class="op">:</span>Y), (<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
@@ -385,7 +386,7 @@ X -----&gt; Y</code></pre>
 </div>
 </div>
 <p>For estimation, the grouped node <code>X</code> is expanded into the actual data columns.</p>
-<div id="dbda6c66" class="cell" data-execution_count="9">
+<div id="8fddff31" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>vertices <span class="op">=</span> [</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span>age, <span class="op">:</span>educ, <span class="op">:</span>black, <span class="op">:</span>hisp, <span class="op">:</span>marr, <span class="op">:</span>nodegree,</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span>re74, <span class="op">:</span>re75, <span class="op">:</span>treat, <span class="op">:</span>re78,</span>
@@ -462,7 +463,7 @@ X -----&gt; Y</code></pre>
 </div>
 </div>
 <p>Under this graph, the effect is identified by adjustment for the measured baseline variables.</p>
-<div id="88bf0ee0" class="cell" data-execution_count="11">
+<div id="7afbe39d" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>observational_id <span class="op">=</span> <span class="fu">identify</span>(observational_graph, <span class="op">:</span>treat, <span class="op">:</span>re78)</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, observational_id.strategy)</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Markov pillow of treat: "</span>,</span>
@@ -472,7 +473,7 @@ X -----&gt; Y</code></pre>
 Markov pillow of treat: [:age, :educ, :black, :hisp, :marr, :nodegree, :re74, :re75]</code></pre>
 </div>
 </div>
-<div id="77e0b674" class="cell" data-execution_count="12">
+<div id="aed0ae7c" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>observational_res <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> data,</span>
@@ -488,17 +489,17 @@ Markov pillow of treat: [:age, :educ, :black, :hisp, :marr, :nodegree, :re74, :r
 <span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Onestep: ACE = %.2f</span><span class="sc">\n</span><span class="st">"</span>, observational_res[<span class="op">:</span>Onestep].ACE)</span>
 <span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Gcomp:   ACE = %.2f</span><span class="sc">\n</span><span class="st">"</span>, observational_res[<span class="op">:</span>Gcomp].ACE)</span>
 <span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"IPW:     ACE = %.2f</span><span class="sc">\n</span><span class="st">"</span>, observational_res[<span class="op">:</span>IPW].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stderr">
-<div class="ansi-escaped-output">
-<pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
-</pre>
-</div>
-</div>
 <div class="cell-output cell-output-stdout">
 <pre><code>TMLE:    ACE = 1637.57  95% CI (321.76, 2953.37)
 Onestep: ACE = 1637.97
 Gcomp:   ACE = 1676.34
 IPW:     ACE = 1613.13</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<div class="ansi-escaped-output">
+<pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+</pre>
+</div>
 </div>
 </div>
 <p>This adjusted estimate answers a different identifying story than the experimental estimate. It is the effect under the assumption that the listed baseline variables block all backdoor paths from training to 1978 earnings.</p>
@@ -510,7 +511,7 @@ IPW:     ACE = 1613.13</code></pre>
 X -----&gt; Y
 A &lt;-&gt; Y</code></pre>
 <p>The bidirected edge says that <code>A</code> and <code>Y</code> share an unmeasured common cause after conditioning on the measured baseline variables.</p>
-<div id="39a89ce1" class="cell" data-execution_count="13">
+<div id="5d1e4fc3" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>selection_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> vertices,</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> edges,</span>
@@ -579,7 +580,7 @@ A &lt;-&gt; Y</code></pre>
 </div>
 </div>
 </div>
-<div id="4907060c" class="cell" data-execution_count="15">
+<div id="63f85db2" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>selection_id <span class="op">=</span> <span class="fu">identify</span>(selection_graph, <span class="op">:</span>treat, <span class="op">:</span>re78)</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy with unmeasured selection: "</span>, selection_id.strategy)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
@@ -591,7 +592,7 @@ A &lt;-&gt; Y</code></pre>
 <section id="optional-observational-counterpart" class="level2">
 <h2 class="anchored" data-anchor-id="optional-observational-counterpart">5. Optional Observational Counterpart</h2>
 <p>The same graph can be used with an observational comparison sample, such as the RDatasets <code>cps_mixtape</code> file. That dataset contains CPS nonparticipants as an observational control group for the NSW treated units. Running the same adjustment graph there is reasonable only under the stronger selection-on- observables assumption encoded above.</p>
-<div id="7e93f431" class="cell" data-execution_count="16">
+<div id="70a4958d" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>cps_url <span class="op">=</span> <span class="st">"https://vincentarelbundock.github.io/Rdatasets/csv/causaldata/cps_mixtape.csv"</span></span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>cps_data <span class="op">=</span> <span class="fu">read_rdatasets_csv</span>(cps_url, cols)</span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>

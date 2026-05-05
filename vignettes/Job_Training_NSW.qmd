@@ -9,7 +9,11 @@ jupyter: julia-1.12
 
 This vignette uses the National Supported Work Demonstration (NSW)
 job-training data distributed through the `causaldata` example-data package and
-mirrored by RDatasets.
+mirrored by
+[RDatasets](https://vincentarelbundock.github.io/Rdatasets/doc/causaldata/nsw_mixtape.html).
+NSW was a large social experiment from the 1970s that targeted disadvantaged
+workers. Treated participants were offered a supported work placement for a
+limited period, and later earnings were measured from administrative records.
 
 The causal question is:
 
@@ -25,6 +29,15 @@ several graphs:
    confound participation and later earnings;
 3. a sensitivity graph with unmeasured selection, where the effect is no longer
    identified by the implemented criteria.
+
+The research idea is the classic program-evaluation problem: can an employment
+and training program raise later earnings? NSW is especially useful because it
+connects an experimental benchmark to the observational problem economists
+often face. If assignment is randomized, a simple comparison can estimate the
+effect. If participation is analyzed as if it came from a non-random labor
+market or administrative process, baseline earnings, education, age, race,
+marital status, and degree status become part of the identifying story. The
+DAG makes those alternative stories explicit before estimation.
 
 ## Setup
 
@@ -45,6 +58,9 @@ using Statistics
 The treatment is `treat`, an indicator for participation in the job-training
 program. The outcome is `re78`, real earnings in 1978. The baseline variables
 are demographic characteristics and pre-treatment earnings in 1974 and 1975.
+The RDatasets file used here has 445 observations and 11 variables. The
+analysis below keeps the variables needed for the treatment, outcome, and
+baseline adjustment set.
 
 ```{julia}
 function read_rdatasets_csv(url, cols)

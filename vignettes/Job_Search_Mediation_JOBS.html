@@ -119,7 +119,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>This vignette uses the JOBS II job-search intervention data distributed through the <code>mediation</code> R package and mirrored by RDatasets.</p>
+<p>This vignette uses the JOBS II job-search intervention data distributed through the <code>mediation</code> R package and mirrored by <a href="https://vincentarelbundock.github.io/Rdatasets/doc/mediation/jobs.html">RDatasets</a>. JOBS II was a randomized field experiment for unemployed workers. The intervention offered job-skills workshops that taught job-search techniques and coping strategies for setbacks in the job-search process. The follow-up data record post-treatment depressive symptoms and employment-related measures.</p>
 <p>The causal question is:</p>
 <pre class="text"><code>How much of the effect of a job-skills workshop on depressive symptoms is
 mediated by job-search self-efficacy?</code></pre>
@@ -129,9 +129,10 @@ mediated by job-search self-efficacy?</code></pre>
 <li>a decomposition of that effect into natural direct and indirect effects through the mediator.</li>
 </ol>
 <p><code>CausalGraphs.jl</code> is used for the DAG, graph visualization, total-effect identification, and total-effect estimation. The mediation decomposition is then computed with a small parametric g-formula. That last step uses additional natural-effect assumptions that are stronger than ordinary total-effect identification.</p>
+<p>The research idea is economic as well as behavioral. A job-search program might affect mental health because it changes employment prospects, but it might also work by changing how participants approach the job search itself. The mediator <code>job_seek</code> captures job-search self-efficacy: whether participants feel more capable of conducting a successful search. The DAG helps separate the policy question, “does assignment help?”, from the mechanism question, “is part of the effect transmitted through self-efficacy?”</p>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="bf001ae1" class="cell" data-execution_count="1">
+<div id="bdfc933b" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -147,7 +148,8 @@ mediated by job-search self-efficacy?</code></pre>
 <section id="load-jobs-ii-data" class="level2">
 <h2 class="anchored" data-anchor-id="load-jobs-ii-data">1. Load JOBS II Data</h2>
 <p>The treatment is <code>treat</code>, an indicator for assignment to the job-skills workshop. The mediator is <code>job_seek</code>, a post-treatment measure of job-search self-efficacy. The outcome is <code>depress2</code>, post-treatment depressive symptoms. The baseline variables used below are economic hardship, baseline depression, sex, age, and nonwhite race.</p>
-<div id="6946c9d2" class="cell" data-execution_count="2">
+<p>The RDatasets version has 899 complete observations and is intended as an illustrative analysis file. The original randomized study was larger; for substantive claims about program efficacy one should return to the original study and documentation. Here the goal is to show a complete causal workflow: data, graph, identification, total-effect estimation, and a clearly labeled mediation decomposition.</p>
+<div id="cb274a61" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">read_jobs</span>()</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    url <span class="op">=</span> <span class="st">"https://vincentarelbundock.github.io/Rdatasets/csv/mediation/jobs.csv"</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    local_file <span class="op">=</span> <span class="bu">Downloads</span>.<span class="fu">download</span>(url; timeout<span class="op">=</span><span class="fl">120</span>)</span>
@@ -284,7 +286,7 @@ A -&gt; M
 M -&gt; Y
 A -&gt; Y</code></pre>
 <p>The edge <code>A -&gt; M -&gt; Y</code> is the mediated pathway. The edge <code>A -&gt; Y</code> allows the workshop to affect depressive symptoms through other channels.</p>
-<div id="c3e52cd1" class="cell" data-execution_count="3">
+<div id="230f425b" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>conceptual_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>X, <span class="op">:</span>A, <span class="op">:</span>M, <span class="op">:</span>Y],</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [</span>
@@ -326,7 +328,7 @@ A -&gt; Y</code></pre>
 </div>
 </div>
 <p>For estimation, the grouped node <code>X</code> is expanded into observed baseline columns.</p>
-<div id="966675bd" class="cell" data-execution_count="5">
+<div id="e9264d34" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>baseline <span class="op">=</span> [<span class="op">:</span>econ_hard, <span class="op">:</span>depress1, <span class="op">:</span>sex, <span class="op">:</span>age, <span class="op">:</span>nonwhite]</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>vertices <span class="op">=</span> [<span class="op">:</span>treat, baseline<span class="op">...</span>, <span class="op">:</span>job_seek, <span class="op">:</span>depress2]</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -403,7 +405,7 @@ A -&gt; Y</code></pre>
 <section id="total-effect-identification" class="level2">
 <h2 class="anchored" data-anchor-id="total-effect-identification">3. Total Effect Identification</h2>
 <p>For the total effect of assignment <code>treat</code> on <code>depress2</code>, the mediator is part of the causal pathway and is not adjusted away. The graph says that adjustment for the baseline variables is sufficient.</p>
-<div id="3358bf69" class="cell" data-execution_count="7">
+<div id="c3a02580" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>total_id <span class="op">=</span> <span class="fu">identify</span>(mediation_graph, <span class="op">:</span>treat, <span class="op">:</span>depress2)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, total_id.strategy)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Markov pillow of treat: "</span>,</span>
@@ -413,7 +415,7 @@ A -&gt; Y</code></pre>
 Markov pillow of treat: [:econ_hard, :depress1, :sex, :age, :nonwhite]</code></pre>
 </div>
 </div>
-<div id="4fb5ce95" class="cell" data-execution_count="8">
+<div id="db0099f0" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>total_res <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> data,</span>
@@ -458,7 +460,7 @@ natural indirect effect = E[Y(1, M1) - Y(1, M0)]</code></pre>
 <li>predict each unit’s <code>M0</code> and <code>M1</code>;</li>
 <li>average predicted outcomes under <code>(A=1,M1)</code>, <code>(A=1,M0)</code>, and <code>(A=0,M0)</code>.</li>
 </ol>
-<div id="d5d3807d" class="cell" data-execution_count="9">
+<div id="febb6bb3" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">mediator_matrix</span>(d, avec)</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="fu">nrow</span>(d)</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">hcat</span>(<span class="fu">ones</span>(n), avec, d.econ_hard, d.depress1, d.sex, d.age, d.nonwhite)</span>
@@ -516,7 +518,7 @@ proportion mediated:     0.209</code></pre>
 <p>The weakest link in many mediation analyses is the mediator-outcome relationship. In this example, job-search self-efficacy is post-treatment, not randomized. Unmeasured optimism, family support, health, or local job-market conditions could affect both self-efficacy and depressive symptoms.</p>
 <p>A sensitivity graph adds a bidirected edge between the mediator and outcome. This is different from the directed edge <code>job_seek -&gt; depress2</code>, which is the causal mediated pathway. The bidirected edge <code>job_seek &lt;-&gt; depress2</code> means there is an unmeasured common cause of job-search self-efficacy and depressive symptoms.</p>
 <pre class="text"><code>M &lt;-&gt; Y</code></pre>
-<div id="37f6a055" class="cell" data-execution_count="10">
+<div id="f9e31401" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>sensitivity_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> vertices,</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> edges,</span>
@@ -585,7 +587,38 @@ proportion mediated:     0.209</code></pre>
 </div>
 </div>
 </div>
-<p>The total effect of <code>treat</code> on <code>depress2</code> is still a treatment-effect question and can still be estimated under the baseline-adjustment assumptions above, because the total effect does not condition on or intervene on the mediator. The natural direct and indirect effects, however, are no longer justified by the simple mediation g-formula because the <code>M -&gt; Y</code> relationship is confounded after conditioning on <code>A</code> and <code>X</code>.</p>
+<p>The total effect of <code>treat</code> on <code>depress2</code> is still a treatment-effect question and can still be estimated under the baseline-adjustment assumptions above, because the total effect does not condition on or intervene on the mediator. <code>CausalGraphs.jl</code> therefore still identifies the total effect in this sensitivity graph:</p>
+<div id="e9f06907" class="cell" data-execution_count="12">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>sensitivity_total_id <span class="op">=</span> <span class="fu">identify</span>(sensitivity_graph, <span class="op">:</span>treat, <span class="op">:</span>depress2)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"total-effect strategy: "</span>, sensitivity_total_id.strategy)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Markov pillow of treat: "</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">markov_pillow</span>(sensitivity_graph, <span class="op">:</span>treat; treatment<span class="op">=:</span>treat))</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>sensitivity_total_res <span class="op">=</span> <span class="fu">estimate_causal</span>(</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">0</span>],</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> data,</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    graph <span class="op">=</span> sensitivity_graph,</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    treatment <span class="op">=</span> <span class="op">:</span>treat,</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    outcome <span class="op">=</span> <span class="op">:</span>depress2,</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"TMLE total effect: %.4f  95%% CI (%.4f, %.4f)</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>        sensitivity_total_res[<span class="op">:</span>TMLE].ACE,</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>        sensitivity_total_res[<span class="op">:</span>TMLE].lower_ci,</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>        sensitivity_total_res[<span class="op">:</span>TMLE].upper_ci)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>total-effect strategy: a_fixable
+Markov pillow of treat: [:econ_hard, :depress1, :sex, :age, :nonwhite]
+TMLE total effect: -0.0462  95% CI (-0.1273, 0.0349)</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<div class="ansi-escaped-output">
+<pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Treatment is a-fixable (backdoor). Using TMLE.
+</pre>
+</div>
+</div>
+</div>
+<p>The natural direct and indirect effects, however, are no longer justified by the simple mediation g-formula because the <code>M -&gt; Y</code> relationship is confounded after conditioning on <code>A</code> and <code>X</code>.</p>
 </section>
 <section id="takeaway" class="level2">
 <h2 class="anchored" data-anchor-id="takeaway">Takeaway</h2>
