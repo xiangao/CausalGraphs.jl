@@ -52,6 +52,7 @@ result[:TMLE].ACE
 | [Nested-Fixable and Missing Data](vignettes/Nested_and_Missing_Data.md) | Nested-fixable effects, ANIPW/NIPW, and missing-data weighting with mDAGs |
 | [Smoking Cessation NHEFS](vignettes/Smoking_Cessation_NHEFS.md) | End-to-end real-data workflow: hypothesize a graph, identify, estimate, and compare assumptions |
 | [Job Training NSW](vignettes/Job_Training_NSW.md) | Economics example: experimental assignment, measured selection, unmeasured selection, identification, and estimation |
+| [Job Search Mediation JOBS II](vignettes/Job_Search_Mediation_JOBS.md) | Economics mediation example: DAG, total-effect estimation, and natural direct and indirect effects |
 
 ## Core API
 

@@ -49,6 +49,7 @@ Full documentation: **https://xiangao.github.io/CausalGraphs.jl/dev/**
 | [Nested-Fixable Estimation and Missing Data](https://xiangao.github.io/CausalGraphs.jl/dev/vignettes/Nested_and_Missing_Data/) | Nested-fixable effects, ANIPW/NIPW, and missing-data weighting with mDAGs |
 | [Real Example: Smoking Cessation and Weight Change](https://xiangao.github.io/CausalGraphs.jl/dev/vignettes/Smoking_Cessation_NHEFS/) | End-to-end NHEFS example: hypothesize a graph, identify, estimate, and compare assumptions |
 | [Economics Example: Job Training and Earnings](https://xiangao.github.io/CausalGraphs.jl/dev/vignettes/Job_Training_NSW/) | NSW job-training example: experimental assignment, measured selection, unmeasured selection, identification, and estimation |
+| [Economics Example: Job Search Mediation](https://xiangao.github.io/CausalGraphs.jl/dev/vignettes/Job_Search_Mediation_JOBS/) | JOBS II mediation example: DAG, total-effect identification and estimation, natural direct and indirect effects |
 
 The Quarto sources live in [`vignettes/`](vignettes/README.md).
 

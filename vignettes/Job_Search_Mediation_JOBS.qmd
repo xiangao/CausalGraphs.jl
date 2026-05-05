@@ -1,0 +1,304 @@
+---
+title: "Economics Example: Job Search Mediation"
+format:
+  html:
+    toc: true
+    code-fold: false
+jupyter: julia-1.12
+---
+
+This vignette uses the JOBS II job-search intervention data distributed through
+the `mediation` R package and mirrored by RDatasets.
+
+The causal question is:
+
+```text
+How much of the effect of a job-skills workshop on depressive symptoms is
+mediated by job-search self-efficacy?
+```
+
+This is a mediation example, so there are two related estimands:
+
+1. the total effect of the workshop on post-treatment depressive symptoms;
+2. a decomposition of that effect into natural direct and indirect effects
+   through the mediator.
+
+`CausalGraphs.jl` is used for the DAG, graph visualization, total-effect
+identification, and total-effect estimation. The mediation decomposition is
+then computed with a small parametric g-formula. That last step uses additional
+natural-effect assumptions that are stronger than ordinary total-effect
+identification.
+
+## Setup
+
+```{julia}
+import Pkg
+Pkg.activate(joinpath(@__DIR__, ".."); io=devnull)
+
+using CausalGraphs
+using DataFrames
+using DelimitedFiles
+using Downloads
+using LinearAlgebra
+using Printf
+using Statistics
+```
+
+## 1. Load JOBS II Data
+
+The treatment is `treat`, an indicator for assignment to the job-skills
+workshop. The mediator is `job_seek`, a post-treatment measure of job-search
+self-efficacy. The outcome is `depress2`, post-treatment depressive symptoms.
+The baseline variables used below are economic hardship, baseline depression,
+sex, age, and nonwhite race.
+
+```{julia}
+function read_jobs()
+    url = "https://vincentarelbundock.github.io/Rdatasets/csv/mediation/jobs.csv"
+    local_file = Downloads.download(url; timeout=120)
+    x, header = readdlm(local_file, ',', Any, '\n'; header=true)
+    raw = DataFrame(x, Symbol.(vec(header)))
+
+    DataFrame(
+        treat = Float64.(raw.treat),
+        econ_hard = Float64.(raw.econ_hard),
+        depress1 = Float64.(raw.depress1),
+        sex = Float64.(raw.sex),
+        age = Float64.(raw.age),
+        nonwhite = Float64.(raw.nonwhite .== "non.white1"),
+        job_seek = Float64.(raw.job_seek),
+        depress2 = Float64.(raw.depress2),
+    )
+end
+
+data = read_jobs();
+
+println("n = ", nrow(data))
+println("treated = ", Int(sum(data.treat .== 1)))
+println("controls = ", Int(sum(data.treat .== 0)))
+first(data, 5)
+```
+
+Lower values of `depress2` correspond to fewer depressive symptoms. Negative
+effects therefore mean reductions in depressive symptoms.
+
+## 2. Mediation DAG
+
+Let:
+
+- `A` be workshop assignment;
+- `M` be job-search self-efficacy;
+- `Y` be post-treatment depressive symptoms;
+- `X` be the baseline variables.
+
+The mediation graph is:
+
+```text
+X -> A
+X -> M
+X -> Y
+A -> M
+M -> Y
+A -> Y
+```
+
+The edge `A -> M -> Y` is the mediated pathway. The edge `A -> Y` allows the
+workshop to affect depressive symptoms through other channels.
+
+```{julia}
+conceptual_graph = make_graph(
+    vertices = [:X, :A, :M, :Y],
+    di_edges = [
+        (:X, :A), (:X, :M), (:X, :Y),
+        (:A, :M), (:M, :Y), (:A, :Y),
+    ],
+);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(conceptual_graph; direction="LR"))
+println("```")
+```
+
+For estimation, the grouped node `X` is expanded into observed baseline
+columns.
+
+```{julia}
+baseline = [:econ_hard, :depress1, :sex, :age, :nonwhite]
+vertices = [:treat, baseline..., :job_seek, :depress2]
+
+edges = vcat(
+    [(x, :treat) for x in baseline],
+    [(x, :job_seek) for x in baseline],
+    [(x, :depress2) for x in baseline],
+    [(:treat, :job_seek), (:job_seek, :depress2), (:treat, :depress2)],
+)
+
+mediation_graph = make_graph(vertices=vertices, di_edges=edges);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(mediation_graph; direction="LR"))
+println("```")
+```
+
+## 3. Total Effect Identification
+
+For the total effect of assignment `treat` on `depress2`, the mediator is part
+of the causal pathway and is not adjusted away. The graph says that adjustment
+for the baseline variables is sufficient.
+
+```{julia}
+total_id = identify(mediation_graph, :treat, :depress2)
+println("strategy: ", total_id.strategy)
+println("Markov pillow of treat: ",
+        markov_pillow(mediation_graph, :treat; treatment=:treat))
+```
+
+```{julia}
+total_res = estimate_causal(
+    a = [1, 0],
+    data = data,
+    graph = mediation_graph,
+    treatment = :treat,
+    outcome = :depress2,
+);
+
+@printf("TMLE total effect: %.4f  95%% CI (%.4f, %.4f)\n",
+        total_res[:TMLE].ACE,
+        total_res[:TMLE].lower_ci,
+        total_res[:TMLE].upper_ci)
+```
+
+The total-effect estimate is a small reduction in depressive symptoms. The
+confidence interval crosses zero in this simple analysis.
+
+## 4. Natural Direct and Indirect Effects
+
+For mediation, define:
+
+- `M0`: job-search self-efficacy under no workshop;
+- `M1`: job-search self-efficacy under the workshop;
+- `Y(a, m)`: depressive symptoms under workshop assignment `a` and mediator
+  value `m`.
+
+The standard natural-effect decomposition is:
+
+```text
+total effect            = E[Y(1, M1) - Y(0, M0)]
+natural direct effect   = E[Y(1, M0) - Y(0, M0)]
+natural indirect effect = E[Y(1, M1) - Y(1, M0)]
+```
+
+The graph-based total effect above only requires identifying the intervention
+`do(A=a)`. Natural direct and indirect effects require additional assumptions:
+no unmeasured treatment-outcome, treatment-mediator, or mediator-outcome
+confounding, plus the usual cross-world condition needed for natural effects.
+
+Here is a compact parametric g-formula implementation:
+
+1. fit a mediator model for `E[M | A, X]`;
+2. fit an outcome model for `E[Y | A, M, A*M, X]`;
+3. predict each unit's `M0` and `M1`;
+4. average predicted outcomes under `(A=1,M1)`, `(A=1,M0)`, and `(A=0,M0)`.
+
+```{julia}
+function mediator_matrix(d, avec)
+    n = nrow(d)
+    hcat(ones(n), avec, d.econ_hard, d.depress1, d.sex, d.age, d.nonwhite)
+end
+
+function outcome_matrix(d, avec, mvec)
+    n = nrow(d)
+    hcat(
+        ones(n), avec, mvec, avec .* mvec,
+        d.econ_hard, d.depress1, d.sex, d.age, d.nonwhite,
+    )
+end
+
+n = nrow(data)
+zeros_a = zeros(n)
+ones_a = ones(n)
+
+mediator_coef = mediator_matrix(data, data.treat) \ data.job_seek
+m0 = mediator_matrix(data, zeros_a) * mediator_coef
+m1 = mediator_matrix(data, ones_a) * mediator_coef
+
+outcome_coef = outcome_matrix(data, data.treat, data.job_seek) \ data.depress2
+
+ey_1m1 = mean(outcome_matrix(data, ones_a, m1) * outcome_coef)
+ey_1m0 = mean(outcome_matrix(data, ones_a, m0) * outcome_coef)
+ey_0m0 = mean(outcome_matrix(data, zeros_a, m0) * outcome_coef)
+
+total_effect = ey_1m1 - ey_0m0
+natural_direct = ey_1m0 - ey_0m0
+natural_indirect = ey_1m1 - ey_1m0
+prop_mediated = natural_indirect / total_effect
+
+@printf("E[Y(1,M1)] = %.4f\n", ey_1m1)
+@printf("E[Y(1,M0)] = %.4f\n", ey_1m0)
+@printf("E[Y(0,M0)] = %.4f\n", ey_0m0)
+@printf("total effect:            %.4f\n", total_effect)
+@printf("natural direct effect:   %.4f\n", natural_direct)
+@printf("natural indirect effect: %.4f\n", natural_indirect)
+@printf("proportion mediated:     %.3f\n", prop_mediated)
+```
+
+In this linear plug-in analysis, most of the estimated reduction in depressive
+symptoms is direct. About one fifth of the estimated reduction is mediated
+through job-search self-efficacy.
+
+The total effect from the mediation g-formula is close to the `estimate_causal`
+TMLE total-effect estimate above, but it is not the same estimator. The
+mediation calculation is intentionally written out so that the role of the
+mediator model and the outcome model is visible.
+
+## 5. Sensitivity to Mediator-Outcome Confounding
+
+The weakest link in many mediation analyses is the mediator-outcome
+relationship. In this example, job-search self-efficacy is post-treatment, not
+randomized. Unmeasured optimism, family support, health, or local job-market
+conditions could affect both self-efficacy and depressive symptoms.
+
+A sensitivity graph adds a bidirected edge between the mediator and outcome:
+
+```text
+M <-> Y
+```
+
+```{julia}
+sensitivity_graph = make_graph(
+    vertices = vertices,
+    di_edges = edges,
+    bi_edges = [(:job_seek, :depress2)],
+);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(sensitivity_graph; direction="LR"))
+println("```")
+```
+
+The total effect of `treat` on `depress2` is still a treatment-effect question.
+The natural direct and indirect effects, however, are no longer justified by
+the simple mediation g-formula because the `M -> Y` relationship is confounded
+after conditioning on `A` and `X`.
+
+## Takeaway
+
+This example separates three tasks that are often collapsed in applied
+mediation work:
+
+- the DAG encodes the economic and behavioral story;
+- `identify()` and `estimate_causal()` handle the total effect of the workshop;
+- the natural-effect decomposition requires extra assumptions and an explicit
+  mediation formula.
+
+That separation is useful in practice: the total effect can be credible even
+when the mediated pathway is more speculative.
