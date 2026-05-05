@@ -13,7 +13,7 @@ export top_order, parents, children, descendants, ancestors
 export district, all_districts, markov_blanket, markov_pillow
 export subgraph, fixed_graph, reachable_closure
 export is_fix, is_p_fix, is_np_saturated, mb_shielded
-export to_dot, to_mermaid, draw_graph, MermaidGraph
+export to_dot, to_mermaid, to_svg, draw_graph, MermaidGraph, SVGGraph
 export identify
 export superlearner
 export estimate_causal, backdoor_tmle_a, nps_tmle_a, nested_anipw_a

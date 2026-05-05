@@ -4,9 +4,6 @@ using CausalGraphs
 makedocs(
     sitename = "CausalGraphs.jl",
     modules = [CausalGraphs],
-    format = Documenter.HTML(
-        assets = ["assets/mermaid-loader.js"],
-    ),
     pages = [
         "Home" => "index.md",
         "Vignettes" => [

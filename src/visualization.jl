@@ -4,6 +4,10 @@ struct MermaidGraph
     code::String
 end
 
+struct SVGGraph
+    svg::String
+end
+
 """
     to_dot(graph; direction="LR")
 
@@ -118,14 +122,41 @@ function to_mermaid(g::MDAG; direction="LR")
 end
 
 """
+    to_svg(graph; direction="LR")
+
+Render the graph to an SVG string using Graphviz (`dot`).
+Returns `nothing` if `dot` is not available on the system PATH.
+"""
+function to_svg(g::Union{ADMG,MDAG}; direction="LR")
+    dot_str = to_dot(g; direction=direction)
+    try
+        raw = read(pipeline(IOBuffer(dot_str), `dot -Tsvg`), String)
+        # Strip XML declaration and DOCTYPE — keep only the <svg>...</svg> fragment
+        m = match(r"(<svg\b.*</svg>)"s, raw)
+        return m === nothing ? raw : m[1]
+    catch
+        return nothing
+    end
+end
+
+"""
     draw_graph(graph; direction="LR")
 
-Return a lightweight Mermaid display object for an ADMG.
+Return a displayable graph object for an ADMG or MDAG.
 
-In HTML-capable environments this displays as a Mermaid diagram. In plain text
-environments it prints the Mermaid source.
+Uses Graphviz (`dot`) to render an SVG when available — the SVG is embedded
+directly in HTML with no JavaScript dependency. Falls back to a Mermaid
+source object for environments without `dot` installed.
 """
-draw_graph(g::Union{ADMG,MDAG}; direction="LR") = MermaidGraph(to_mermaid(g; direction=direction))
+function draw_graph(g::Union{ADMG,MDAG}; direction="LR")
+    svg = to_svg(g; direction=direction)
+    svg !== nothing && return SVGGraph(svg)
+    return MermaidGraph(to_mermaid(g; direction=direction))
+end
+
+Base.show(io::IO, g::SVGGraph) = print(io, "[SVG graph — display in an HTML environment]")
+Base.show(io::IO, ::MIME"text/plain", g::SVGGraph) = print(io, "[SVG graph — display in an HTML environment]")
+Base.show(io::IO, ::MIME"text/html", g::SVGGraph) = print(io, g.svg)
 
 Base.show(io::IO, g::MermaidGraph) = print(io, g.code)
 Base.show(io::IO, ::MIME"text/plain", g::MermaidGraph) = print(io, g.code)
