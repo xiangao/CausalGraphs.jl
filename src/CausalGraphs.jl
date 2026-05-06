@@ -15,6 +15,9 @@ export subgraph, fixed_graph, reachable_closure
 export is_fix, is_p_fix, is_np_saturated, mb_shielded
 export to_dot, to_mermaid, to_svg, draw_graph, MermaidGraph, SVGGraph
 export identify
+export IDExpression, IDJoint, IDKernel, IDProduct, IDSum, ADMGIDResult
+export id_algorithm, is_id_identified
+export fixing_sequence, nested_fixability, is_nested_fixable
 export superlearner
 export estimate_causal, backdoor_tmle_a, nps_tmle_a, nested_anipw_a
 export calculate_density_ratio_dnorm
@@ -53,6 +56,8 @@ Identification is determined automatically:
 - a-fixable (backdoor): returns TMLE, Onestep, Gcomp, IPW
 - p-fixable (front-door / NPS): returns TMLE, Onestep
 - nested-fixable: returns ANIPW, NIPW
+- general ID-algorithm identifiable: `identify()` reports `:id_algorithm`,
+  but arbitrary ID functionals do not yet have an automatic estimator here
 
 `a` may be a scalar for E[Y(a)] or a length-2 vector `[a1, a0]` for the ACE.
 
@@ -103,7 +108,7 @@ function estimate_causal(; a, data::DataFrame,
             nps_tmle_a(a=aval, data=data, graph=g,
                        treatment=treatment, outcome=outcome,
                        sample_weights=sample_weights; kwargs...))
-    else  # :nested_fixable
+    elseif id.strategy == :nested_fixable
         @info "Treatment is nested-fixable. Using ANIPW."
         avals = collect(a isa AbstractVector ? a : [a])
         isempty(avals) && error("`a` must be a scalar or length-two vector.")
@@ -135,6 +140,10 @@ function estimate_causal(; a, data::DataFrame,
             :ANIPW_Y0 => out0.ANIPW,
             :rw       => out1.rw,
         )
+    else  # :id_algorithm
+        error("The effect of $treatment on $outcome is identified by the general ID algorithm, " *
+              "but `estimate_causal()` does not yet implement an estimator for arbitrary ID functionals. " *
+              "Inspect `identify(...).id_expression` or `ID_algorithm(graph, treatment, outcome)`.")
     end
 end
 

@@ -61,6 +61,20 @@ end
                     di_edges=[(:U,:A),(:U,:M),(:A,:M),(:M,:Y)])
     id4 = identify(g4,:A,:Y)
     @test id4.strategy in (:p_fixable, :nested_fixable, :a_fixable)
+
+    # Pearl-Shpitser ID succeeds for front-door and fails for the bow graph.
+    id_fd = ID_algorithm(g2, :A, :Y)
+    @test id_fd.identified
+    @test occursin("sum_{M}", string(id_fd.expression))
+    @test is_id_identified(g2, :A, :Y)
+    @test !ID_algorithm(g3; treatment=:A, outcome=:Y).identified
+
+    fs = fixing_sequence(g1, [:A])
+    @test fs.fixable
+    @test fs.fixing_order == [:A]
+    nested = nested_fixability(g4, :A, :Y)
+    @test nested.treatment == :A
+    @test nested.outcome == :Y
 end
 
 # ── Backdoor TMLE ─────────────────────────────────────────────────────────────

@@ -209,6 +209,47 @@ In this linear plug-in analysis, most of the estimated reduction in depressive
 symptoms is direct. About one fifth of the estimated reduction is mediated
 through job-search self-efficacy.
 
+## Optional Crumble.jl Handoff
+
+This vignette does not need `Crumble.jl` to make the main point. The purpose
+here is to show how `CausalGraphs.jl` moves from a DAG to total-effect
+identification and estimation, and then to show the extra assumptions behind a
+simple natural-effect mediation decomposition.
+
+`Crumble.jl` is the better tool when the mediation estimand itself is the main
+target. It implements mediation estimators for natural, organic, randomized
+interventional, and recanting-twins effects, with nuisance estimation machinery
+that is beyond the scope of this graph vignette. For the simple JOBS graph
+above, the analogous `Crumble.jl` call would target natural effects:
+
+```julia
+using Crumble
+
+crumble_res = crumble(
+    data,
+    ["treat"];
+    outcome = "depress2",
+    mediators = ["job_seek"],
+    covar = string.(baseline),
+    effect = "N",
+)
+```
+
+This is intentionally shown as optional code rather than a required dependency
+of `CausalGraphs.jl`. The graph package should be usable without pulling in a
+full mediation-estimation stack. In a substantive mediation analysis, however,
+one natural workflow is to use `CausalGraphs.jl` to state and stress-test the
+DAG assumptions, use `identify()` to separate total-effect identification from
+mechanism assumptions, and then use `Crumble.jl` when the target is a formal
+mediation estimand and the data support the required assumptions.
+
+The distinction matters in the next section. If the mediator-outcome
+relationship is confounded by an unmeasured variable, the total effect may
+still be identifiable from the graph, but the natural direct and indirect
+effects are no longer justified by the simple natural-effect formula. A
+different mediation estimand or additional measured mediator-outcome
+confounders would be needed before using a richer mediation estimator.
+
 ## Mediator-Outcome Confounding
 
 The weakest link in many mediation analyses is the mediator-outcome
@@ -272,4 +313,6 @@ mediation work:
 - the DAG encodes the economic and behavioral story;
 - `identify()` and `estimate_causal()` handle the total effect of the workshop;
 - the natural-effect decomposition requires extra assumptions and an explicit
-  mediation formula.
+  mediation formula;
+- `Crumble.jl` is the natural companion when the mediation estimand, rather
+  than the graph-to-total-effect workflow, is the main analysis target.

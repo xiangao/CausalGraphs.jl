@@ -91,6 +91,7 @@ The implemented strategies are:
 | `:a_fixable` | Backdoor/a-fixable effect |
 | `:p_fixable` | Front-door, primal-fixable, or NPS effect |
 | `:nested_fixable` | Identified by a One-Line-ID style nested check |
+| `:id_algorithm` | Identified by the general Pearl-Shpitser ID algorithm, but no automatic estimator is routed |
 | `:not_identified` | Not identified by the implemented criteria |
 
 These strategies correspond to different identification arguments:
@@ -103,9 +104,13 @@ These strategies correspond to different identification arguments:
 - `:nested_fixable` covers ADMGs where neither simple adjustment nor
   p-fixability is enough, but a One-Line ID style fixing sequence still
   identifies the effect.
+- `:id_algorithm` covers more general ADMGs where the recursive ID algorithm
+  finds a symbolic functional, but the package does not yet provide an
+  automatic estimator for that arbitrary functional.
 
-The returned strategy is both an identification statement and an estimation
-instruction for `estimate_causal()`.
+The returned strategy is an estimation instruction for `estimate_causal()` when
+it is `:a_fixable`, `:p_fixable`, or `:nested_fixable`. For `:id_algorithm`,
+inspect `identify(...).id_expression` or call `ID_algorithm()` directly.
 
 For the backdoor graph, the a-fixability condition holds because `A` is not in
 the same hidden-confounding district as any descendant other than itself. The
@@ -120,3 +125,29 @@ Markov pillow is `X`, which becomes the adjustment set.
 If a graph has both `A -> Y` and `A <-> Y`, the directed causal effect and the
 hidden common cause are entangled. That bow graph is the simplest
 non-identified case.
+
+## General ID Algorithm
+
+`ID_algorithm()` runs the Pearl-Shpitser recursive ID algorithm for ADMG
+queries. It is useful for separating mathematical identification from estimator
+routing. On the front-door graph, it recovers the familiar front-door
+functional:
+
+```@example graphs_identification
+id_general = ID_algorithm(g_fd, :A, :Y)
+(identified = id_general.identified,
+ expression = string(id_general.expression))
+```
+
+On the bow graph, the general ID algorithm fails and returns a hedge witness.
+
+```@example graphs_identification
+g_bow = make_graph(
+    vertices = [:A, :Y],
+    di_edges = [(:A, :Y)],
+    bi_edges = [(:A, :Y)],
+)
+
+id_bow = ID_algorithm(g_bow, :A, :Y)
+(identified = id_bow.identified, hedge = id_bow.hedge)
+```

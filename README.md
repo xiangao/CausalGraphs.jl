@@ -8,16 +8,17 @@ It combines graph-based causal identification, semiparametric effect
 estimation, and missing-data weighting in one package:
 
 1. Build an ADMG with directed and bidirected edges.
-2. Check whether an effect is a-fixable, p-fixable, nested-fixable, or not
-   identified.
+2. Check whether an effect is a-fixable, p-fixable, nested-fixable, identified
+   by the general ID algorithm, or not identified.
 3. Route automatically to the appropriate semiparametric estimator.
 4. Optionally identify missing-data mechanisms on an mDAG and pass
    inverse-probability weights into the causal estimator.
 
 The package currently implements graph utilities, automatic identification
 routing, backdoor TMLE, front-door/NPS TMLE, nested ANIPW/NIPW, default
-parametric nuisance fits, MLJ-based SuperLearner ensembles, mDAG missing-data
-identification, missingness propensity estimation, and missing-data weighting.
+parametric nuisance fits, MLJ-based SuperLearner ensembles, symbolic
+Pearl-Shpitser ID for ADMGs, mDAG missing-data identification, missingness
+propensity estimation, and missing-data weighting.
 
 `CausalGraphs.jl` brings together ideas and workflows from Anna Guo and Razieh
 Nabi's R packages [`flexCausal`](https://github.com/annaguo-bios/flexCausal)
@@ -107,6 +108,7 @@ result[:TMLE].upper_ci
 - Subgraphs and fixed graphs
 - Reachable closures
 - Fixability and primal-fixability checks
+- General fixing sequences
 - Nonparametric saturation and Markov-blanket shielding checks
 
 ### Identification
@@ -119,7 +121,11 @@ one of:
 | `:a_fixable` | Backdoor/a-fixable effect |
 | `:p_fixable` | Front-door, primal-fixable, or NPS effect |
 | `:nested_fixable` | Identified by a One-Line-ID style nested check |
+| `:id_algorithm` | Identified by the general Pearl-Shpitser ID algorithm; inspect `id_expression` |
 | `:not_identified` | Not identified by the implemented criteria |
+
+For symbolic identification without estimator routing, use
+`ID_algorithm(graph, treatment, outcome)`.
 
 ### Estimation
 
@@ -131,6 +137,9 @@ the graph:
 | a-fixable | `:TMLE`, `:Onestep`, `:Gcomp`, `:IPW` |
 | p-fixable | `:TMLE`, `:Onestep` |
 | nested-fixable | `:ANIPW`, `:NIPW` |
+
+Effects with strategy `:id_algorithm` are identified symbolically, but arbitrary
+ID functionals are not yet automatically estimated by `estimate_causal()`.
 
 The argument `a` can be a scalar, such as `a=1`, for `E[Y(a)]`, or a length-two
 vector, such as `a=[1,0]`, for an ACE contrast.
