@@ -128,13 +128,19 @@ Y = Float64.(rand(n) .< (0.1 .+ 0.2 .* A .+ 0.4 .* M))
 df = DataFrame(A=A, M=M, Y=Y)
 
 id_est = estimate_id(a=[1, 0], data=df, graph=g_fd, treatment=:A, outcome=:Y)
-id_est[:IDPlugin]
+r = x -> round(x, sigdigits=4)
+(ACE = r(id_est[:IDPlugin].ACE),
+ lower_ci = r(id_est[:IDPlugin].lower_ci),
+ upper_ci = r(id_est[:IDPlugin].upper_ci),
+ SE = r(id_est[:IDPlugin].standard_error),
+ total_probability_a1 = r(id_est[:IDPlugin].total_probability_a1),
+ total_probability_a0 = r(id_est[:IDPlugin].total_probability_a0))
 ```
 
 The same plug-in route is used by `estimate_causal()` when `identify()` returns
 `:id_algorithm`. The estimator is deliberately labeled `:IDPlugin`: it is an
-automatic finite-support estimator, not a general TMLE for arbitrary continuous
-ID functionals.
+automatic finite-support estimator with a finite-support EIF standard error, not
+a general TMLE for arbitrary continuous ID functionals.
 
 ## Non-Identification and Hedges
 

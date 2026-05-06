@@ -91,8 +91,20 @@ end
     res = estimate_id(a=[1, 0], data=df, graph=g, treatment=:A, outcome=:Y)
     @test haskey(res, :IDPlugin)
     @test isfinite(res[:IDPlugin].ACE)
+    @test isfinite(res[:IDPlugin].standard_error)
+    @test res[:IDPlugin].standard_error >= 0
+    @test res[:IDPlugin].lower_ci < res[:IDPlugin].upper_ci
+    @test length(res[:IDPlugin].EIF) == nrow(df)
     @test abs(res[:IDPlugin_Y1].total_probability - 1) < 1e-8
     @test abs(res[:IDPlugin_Y0].total_probability - 1) < 1e-8
+    @test length(res[:IDPlugin_Y1].cell_EIF) == 8
+
+    collapsed = combine(groupby(df, [:A, :M, :Y]), nrow => :w)
+    res_w = estimate_id(a=[1, 0], data=collapsed[:, [:A, :M, :Y]],
+                        graph=g, treatment=:A, outcome=:Y,
+                        sample_weights=collapsed.w)
+    @test res_w[:IDPlugin].ACE ≈ res[:IDPlugin].ACE
+    @test res_w[:IDPlugin].standard_error ≈ res[:IDPlugin].standard_error
 
     g_bow = make_graph(vertices=[:A, :Y],
                        di_edges=[(:A, :Y)],

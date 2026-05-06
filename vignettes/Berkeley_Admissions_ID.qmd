@@ -89,9 +89,9 @@ female_rate = weighted_mean(data.admitted[data.female .== 1],
 male_rate = weighted_mean(data.admitted[data.female .== 0],
                           data.weight[data.female .== 0])
 
-@printf("Pr(admitted | female) = %.3f\n", female_rate)
-@printf("Pr(admitted | male)   = %.3f\n", male_rate)
-@printf("raw difference        = %.3f\n", female_rate - male_rate)
+@printf("Pr(admitted | female) = %.4g\n", female_rate)
+@printf("Pr(admitted | male)   = %.4g\n", male_rate)
+@printf("raw difference        = %.4g\n", female_rate - male_rate)
 ```
 
 This raw comparison mixes two things: differences in department application
@@ -161,8 +161,8 @@ be evaluated by empirical conditional probabilities.
 ## 4. Estimate the ID Functional
 
 `estimate_id()` runs the general ID algorithm and evaluates the returned
-functional with a finite-support plug-in estimator. The aggregated table counts
-enter through `sample_weights`.
+functional with a finite-support plug-in estimator and EIF confidence interval.
+The aggregated table counts enter through `sample_weights`.
 
 ```{julia}
 id_res = estimate_id(
@@ -174,13 +174,20 @@ id_res = estimate_id(
     sample_weights = data.weight,
 );
 
-id_res[:IDPlugin]
+r = x -> round(x, sigdigits=4)
+(ACE = r(id_res[:IDPlugin].ACE),
+ lower_ci = r(id_res[:IDPlugin].lower_ci),
+ upper_ci = r(id_res[:IDPlugin].upper_ci),
+ SE = r(id_res[:IDPlugin].standard_error),
+ total_probability_a1 = r(id_res[:IDPlugin].total_probability_a1),
+ total_probability_a0 = r(id_res[:IDPlugin].total_probability_a0))
 ```
 
 ```{julia}
-@printf("ID E[Y(female=1)] = %.3f\n", id_res[:IDPlugin_Y1].estimated_psi)
-@printf("ID E[Y(female=0)] = %.3f\n", id_res[:IDPlugin_Y0].estimated_psi)
-@printf("ID ACE            = %.3f\n", id_res[:IDPlugin].ACE)
+@printf("ID E[Y(female=1)] = %.4g\n", id_res[:IDPlugin_Y1].estimated_psi)
+@printf("ID E[Y(female=0)] = %.4g\n", id_res[:IDPlugin_Y0].estimated_psi)
+@printf("ID ACE            = %.4g\n", id_res[:IDPlugin].ACE)
+@printf("ID SE             = %.4g\n", id_res[:IDPlugin].standard_error)
 ```
 
 The estimate is different from the raw admission-rate contrast because it

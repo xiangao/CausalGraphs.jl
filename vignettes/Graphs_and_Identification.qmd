@@ -161,7 +161,8 @@ There is also a more general symbolic check: `ID_algorithm(g, treatment,
 outcome)` runs the Pearl-Shpitser ID algorithm. This can identify ADMG effects
 even when the result is not one of the specialized estimator classes above. In
 that case `identify()` reports `:id_algorithm`, and `estimate_causal()` routes
-to a finite-support plug-in estimator for discrete variables.
+to a finite-support plug-in estimator with EIF confidence intervals for discrete
+variables.
 
 If all checks fail, the package reports `:not_identified`. For the general ID
 algorithm this comes with a hedge witness: two bidirected-connected structures
@@ -206,7 +207,8 @@ standard backdoor estimators. If not, it checks p-fixability and routes to the
 front-door/NPS estimators. If that also fails, it tries the nested-fixable
 route. Finally, it runs the general ID algorithm. The returned `strategy` is
 therefore an estimation instruction. For `:id_algorithm`, the estimator is the
-discrete finite-support plug-in estimator rather than a TMLE/EIF estimator.
+discrete finite-support plug-in estimator with an EIF confidence interval rather
+than a full targeted TMLE for arbitrary ID functionals.
 
 ```{julia}
 id_bd = identify(g_bd, :A, :Y)

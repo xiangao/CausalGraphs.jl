@@ -91,7 +91,7 @@ The implemented strategies are:
 | `:a_fixable` | Backdoor/a-fixable effect |
 | `:p_fixable` | Front-door, primal-fixable, or NPS effect |
 | `:nested_fixable` | Identified by a One-Line-ID style nested check |
-| `:id_algorithm` | Identified by the general Pearl-Shpitser ID algorithm; finite-support plug-in estimation is available for discrete variables |
+| `:id_algorithm` | Identified by the general Pearl-Shpitser ID algorithm; finite-support plug-in estimation with EIF CIs is available for discrete variables |
 | `:not_identified` | Not identified by the implemented criteria |
 
 These strategies correspond to different identification arguments:
@@ -106,7 +106,8 @@ These strategies correspond to different identification arguments:
   identifies the effect.
 - `:id_algorithm` covers more general ADMGs where the recursive ID algorithm
   finds a symbolic functional. The package can estimate such functionals with a
-  finite-support plug-in estimator when the variables are discrete.
+  finite-support plug-in estimator with EIF confidence intervals when the
+  variables are discrete.
 
 The returned strategy is an estimation instruction for `estimate_causal()` when
 it is `:a_fixable`, `:p_fixable`, `:nested_fixable`, or `:id_algorithm`.

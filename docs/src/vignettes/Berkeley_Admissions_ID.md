@@ -97,8 +97,9 @@ r = x -> round(x, sigdigits=4)
 ## ID Estimation
 
 `estimate_id()` evaluates the symbolic ID functional by enumerating the observed
-support and plugging in empirical conditional probabilities. This is appropriate
-here because `female`, `dept`, and `admitted` are finite-support variables.
+support and plugging in empirical conditional probabilities. It also reports a
+finite-support EIF confidence interval. This is appropriate here because
+`female`, `dept`, and `admitted` are finite-support variables.
 
 ```@example berkeley_id
 id_res = estimate_id(
@@ -113,6 +114,9 @@ id_res = estimate_id(
 (EYa1 = r(id_res[:IDPlugin_Y1].estimated_psi),
  EYa0 = r(id_res[:IDPlugin_Y0].estimated_psi),
  ACE = r(id_res[:IDPlugin].ACE),
+ lower_ci = r(id_res[:IDPlugin].lower_ci),
+ upper_ci = r(id_res[:IDPlugin].upper_ci),
+ SE = r(id_res[:IDPlugin].standard_error),
  total_probability_a1 = r(id_res[:IDPlugin].total_probability_a1),
  total_probability_a0 = r(id_res[:IDPlugin].total_probability_a0))
 ```

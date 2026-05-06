@@ -132,7 +132,7 @@ than male, under a front-door graph where department choice mediates the effect?
 </ol>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="2e0070bd" class="cell" data-execution_count="1">
+<div id="c10daf2f" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -142,12 +142,22 @@ than male, under a front-door graph where department choice mediates the effect?
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Downloads</span></span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Printf</span></span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Statistics</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<div class="ansi-escaped-output">
+<pre><span class="ansi-cyan-fg ansi-bold">[ </span><span class="ansi-cyan-fg ansi-bold">Info: </span>Precompiling CausalGraphs [c9f3a1b2-7e4d-5f8a-b0c1-2d3e4f5a6b7c] (cache misses: include_dependency fsize change (4), mismatched flags (16))
+
+
+
+SYSTEM: caught exception of type :MethodError while trying to print a failed Task notice; giving up
+</pre>
+</div>
+</div>
 </div>
 </section>
 <section id="load-berkeley-admissions-data" class="level2">
 <h2 class="anchored" data-anchor-id="load-berkeley-admissions-data">1. Load Berkeley Admissions Data</h2>
 <p>The R dataset is aggregated. Each row is a cell count for a combination of <code>Admit</code>, <code>Gender</code>, and <code>Dept</code>. We keep the data aggregated and pass <code>Freq</code> as sample weights to the finite-support ID estimator.</p>
-<div id="35cb8e89" class="cell" data-execution_count="2">
+<div id="d6271261" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">read_rdatasets_csv</span>(url)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    local_file <span class="op">=</span> <span class="bu">Downloads</span>.<span class="fu">download</span>(url; timeout<span class="op">=</span><span class="fl">120</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    x, header <span class="op">=</span> <span class="fu">readdlm</span>(local_file, <span class="ch">','</span>, <span class="dt">Any</span>, <span class="ch">'\n'</span>; header<span class="op">=</span><span class="cn">true</span>)</span>
@@ -245,7 +255,7 @@ applicants = 4526</code></pre>
 <li><code>admitted = 1</code> for admitted applicants and <code>0</code> for rejected applicants.</li>
 </ul>
 <p>The raw weighted admission rates are:</p>
-<div id="02529970" class="cell" data-execution_count="3">
+<div id="259035ed" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">weighted_mean</span>(x, w)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>(x <span class="op">.*</span> w) <span class="op">/</span> <span class="fu">sum</span>(w)</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
@@ -255,13 +265,13 @@ applicants = 4526</code></pre>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>male_rate <span class="op">=</span> <span class="fu">weighted_mean</span>(data.admitted[data.female <span class="op">.==</span> <span class="fl">0</span>],</span>
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                          data.weight[data.female <span class="op">.==</span> <span class="fl">0</span>])</span>
 <span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Pr(admitted | female) = %.3f</span><span class="sc">\n</span><span class="st">"</span>, female_rate)</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Pr(admitted | male)   = %.3f</span><span class="sc">\n</span><span class="st">"</span>, male_rate)</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"raw difference        = %.3f</span><span class="sc">\n</span><span class="st">"</span>, female_rate <span class="op">-</span> male_rate)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Pr(admitted | female) = %.4g</span><span class="sc">\n</span><span class="st">"</span>, female_rate)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"Pr(admitted | male)   = %.4g</span><span class="sc">\n</span><span class="st">"</span>, male_rate)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"raw difference        = %.4g</span><span class="sc">\n</span><span class="st">"</span>, female_rate <span class="op">-</span> male_rate)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Pr(admitted | female) = 0.304
-Pr(admitted | male)   = 0.445
-raw difference        = -0.142</code></pre>
+<pre><code>Pr(admitted | female) = 0.3035
+Pr(admitted | male)   = 0.4452
+raw difference        = -0.1416</code></pre>
 </div>
 </div>
 <p>This raw comparison mixes two things: differences in department application patterns and differences in admission rates within departments. The graph below turns one possible explanation into a formal identification problem.</p>
@@ -278,7 +288,7 @@ raw difference        = -0.142</code></pre>
 <pre class="text"><code>A -&gt; M -&gt; Y
 A &lt;-&gt; Y</code></pre>
 <p>The bidirected edge says that there may be unmeasured common causes of applicant gender and admission, or more generally residual association not mediated by the department node. The absence of a direct <code>A -&gt; Y</code> edge is the key front-door assumption: under this graph, the effect of <code>A</code> on <code>Y</code> runs through department choice.</p>
-<div id="05df7f72" class="cell" data-execution_count="4">
+<div id="097e2f3e" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>female, <span class="op">:</span>dept, <span class="op">:</span>admitted],</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="op">:</span>female, <span class="op">:</span>dept), (<span class="op">:</span>dept, <span class="op">:</span>admitted)],</span>
@@ -314,7 +324,7 @@ A &lt;-&gt; Y</code></pre>
 <section id="identification" class="level2">
 <h2 class="anchored" data-anchor-id="identification">3. Identification</h2>
 <p><code>identify()</code> is the estimator-routing function. For this graph it reports the specialized front-door route:</p>
-<div id="a7db7322" class="cell" data-execution_count="6">
+<div id="cde329b2" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>route <span class="op">=</span> <span class="fu">identify</span>(graph, <span class="op">:</span>female, <span class="op">:</span>admitted)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"identify() strategy: "</span>, route.strategy)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
@@ -322,7 +332,7 @@ A &lt;-&gt; Y</code></pre>
 </div>
 </div>
 <p>The same graph is identified by the general Pearl-Shpitser ID algorithm. Calling <code>ID_algorithm()</code> exposes the symbolic functional that will be estimated below:</p>
-<div id="5d5df611" class="cell" data-execution_count="7">
+<div id="96ae2c51" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>id <span class="op">=</span> <span class="fu">ID_algorithm</span>(graph, <span class="op">:</span>female, <span class="op">:</span>admitted)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"ID identified: "</span>, id.identified)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"functional:    "</span>, id.expression)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -335,8 +345,8 @@ functional:    sum_{dept} P(dept | female) * sum_{female} P(female) * P(admitted
 </section>
 <section id="estimate-the-id-functional" class="level2">
 <h2 class="anchored" data-anchor-id="estimate-the-id-functional">4. Estimate the ID Functional</h2>
-<p><code>estimate_id()</code> runs the general ID algorithm and evaluates the returned functional with a finite-support plug-in estimator. The aggregated table counts enter through <code>sample_weights</code>.</p>
-<div id="aaefd73b" class="cell" data-execution_count="8">
+<p><code>estimate_id()</code> runs the general ID algorithm and evaluates the returned functional with a finite-support plug-in estimator and EIF confidence interval. The aggregated table counts enter through <code>sample_weights</code>.</p>
+<div id="9b9e48c1" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>id_res <span class="op">=</span> <span class="fu">estimate_id</span>(</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> [<span class="fl">1.0</span>, <span class="fl">0.0</span>],</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> <span class="fu">select</span>(data, <span class="fu">Not</span>(<span class="op">:</span>weight)),</span>
@@ -346,19 +356,27 @@ functional:    sum_{dept} P(dept | female) * sum_{female} P(female) * P(admitted
 <span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    sample_weights <span class="op">=</span> data.weight,</span>
 <span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>);</span>
 <span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>id_res[<span class="op">:</span>IDPlugin]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> x <span class="op">-&gt;</span> <span class="fu">round</span>(x, sigdigits<span class="op">=</span><span class="fl">4</span>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>(ACE <span class="op">=</span> <span class="fu">r</span>(id_res[<span class="op">:</span>IDPlugin].ACE),</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a> lower_ci <span class="op">=</span> <span class="fu">r</span>(id_res[<span class="op">:</span>IDPlugin].lower_ci),</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a> upper_ci <span class="op">=</span> <span class="fu">r</span>(id_res[<span class="op">:</span>IDPlugin].upper_ci),</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a> SE <span class="op">=</span> <span class="fu">r</span>(id_res[<span class="op">:</span>IDPlugin].standard_error),</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a> total_probability_a1 <span class="op">=</span> <span class="fu">r</span>(id_res[<span class="op">:</span>IDPlugin].total_probability_a1),</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a> total_probability_a0 <span class="op">=</span> <span class="fu">r</span>(id_res[<span class="op">:</span>IDPlugin].total_probability_a0))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="9">
-<pre><code>(ACE = -0.1710655962866402, total_probability_a1 = 0.9999999999999998, total_probability_a0 = 1.0, expression = sum_{dept} P(dept | female) * sum_{female} P(female) * P(admitted | female, dept))</code></pre>
+<pre><code>(ACE = -0.1711, lower_ci = -0.1939, upper_ci = -0.1483, SE = 0.01163, total_probability_a1 = 1.0, total_probability_a0 = 1.0)</code></pre>
 </div>
 </div>
-<div id="ae0fc794" class="cell" data-execution_count="9">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"ID E[Y(female=1)] = %.3f</span><span class="sc">\n</span><span class="st">"</span>, id_res[<span class="op">:</span>IDPlugin_Y1].estimated_psi)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"ID E[Y(female=0)] = %.3f</span><span class="sc">\n</span><span class="st">"</span>, id_res[<span class="op">:</span>IDPlugin_Y0].estimated_psi)</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"ID ACE            = %.3f</span><span class="sc">\n</span><span class="st">"</span>, id_res[<span class="op">:</span>IDPlugin].ACE)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="624fc92c" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"ID E[Y(female=1)] = %.4g</span><span class="sc">\n</span><span class="st">"</span>, id_res[<span class="op">:</span>IDPlugin_Y1].estimated_psi)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"ID E[Y(female=0)] = %.4g</span><span class="sc">\n</span><span class="st">"</span>, id_res[<span class="op">:</span>IDPlugin_Y0].estimated_psi)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"ID ACE            = %.4g</span><span class="sc">\n</span><span class="st">"</span>, id_res[<span class="op">:</span>IDPlugin].ACE)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="pp">@printf</span>(<span class="st">"ID SE             = %.4g</span><span class="sc">\n</span><span class="st">"</span>, id_res[<span class="op">:</span>IDPlugin].standard_error)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>ID E[Y(female=1)] = 0.303
+<pre><code>ID E[Y(female=1)] = 0.3029
 ID E[Y(female=0)] = 0.474
-ID ACE            = -0.171</code></pre>
+ID ACE            = -0.1711
+ID SE             = 0.01163</code></pre>
 </div>
 </div>
 <p>The estimate is different from the raw admission-rate contrast because it answers a different question. The raw contrast conditions on the applicant mix as observed. The ID functional uses the front-door graph to combine department choice and within-department admission patterns into an interventional quantity.</p>
@@ -369,7 +387,7 @@ ID ACE            = -0.171</code></pre>
 <pre class="text"><code>A -&gt; M -&gt; Y
 A -&gt; Y
 A &lt;-&gt; Y</code></pre>
-<div id="5f4b46e8" class="cell" data-execution_count="10">
+<div id="8626ae07" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>sensitivity_graph <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>female, <span class="op">:</span>dept, <span class="op">:</span>admitted],</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="op">:</span>female, <span class="op">:</span>dept), (<span class="op">:</span>dept, <span class="op">:</span>admitted), (<span class="op">:</span>female, <span class="op">:</span>admitted)],</span>
@@ -403,7 +421,7 @@ A &lt;-&gt; Y</code></pre>
 </div>
 </div>
 </div>
-<div id="c1ad4acf" class="cell" data-execution_count="12">
+<div id="46d8b49c" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>sensitivity_id <span class="op">=</span> <span class="fu">identify</span>(sensitivity_graph, <span class="op">:</span>female, <span class="op">:</span>admitted)</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"strategy: "</span>, sensitivity_id.strategy)</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"hedge:    "</span>, sensitivity_id.hedge)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>

@@ -59,7 +59,7 @@ Identification is determined automatically:
 - p-fixable (front-door / NPS): returns TMLE, Onestep
 - nested-fixable: returns ANIPW, NIPW
 - general ID-algorithm identifiable: returns a finite-support ID plug-in
-  estimator for discrete variables
+  estimator with finite-support EIF confidence intervals for discrete variables
 
 `a` may be a scalar for E[Y(a)] or a length-2 vector `[a1, a0]` for the ACE.
 
