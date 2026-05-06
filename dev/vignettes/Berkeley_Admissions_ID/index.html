@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Berkeley Admissions with ID · CausalGraphs.jl</title><meta name="title" content="Berkeley Admissions with ID · CausalGraphs.jl"/><meta property="og:title" content="Berkeley Admissions with ID · CausalGraphs.jl"/><meta property="twitter:title" content="Berkeley Admissions with ID · CausalGraphs.jl"/><meta name="description" content="Documentation for CausalGraphs.jl."/><meta property="og:description" content="Documentation for CausalGraphs.jl."/><meta property="twitter:description" content="Documentation for CausalGraphs.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">CausalGraphs.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Vignettes</span><ul><li><a class="tocitem" href="../Graphs_and_Identification/">Graphs and Identification</a></li><li><a class="tocitem" href="../ADMG_ID_Algorithm/">General ADMG ID Algorithm</a></li><li class="is-active"><a class="tocitem" href>Berkeley Admissions with ID</a><ul class="internal"><li><a class="tocitem" href="#Causal-Question"><span>Causal Question</span></a></li><li><a class="tocitem" href="#Front-Door-Graph"><span>Front-Door Graph</span></a></li><li><a class="tocitem" href="#Data"><span>Data</span></a></li><li><a class="tocitem" href="#ID-Estimation"><span>ID Estimation</span></a></li><li><a class="tocitem" href="#Sensitivity-Graph"><span>Sensitivity Graph</span></a></li></ul></li><li><a class="tocitem" href="../Estimation_Backdoor_Frontdoor/">Estimation: Backdoor and Front-Door</a></li><li><a class="tocitem" href="../Nested_and_Missing_Data/">Nested-Fixable and Missing Data</a></li><li><a class="tocitem" href="../Smoking_Cessation_NHEFS/">Smoking Cessation NHEFS</a></li><li><a class="tocitem" href="../Job_Training_NSW/">Job Training NSW</a></li><li><a class="tocitem" href="../Job_Search_Mediation_JOBS/">Job Search Mediation JOBS II</a></li></ul></li><li><a class="tocitem" href="../../reference/">Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Vignettes</a></li><li class="is-active"><a href>Berkeley Admissions with ID</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Berkeley Admissions with ID</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/xiangao/CausalGraphs.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/xiangao/CausalGraphs.jl/blob/main/docs/src/vignettes/Berkeley_Admissions_ID.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Berkeley-Admissions-with-the-ID-Algorithm"><a class="docs-heading-anchor" href="#Berkeley-Admissions-with-the-ID-Algorithm">Berkeley Admissions with the ID Algorithm</a><a id="Berkeley-Admissions-with-the-ID-Algorithm-1"></a><a class="docs-heading-anchor-permalink" href="#Berkeley-Admissions-with-the-ID-Algorithm" title="Permalink"></a></h1><p>This vignette summarizes a real-data finite-support ID example using the Berkeley graduate admissions data. The full Quarto source is in <code>vignettes/Berkeley_Admissions_ID.qmd</code>.</p><h2 id="Causal-Question"><a class="docs-heading-anchor" href="#Causal-Question">Causal Question</a><a id="Causal-Question-1"></a><a class="docs-heading-anchor-permalink" href="#Causal-Question" title="Permalink"></a></h2><p>What would the admission rate be if applicant gender were set to female rather than male, under a front-door graph where department choice mediates the effect?</p><p>The data are the <code>UCBAdmissions</code> table distributed with R and mirrored by <a href="https://vincentarelbundock.github.io/Rdatasets/doc/datasets/UCBAdmissions.html">RDatasets</a>. They contain cell counts by admission outcome, gender, and department.</p><h2 id="Front-Door-Graph"><a class="docs-heading-anchor" href="#Front-Door-Graph">Front-Door Graph</a><a id="Front-Door-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Front-Door-Graph" title="Permalink"></a></h2><p>Let <code>female</code> be the treatment, <code>dept</code> the mediator, and <code>admitted</code> the outcome. The applied front-door ADMG is:</p><pre><code class="language-text hljs">female -&gt; dept -&gt; admitted
+female &lt;-&gt; admitted</code></pre><pre><code class="language-julia hljs">using CausalGraphs
+
+graph = make_graph(
+    vertices = [:female, :dept, :admitted],
+    di_edges = [(:female, :dept), (:dept, :admitted)],
+    bi_edges = [(:female, :admitted)],
+)
+
+draw_graph(graph; direction=&quot;LR&quot;)</code></pre><svg width="275pt" height="67pt"
+ viewBox="0.00 0.00 275.00 67.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 63)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-63 271,-63 271,4 -4,4"/>
+<!-- female -->
+<g id="node1" class="node">
+<title>female</title>
+<text text-anchor="middle" x="32.5" y="-14.3" font-family="Times,serif" font-size="14.00">female</text>
+</g>
+<!-- dept -->
+<g id="node2" class="node">
+<title>dept</title>
+<text text-anchor="middle" x="125.5" y="-37.3" font-family="Times,serif" font-size="14.00">dept</text>
+</g>
+<!-- female&#45;&gt;dept -->
+<g id="edge1" class="edge">
+<title>female&#45;&gt;dept</title>
+<path fill="none" stroke="blue" d="M65.07,-25.98C73.39,-28.08 82.4,-30.36 90.83,-32.49"/>
+<polygon fill="blue" stroke="blue" points="90.18,-35.94 100.73,-34.99 91.9,-29.15 90.18,-35.94"/>
+</g>
+<!-- admitted -->
+<g id="node3" class="node">
+<title>admitted</title>
+<text text-anchor="middle" x="226.5" y="-14.3" font-family="Times,serif" font-size="14.00">admitted</text>
+</g>
+<!-- female&#45;&gt;admitted -->
+<g id="edge3" class="edge">
+<title>female&#45;&gt;admitted</title>
+<path fill="none" stroke="red" d="M75.22,-15.14C83.74,-14.67 92.66,-14.25 101,-14 122.77,-13.36 128.23,-13.42 150,-14 158.3,-14.22 167.11,-14.58 175.67,-14.99"/>
+<polygon fill="red" stroke="red" points="74.85,-11.66 65.08,-15.74 75.26,-18.64 74.85,-11.66"/>
+<polygon fill="red" stroke="red" points="175.77,-18.5 185.94,-15.51 176.13,-11.5 175.77,-18.5"/>
+</g>
+<!-- dept&#45;&gt;admitted -->
+<g id="edge2" class="edge">
+<title>dept&#45;&gt;admitted</title>
+<path fill="none" stroke="blue" d="M150.21,-35.49C157.94,-33.69 166.84,-31.63 175.74,-29.56"/>
+<polygon fill="blue" stroke="blue" points="176.79,-32.91 185.74,-27.24 175.21,-26.09 176.79,-32.91"/>
+</g>
+</g>
+</svg><p><code>identify()</code> routes this graph to the specialized front-door estimator class, but the same graph is also identified by the general Pearl-Shpitser ID algorithm:</p><pre><code class="language-julia hljs">route = identify(graph, :female, :admitted)
+id = ID_algorithm(graph, :female, :admitted)
+
+(strategy = route.strategy,
+ identified_by_ID = id.identified,
+ expression = string(id.expression))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(strategy = :p_fixable, identified_by_ID = true, expression = &quot;sum_{dept} P(dept | female) * sum_{female} P(female) * P(admitted | female, dept)&quot;)</code></pre><h2 id="Data"><a class="docs-heading-anchor" href="#Data">Data</a><a id="Data-1"></a><a class="docs-heading-anchor-permalink" href="#Data" title="Permalink"></a></h2><p>The data are aggregated. <code>Freq</code> is used as a sample weight.</p><pre><code class="language-julia hljs">using DataFrames, DelimitedFiles, Downloads, Statistics
+
+function read_rdatasets_csv(url)
+    local_file = Downloads.download(url; timeout=120)
+    x, header = readdlm(local_file, &#39;,&#39;, Any, &#39;\n&#39;; header=true)
+    DataFrame(x, Symbol.(vec(header)))
+end
+
+url = &quot;https://vincentarelbundock.github.io/Rdatasets/csv/datasets/UCBAdmissions.csv&quot;
+raw = read_rdatasets_csv(url)
+
+data = DataFrame(
+    female = Float64.(raw.Gender .== &quot;Female&quot;),
+    dept = String.(raw.Dept),
+    admitted = Float64.(raw.Admit .== &quot;Admitted&quot;),
+    weight = Float64.(raw.Freq),
+)
+
+(cells = nrow(data), applicants = Int(sum(data.weight)))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(cells = 24, applicants = 4526)</code></pre><p>The raw weighted admission-rate contrast is:</p><pre><code class="language-julia hljs">weighted_mean(x, w) = sum(x .* w) / sum(w)
+
+female_rate = weighted_mean(data.admitted[data.female .== 1],
+                            data.weight[data.female .== 1])
+male_rate = weighted_mean(data.admitted[data.female .== 0],
+                          data.weight[data.female .== 0])
+
+r = x -&gt; round(x, sigdigits=4)
+(female_rate = r(female_rate),
+ male_rate = r(male_rate),
+ raw_difference = r(female_rate - male_rate))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(female_rate = 0.3035, male_rate = 0.4452, raw_difference = -0.1416)</code></pre><h2 id="ID-Estimation"><a class="docs-heading-anchor" href="#ID-Estimation">ID Estimation</a><a id="ID-Estimation-1"></a><a class="docs-heading-anchor-permalink" href="#ID-Estimation" title="Permalink"></a></h2><p><code>estimate_id()</code> evaluates the symbolic ID functional by enumerating the observed support and plugging in empirical conditional probabilities. This is appropriate here because <code>female</code>, <code>dept</code>, and <code>admitted</code> are finite-support variables.</p><pre><code class="language-julia hljs">id_res = estimate_id(
+    a = [1.0, 0.0],
+    data = select(data, Not(:weight)),
+    graph = graph,
+    treatment = :female,
+    outcome = :admitted,
+    sample_weights = data.weight,
+)
+
+(EYa1 = r(id_res[:IDPlugin_Y1].estimated_psi),
+ EYa0 = r(id_res[:IDPlugin_Y0].estimated_psi),
+ ACE = r(id_res[:IDPlugin].ACE),
+ total_probability_a1 = r(id_res[:IDPlugin].total_probability_a1),
+ total_probability_a0 = r(id_res[:IDPlugin].total_probability_a0))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(EYa1 = 0.3029, EYa0 = 0.474, ACE = -0.1711, total_probability_a1 = 1.0, total_probability_a0 = 1.0)</code></pre><p>The ID estimate answers the interventional question encoded by the front-door graph. It is not the same object as the raw admission-rate contrast.</p><h2 id="Sensitivity-Graph"><a class="docs-heading-anchor" href="#Sensitivity-Graph">Sensitivity Graph</a><a id="Sensitivity-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Sensitivity-Graph" title="Permalink"></a></h2><p>If we add a direct <code>female -&gt; admitted</code> edge while keeping the hidden <code>female &lt;-&gt; admitted</code> association, the effect is no longer identified:</p><pre><code class="language-julia hljs">sensitivity_graph = make_graph(
+    vertices = [:female, :dept, :admitted],
+    di_edges = [(:female, :dept), (:dept, :admitted), (:female, :admitted)],
+    bi_edges = [(:female, :admitted)],
+)
+
+identify(sensitivity_graph, :female, :admitted)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(strategy = :not_identified, treatment = :female, outcome = :admitted, hedge = (S = [:admitted], F = [:female, :admitted], treatment = [:female], outcome = [:admitted]))</code></pre><pre><code class="language-julia hljs">draw_graph(sensitivity_graph; direction=&quot;LR&quot;)</code></pre><svg width="275pt" height="99pt"
+ viewBox="0.00 0.00 275.00 99.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 95)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-95 271,-95 271,4 -4,4"/>
+<!-- female -->
+<g id="node1" class="node">
+<title>female</title>
+<text text-anchor="middle" x="32.5" y="-14.3" font-family="Times,serif" font-size="14.00">female</text>
+</g>
+<!-- dept -->
+<g id="node2" class="node">
+<title>dept</title>
+<text text-anchor="middle" x="125.5" y="-69.3" font-family="Times,serif" font-size="14.00">dept</text>
+</g>
+<!-- female&#45;&gt;dept -->
+<g id="edge1" class="edge">
+<title>female&#45;&gt;dept</title>
+<path fill="none" stroke="blue" d="M63.3,-36.01C72.57,-41.61 82.83,-47.81 92.26,-53.51"/>
+<polygon fill="blue" stroke="blue" points="90.62,-56.61 100.98,-58.79 94.24,-50.62 90.62,-56.61"/>
+</g>
+<!-- admitted -->
+<g id="node3" class="node">
+<title>admitted</title>
+<text text-anchor="middle" x="226.5" y="-14.3" font-family="Times,serif" font-size="14.00">admitted</text>
+</g>
+<!-- female&#45;&gt;admitted -->
+<g id="edge3" class="edge">
+<title>female&#45;&gt;admitted</title>
+<path fill="none" stroke="blue" d="M65.2,-12.83C95.26,-11.05 140.87,-10.77 175.76,-12"/>
+<polygon fill="blue" stroke="blue" points="175.62,-15.5 185.75,-12.41 175.9,-8.5 175.62,-15.5"/>
+</g>
+<!-- female&#45;&gt;admitted -->
+<g id="edge4" class="edge">
+<title>female&#45;&gt;admitted</title>
+<path fill="none" stroke="red" d="M75.38,-23.69C104.86,-24.99 144.43,-25.09 175.55,-24.01"/>
+<polygon fill="red" stroke="red" points="75.37,-20.18 65.2,-23.17 75.01,-27.17 75.37,-20.18"/>
+<polygon fill="red" stroke="red" points="175.9,-27.49 185.75,-23.59 175.62,-20.5 175.9,-27.49"/>
+</g>
+<!-- dept&#45;&gt;admitted -->
+<g id="edge2" class="edge">
+<title>dept&#45;&gt;admitted</title>
+<path fill="none" stroke="blue" d="M150.21,-59.83C160.32,-54.21 172.43,-47.49 183.94,-41.09"/>
+<polygon fill="blue" stroke="blue" points="185.96,-43.97 193,-36.06 182.56,-37.85 185.96,-43.97"/>
+</g>
+</g>
+</svg><p>The point is the workflow: draw the graph, run <code>ID_algorithm()</code>, estimate only when the graph identifies the effect, and then check how the conclusion changes under a plausible alternative graph.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../ADMG_ID_Algorithm/">« General ADMG ID Algorithm</a><a class="docs-footer-nextpage" href="../Estimation_Backdoor_Frontdoor/">Estimation: Backdoor and Front-Door »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 6 May 2026 09:34">Wednesday 6 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
