@@ -27,6 +27,48 @@ Pkg.activate(joinpath(@__DIR__, ".."); io=devnull)
 using CausalGraphs
 ```
 
+## How the ID Algorithm Works
+
+The ID algorithm answers one question:
+
+```text
+Can P(Y | do(A)) be written using only the observed joint distribution P(V)?
+```
+
+Here `V` is the set of observed vertices in the ADMG, `A` is the intervention,
+and `Y` is the outcome. Directed edges represent causal relations among observed
+variables. Bidirected edges represent latent common causes. Identification means
+that, despite those latent common causes, the intervention distribution has a
+unique expression in terms of the observed law.
+
+The recursive algorithm repeatedly simplifies the query:
+
+1. **Restrict to ancestors of the outcome.** If some observed variables are not
+   ancestors of `Y`, they cannot affect `Y` under the current intervention
+   query. The algorithm sums them out and continues in the ancestral subgraph.
+2. **Add irrelevant interventions.** After removing incoming arrows into `A`,
+   some variables may no longer be ancestors of `Y`. Those variables can be
+   treated as fixed as well, because changing them cannot change the target
+   distribution.
+3. **Remove the intervention nodes and inspect districts.** In the graph induced
+   by `V \ A`, districts are the bidirected-connected components. Multiple
+   districts mean the post-intervention law factorizes into smaller pieces, so
+   ID recursively identifies each district and multiplies the results.
+4. **Handle a single remaining district.** If the remaining district is already a
+   district in the original graph, the needed factor can be read from the
+   observed joint distribution using a topological product of kernels. If it is
+   contained in a larger district, the algorithm recurses inside that larger
+   district with the corresponding kernel as the new source law.
+5. **Report a hedge when no reduction is possible.** If the graph is one large
+   district and the intervention cannot separate the outcome from hidden
+   confounding, ID fails. The returned hedge is a pair of district structures
+   witnessing non-identification.
+
+The output is not an estimate. It is a symbolic functional built from sums,
+products, joint probabilities, and conditional kernels. Estimation is a second
+step: for finite-support variables, `estimate_id()` evaluates that functional by
+plugging in empirical probabilities.
+
 ## Front-Door as a General ID Query
 
 The front-door graph has an unmeasured common cause of treatment and outcome,
