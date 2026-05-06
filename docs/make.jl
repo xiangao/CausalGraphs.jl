@@ -9,6 +9,7 @@ makedocs(
         "Vignettes" => [
             "Graphs and Identification" => "vignettes/Graphs_and_Identification.md",
             "General ADMG ID Algorithm" => "vignettes/ADMG_ID_Algorithm.md",
+            "Berkeley Admissions with ID" => "vignettes/Berkeley_Admissions_ID.md",
             "Estimation: Backdoor and Front-Door" => "vignettes/Estimation_Backdoor_Frontdoor.md",
             "Nested-Fixable and Missing Data" => "vignettes/Nested_and_Missing_Data.md",
             "Smoking Cessation NHEFS" => "vignettes/Smoking_Cessation_NHEFS.md",

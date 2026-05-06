@@ -1,0 +1,243 @@
+---
+title: "Real Example: Berkeley Admissions with the ID Algorithm"
+format:
+  html:
+    toc: true
+    code-fold: false
+jupyter: julia-1.12
+---
+
+This vignette uses the Berkeley graduate admissions data distributed with R and
+mirrored by
+[RDatasets](https://vincentarelbundock.github.io/Rdatasets/doc/datasets/UCBAdmissions.html).
+The data are a three-way table of admission outcome, applicant gender, and
+department for the 1973 admissions cycle.
+
+The causal question is:
+
+```text
+What would the admission rate be if applicant gender were set to female rather
+than male, under a front-door graph where department choice mediates the effect?
+```
+
+This is an identification example, not a substantive claim that the graph is
+true. The point is to show the full applied workflow for a finite-support
+Pearl-Shpitser ID functional:
+
+1. state a graph;
+2. run `identify()` and `ID_algorithm()`;
+3. estimate the symbolic ID functional with `estimate_id()`;
+4. challenge the graph with a sensitivity alternative.
+
+## Setup
+
+```{julia}
+import Pkg
+Pkg.activate(joinpath(@__DIR__, ".."); io=devnull)
+
+using CausalGraphs
+using DataFrames
+using DelimitedFiles
+using Downloads
+using Printf
+using Statistics
+```
+
+## 1. Load Berkeley Admissions Data
+
+The R dataset is aggregated. Each row is a cell count for a combination of
+`Admit`, `Gender`, and `Dept`. We keep the data aggregated and pass `Freq` as
+sample weights to the finite-support ID estimator.
+
+```{julia}
+function read_rdatasets_csv(url)
+    local_file = Downloads.download(url; timeout=120)
+    x, header = readdlm(local_file, ',', Any, '\n'; header=true)
+    DataFrame(x, Symbol.(vec(header)))
+end
+
+url = "https://vincentarelbundock.github.io/Rdatasets/csv/datasets/UCBAdmissions.csv"
+raw = read_rdatasets_csv(url)
+
+data = DataFrame(
+    female = Float64.(raw.Gender .== "Female"),
+    dept = String.(raw.Dept),
+    admitted = Float64.(raw.Admit .== "Admitted"),
+    weight = Float64.(raw.Freq),
+);
+
+println("table cells = ", nrow(data))
+println("applicants = ", Int(sum(data.weight)))
+first(data, 6)
+```
+
+The coding is:
+
+- `female = 1` for female applicants and `0` for male applicants;
+- `dept` is the department applied to, from `A` through `F`;
+- `admitted = 1` for admitted applicants and `0` for rejected applicants.
+
+The raw weighted admission rates are:
+
+```{julia}
+function weighted_mean(x, w)
+    sum(x .* w) / sum(w)
+end
+
+female_rate = weighted_mean(data.admitted[data.female .== 1],
+                            data.weight[data.female .== 1])
+male_rate = weighted_mean(data.admitted[data.female .== 0],
+                          data.weight[data.female .== 0])
+
+@printf("Pr(admitted | female) = %.3f\n", female_rate)
+@printf("Pr(admitted | male)   = %.3f\n", male_rate)
+@printf("raw difference        = %.3f\n", female_rate - male_rate)
+```
+
+This raw comparison mixes two things: differences in department application
+patterns and differences in admission rates within departments. The graph below
+turns one possible explanation into a formal identification problem.
+
+## 2. Front-Door ADMG
+
+Let:
+
+- `A` be applicant gender, coded as `female`;
+- `M` be department choice, coded as `dept`;
+- `Y` be admission, coded as `admitted`.
+
+The front-door ADMG is:
+
+```text
+A -> M -> Y
+A <-> Y
+```
+
+The bidirected edge says that there may be unmeasured common causes of applicant
+gender and admission, or more generally residual association not mediated by the
+department node. The absence of a direct `A -> Y` edge is the key front-door
+assumption: under this graph, the effect of `A` on `Y` runs through department
+choice.
+
+```{julia}
+graph = make_graph(
+    vertices = [:female, :dept, :admitted],
+    di_edges = [(:female, :dept), (:dept, :admitted)],
+    bi_edges = [(:female, :admitted)],
+);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(graph; direction="LR"))
+println("```")
+```
+
+## 3. Identification
+
+`identify()` is the estimator-routing function. For this graph it reports the
+specialized front-door route:
+
+```{julia}
+route = identify(graph, :female, :admitted)
+println("identify() strategy: ", route.strategy)
+```
+
+The same graph is identified by the general Pearl-Shpitser ID algorithm. Calling
+`ID_algorithm()` exposes the symbolic functional that will be estimated below:
+
+```{julia}
+id = ID_algorithm(graph, :female, :admitted)
+println("ID identified: ", id.identified)
+println("functional:    ", id.expression)
+```
+
+For the front-door graph, the expression averages the mediator distribution
+under the intervention and combines it with the observed treatment-mediator-
+outcome law. Because all graph variables have finite support, the functional can
+be evaluated by empirical conditional probabilities.
+
+## 4. Estimate the ID Functional
+
+`estimate_id()` runs the general ID algorithm and evaluates the returned
+functional with a finite-support plug-in estimator. The aggregated table counts
+enter through `sample_weights`.
+
+```{julia}
+id_res = estimate_id(
+    a = [1.0, 0.0],
+    data = select(data, Not(:weight)),
+    graph = graph,
+    treatment = :female,
+    outcome = :admitted,
+    sample_weights = data.weight,
+);
+
+id_res[:IDPlugin]
+```
+
+```{julia}
+@printf("ID E[Y(female=1)] = %.3f\n", id_res[:IDPlugin_Y1].estimated_psi)
+@printf("ID E[Y(female=0)] = %.3f\n", id_res[:IDPlugin_Y0].estimated_psi)
+@printf("ID ACE            = %.3f\n", id_res[:IDPlugin].ACE)
+```
+
+The estimate is different from the raw admission-rate contrast because it
+answers a different question. The raw contrast conditions on the applicant mix
+as observed. The ID functional uses the front-door graph to combine department
+choice and within-department admission patterns into an interventional
+quantity.
+
+## 5. Sensitivity Graph
+
+The identifying conclusion depends on the absence of a direct `female ->
+admitted` edge. If gender can affect admission through a pathway not represented
+by department choice while the hidden association `female <-> admitted` remains,
+the graph becomes:
+
+```text
+A -> M -> Y
+A -> Y
+A <-> Y
+```
+
+```{julia}
+sensitivity_graph = make_graph(
+    vertices = [:female, :dept, :admitted],
+    di_edges = [(:female, :dept), (:dept, :admitted), (:female, :admitted)],
+    bi_edges = [(:female, :admitted)],
+);
+```
+
+```{julia}
+#| output: asis
+println("```{mermaid}")
+println(to_mermaid(sensitivity_graph; direction="LR"))
+println("```")
+```
+
+```{julia}
+sensitivity_id = identify(sensitivity_graph, :female, :admitted)
+println("strategy: ", sensitivity_id.strategy)
+println("hedge:    ", sensitivity_id.hedge)
+```
+
+Under this graph, the package reports non-identification. The hedge shows the
+district structure responsible for the failure: the direct effect and hidden
+treatment-outcome association cannot be separated from the observed law.
+
+## Summary
+
+This example adds a real-data workflow for the ID algorithm:
+
+1. Berkeley admissions is an aggregated finite-support dataset.
+2. The front-door ADMG is identified by `ID_algorithm()`.
+3. `estimate_id()` evaluates the symbolic ID functional using the cell counts as
+   sample weights.
+4. Adding a direct treatment-outcome edge changes the graph to
+   `:not_identified`.
+
+The example is intentionally graph-first. Different substantive assumptions
+about admissions would imply different graphs and therefore different
+identification conclusions.
