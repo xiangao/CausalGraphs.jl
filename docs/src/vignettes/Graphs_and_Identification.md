@@ -115,6 +115,36 @@ For `:id_algorithm`, inspect `identify(...).id_expression`, call
 `ID_algorithm()` directly, or use `estimate_id()` for the finite-support
 plug-in estimator.
 
+## Optional NPCausal.jl Estimation
+
+`CausalGraphs.jl` can also act as the identification layer for
+[`NPCausal.jl`](https://github.com/xiangao/NPCausal.jl). Install and load both
+packages, then call `estimate_causal_npcausal(...)`:
+
+```julia
+using Pkg
+Pkg.add(url="https://github.com/xiangao/NPCausal.jl")
+
+using CausalGraphs, NPCausal
+
+res = estimate_causal_npcausal(
+    a = [1, 0],
+    data = df,
+    graph = g_bd,
+    treatment = :A,
+    outcome = :Y,
+    nsplits = 5,
+)
+
+r = x -> round(x, sigdigits=4)
+(ACE = r(res[:NPCausalOnestep].ACE),
+ SE = r(res[:NPCausalOnestep].standard_error))
+```
+
+The bridge currently supports `:a_fixable`/backdoor effects by passing the
+treatment Markov pillow to `NPCausal.ate`. Front-door, nested-fixable, and
+general ID-algorithm targets still use the estimators inside `CausalGraphs.jl`.
+
 For the backdoor graph, the a-fixability condition holds because `A` is not in
 the same hidden-confounding district as any descendant other than itself. The
 Markov pillow is `X`, which becomes the adjustment set.

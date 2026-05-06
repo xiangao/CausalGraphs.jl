@@ -146,6 +146,35 @@ the graph:
 The ID plug-in estimator enumerates observed supports, so it is appropriate for
 discrete variables. It is not a general continuous-variable TMLE.
 
+If [`NPCausal.jl`](https://github.com/xiangao/NPCausal.jl) is also installed
+and loaded, `estimate_causal_npcausal(...)` can use `CausalGraphs.jl` for
+identification and route supported backdoor/a-fixable effects to
+`NPCausal.ate`:
+
+```julia
+using Pkg
+Pkg.add(url="https://github.com/xiangao/NPCausal.jl")
+
+using CausalGraphs, NPCausal
+
+res = estimate_causal_npcausal(
+    a = [1, 0],
+    data = data,
+    graph = graph,
+    treatment = :A,
+    outcome = :Y,
+    nsplits = 5,
+)
+
+r = x -> round(x, sigdigits=4)
+(ACE = r(res[:NPCausalOnestep].ACE),
+ SE = r(res[:NPCausalOnestep].standard_error))
+```
+
+The bridge is deliberately narrow for now: p-fixable, nested-fixable, and
+general ID-algorithm targets still use the estimators implemented in this
+package until matching `NPCausal.jl` APIs exist.
+
 The argument `a` can be a scalar, such as `a=1`, for `E[Y(a)]`, or a length-two
 vector, such as `a=[1,0]`, for an ACE contrast.
 

@@ -20,6 +20,7 @@ export id_algorithm, is_id_identified
 export fixing_sequence, nested_fixability, is_nested_fixable
 export superlearner
 export estimate_causal, backdoor_tmle_a, nps_tmle_a, nested_anipw_a
+export estimate_causal_npcausal
 export estimate_id, id_plugin_a
 export calculate_density_ratio_dnorm
 export MDAG, MissingTree, IDLaw, IDResult, PropensityEstimate, CliqueResult, MEstimationResult
@@ -44,6 +45,29 @@ include("primalfix.jl")
 include("nested.jl")
 include("missing.jl")
 include("ensemble.jl")
+
+"""
+    estimate_causal_npcausal(; a, data, graph=nothing, vertices, di_edges,
+                              bi_edges, treatment, outcome, kwargs...)
+
+Identify an effect with `CausalGraphs.jl` and estimate supported effects with
+`NPCausal.jl`.
+
+This optional bridge is loaded only when `NPCausal.jl` is also loaded in the
+Julia session. The current bridge supports `:a_fixable`/backdoor effects by
+passing the outcome, treatment, and treatment Markov pillow to `NPCausal.ate`.
+It returns `:NPCausalOnestep` plus the raw `NPCausal.ate` result. Other ADMG
+strategies still use `estimate_causal` or `estimate_id`.
+"""
+function estimate_causal_npcausal(; kwargs...)
+    ext = Base.get_extension(@__MODULE__, :CausalGraphsNPCausalExt)
+    ext === nothing && error(
+        "`estimate_causal_npcausal` requires NPCausal.jl. Install it with " *
+        "`using Pkg; Pkg.add(url=\"https://github.com/xiangao/NPCausal.jl\")`, " *
+        "then load both packages with `using CausalGraphs, NPCausal`."
+    )
+    ext.estimate_causal_npcausal_impl(; kwargs...)
+end
 
 # ── Unified entry point ───────────────────────────────────────────────────────
 

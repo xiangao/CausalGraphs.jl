@@ -218,6 +218,36 @@ id_fd = identify(g_fd, :A, :Y)
 println("Frontdoor: ", id_fd.strategy)
 ```
 
+### Optional NPCausal.jl estimation
+
+`CausalGraphs.jl` can also act as the identification layer for
+[`NPCausal.jl`](https://github.com/xiangao/NPCausal.jl). Install and load both
+packages, then call `estimate_causal_npcausal(...)`:
+
+```julia
+using Pkg
+Pkg.add(url="https://github.com/xiangao/NPCausal.jl")
+
+using CausalGraphs, NPCausal
+
+res = estimate_causal_npcausal(
+    a = [1, 0],
+    data = df,
+    graph = g_bd,
+    treatment = :A,
+    outcome = :Y,
+    nsplits = 5,
+)
+
+r = x -> round(x, sigdigits=4)
+(ACE = r(res[:NPCausalOnestep].ACE),
+ SE = r(res[:NPCausalOnestep].standard_error))
+```
+
+The bridge currently supports `:a_fixable`/backdoor effects by passing the
+treatment Markov pillow to `NPCausal.ate`. Front-door, nested-fixable, and
+general ID-algorithm targets still use the estimators inside `CausalGraphs.jl`.
+
 ### Non-identified: the bow graph
 
 The **bow graph** (A → Y, A ↔ Y) is the classic non-identified case.

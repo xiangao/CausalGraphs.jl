@@ -74,8 +74,38 @@ result[:TMLE].ACE
 - `ID_algorithm`
 - `estimate_id`
 - `estimate_causal`
+- `estimate_causal_npcausal`
 - `make_mdag`
 - `compute_missing_weights`
+
+## Optional NPCausal.jl Bridge
+
+`estimate_causal_npcausal(...)` keeps identification in `CausalGraphs.jl` and,
+when [`NPCausal.jl`](https://github.com/xiangao/NPCausal.jl) is also installed
+and loaded, routes supported backdoor/a-fixable effects to `NPCausal.ate`.
+
+```julia
+using Pkg
+Pkg.add(url="https://github.com/xiangao/NPCausal.jl")
+
+using CausalGraphs, NPCausal
+
+res = estimate_causal_npcausal(
+    a = [1, 0],
+    data = data,
+    graph = graph,
+    treatment = :A,
+    outcome = :Y,
+    nsplits = 5,
+)
+
+r = x -> round(x, sigdigits=4)
+(ACE = r(res[:NPCausalOnestep].ACE),
+ SE = r(res[:NPCausalOnestep].standard_error))
+```
+
+The current bridge supports only `:a_fixable`/backdoor effects. Other
+identified ADMG strategies continue to use `estimate_causal` or `estimate_id`.
 
 ## References
 

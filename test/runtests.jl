@@ -113,6 +113,17 @@ end
                                             graph=g_bow, treatment=:A, outcome=:Y)
 end
 
+@testset "optional NPCausal bridge" begin
+    @test_throws ErrorException estimate_causal_npcausal(
+        a=[1, 0],
+        data=DataFrame(A=Float64[], Y=Float64[]),
+        vertices=[:A, :Y],
+        di_edges=[(:A, :Y)],
+        treatment=:A,
+        outcome=:Y,
+    )
+end
+
 # ── Backdoor TMLE ─────────────────────────────────────────────────────────────
 @testset "backdoor TMLE" begin
     Random.seed!(1)
