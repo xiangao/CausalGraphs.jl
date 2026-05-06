@@ -91,7 +91,7 @@ The implemented strategies are:
 | `:a_fixable` | Backdoor/a-fixable effect |
 | `:p_fixable` | Front-door, primal-fixable, or NPS effect |
 | `:nested_fixable` | Identified by a One-Line-ID style nested check |
-| `:id_algorithm` | Identified by the general Pearl-Shpitser ID algorithm, but no automatic estimator is routed |
+| `:id_algorithm` | Identified by the general Pearl-Shpitser ID algorithm; finite-support plug-in estimation is available for discrete variables |
 | `:not_identified` | Not identified by the implemented criteria |
 
 These strategies correspond to different identification arguments:
@@ -105,12 +105,14 @@ These strategies correspond to different identification arguments:
   p-fixability is enough, but a One-Line ID style fixing sequence still
   identifies the effect.
 - `:id_algorithm` covers more general ADMGs where the recursive ID algorithm
-  finds a symbolic functional, but the package does not yet provide an
-  automatic estimator for that arbitrary functional.
+  finds a symbolic functional. The package can estimate such functionals with a
+  finite-support plug-in estimator when the variables are discrete.
 
 The returned strategy is an estimation instruction for `estimate_causal()` when
-it is `:a_fixable`, `:p_fixable`, or `:nested_fixable`. For `:id_algorithm`,
-inspect `identify(...).id_expression` or call `ID_algorithm()` directly.
+it is `:a_fixable`, `:p_fixable`, `:nested_fixable`, or `:id_algorithm`.
+For `:id_algorithm`, inspect `identify(...).id_expression`, call
+`ID_algorithm()` directly, or use `estimate_id()` for the finite-support
+plug-in estimator.
 
 For the backdoor graph, the a-fixability condition holds because `A` is not in
 the same hidden-confounding district as any descendant other than itself. The

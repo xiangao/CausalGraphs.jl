@@ -17,8 +17,9 @@ estimation, and missing-data weighting in one package:
 The package currently implements graph utilities, automatic identification
 routing, backdoor TMLE, front-door/NPS TMLE, nested ANIPW/NIPW, default
 parametric nuisance fits, MLJ-based SuperLearner ensembles, symbolic
-Pearl-Shpitser ID for ADMGs, mDAG missing-data identification, missingness
-propensity estimation, and missing-data weighting.
+Pearl-Shpitser ID for ADMGs, finite-support plug-in estimation for discrete ID
+functionals, mDAG missing-data identification, missingness propensity
+estimation, and missing-data weighting.
 
 `CausalGraphs.jl` brings together ideas and workflows from Anna Guo and Razieh
 Nabi's R packages [`flexCausal`](https://github.com/annaguo-bios/flexCausal)
@@ -51,7 +52,7 @@ Full documentation: **https://xiangao.github.io/CausalGraphs.jl/dev/**
 | Vignette | Description |
 |---|---|
 | [Graphs and Identification](https://xiangao.github.io/CausalGraphs.jl/dev/vignettes/Graphs_and_Identification/) | ADMG construction, graph visualization, graph properties, and `identify()` routing |
-| [General ADMG ID Algorithm](https://xiangao.github.io/CausalGraphs.jl/dev/vignettes/ADMG_ID_Algorithm/) | Symbolic Pearl-Shpitser ID, hedge failures, fixing sequences, and nested-fixability diagnostics |
+| [General ADMG ID Algorithm](https://xiangao.github.io/CausalGraphs.jl/dev/vignettes/ADMG_ID_Algorithm/) | Symbolic Pearl-Shpitser ID, finite-support plug-in estimation, hedge failures, and fixing diagnostics |
 | [Estimation: Backdoor and Front-Door](https://xiangao.github.io/CausalGraphs.jl/dev/vignettes/Estimation_Backdoor_Frontdoor/) | Backdoor/a-fixable and front-door/p-fixable estimation workflows |
 | [Nested-Fixable Estimation and Missing Data](https://xiangao.github.io/CausalGraphs.jl/dev/vignettes/Nested_and_Missing_Data/) | Nested-fixable effects, ANIPW/NIPW, and missing-data weighting with mDAGs |
 | [Real Example: Smoking Cessation and Weight Change](https://xiangao.github.io/CausalGraphs.jl/dev/vignettes/Smoking_Cessation_NHEFS/) | End-to-end NHEFS example: hypothesize a graph, identify, estimate, and compare assumptions |
@@ -122,11 +123,12 @@ one of:
 | `:a_fixable` | Backdoor/a-fixable effect |
 | `:p_fixable` | Front-door, primal-fixable, or NPS effect |
 | `:nested_fixable` | Identified by a One-Line-ID style nested check |
-| `:id_algorithm` | Identified by the general Pearl-Shpitser ID algorithm; inspect `id_expression` |
+| `:id_algorithm` | Identified by the general Pearl-Shpitser ID algorithm; routed to finite-support plug-in estimation for discrete variables |
 | `:not_identified` | Not identified by the implemented criteria |
 
 For symbolic identification without estimator routing, use
-`ID_algorithm(graph, treatment, outcome)`.
+`ID_algorithm(graph, treatment, outcome)`. For direct finite-support plug-in
+estimation of a symbolic ID functional, use `estimate_id(...)`.
 
 ### Estimation
 
@@ -138,9 +140,10 @@ the graph:
 | a-fixable | `:TMLE`, `:Onestep`, `:Gcomp`, `:IPW` |
 | p-fixable | `:TMLE`, `:Onestep` |
 | nested-fixable | `:ANIPW`, `:NIPW` |
+| ID-algorithm | `:IDPlugin` for finite-support/discrete variables |
 
-Effects with strategy `:id_algorithm` are identified symbolically, but arbitrary
-ID functionals are not yet automatically estimated by `estimate_causal()`.
+The ID plug-in estimator enumerates observed supports, so it is appropriate for
+discrete variables. It is not a general continuous-variable TMLE.
 
 The argument `a` can be a scalar, such as `a=1`, for `E[Y(a)]`, or a length-two
 vector, such as `a=[1,0]`, for an ACE contrast.

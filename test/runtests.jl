@@ -77,6 +77,30 @@ end
     @test nested.outcome == :Y
 end
 
+@testset "finite-support ID plug-in" begin
+    Random.seed!(11)
+    n = 500
+    A = Float64.(rand(n) .< 0.5)
+    M = Float64.(rand(n) .< (0.2 .+ 0.6 .* A))
+    Y = Float64.(rand(n) .< (0.1 .+ 0.2 .* A .+ 0.4 .* M))
+    df = DataFrame(A=A, M=M, Y=Y)
+    g = make_graph(vertices=[:A, :M, :Y],
+                   di_edges=[(:A, :M), (:M, :Y)],
+                   bi_edges=[(:A, :Y)])
+
+    res = estimate_id(a=[1, 0], data=df, graph=g, treatment=:A, outcome=:Y)
+    @test haskey(res, :IDPlugin)
+    @test isfinite(res[:IDPlugin].ACE)
+    @test abs(res[:IDPlugin_Y1].total_probability - 1) < 1e-8
+    @test abs(res[:IDPlugin_Y0].total_probability - 1) < 1e-8
+
+    g_bow = make_graph(vertices=[:A, :Y],
+                       di_edges=[(:A, :Y)],
+                       bi_edges=[(:A, :Y)])
+    @test_throws ErrorException estimate_id(a=1, data=df[:, [:A, :Y]],
+                                            graph=g_bow, treatment=:A, outcome=:Y)
+end
+
 # ── Backdoor TMLE ─────────────────────────────────────────────────────────────
 @testset "backdoor TMLE" begin
     Random.seed!(1)

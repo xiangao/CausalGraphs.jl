@@ -5,7 +5,7 @@ semiparametric effect estimation, and missing-data weighting in acyclic directed
 mixed graphs (ADMGs) and missingness DAGs (mDAGs).
 It includes estimator-routing checks for a-fixable, p-fixable, and
 nested-fixable effects, plus symbolic Pearl-Shpitser ID for more general ADMG
-queries.
+queries and finite-support plug-in estimation for discrete ID functionals.
 
 It brings together ideas and workflows from Anna Guo and Razieh Nabi's R
 packages [`flexCausal`](https://github.com/annaguo-bios/flexCausal) and
@@ -56,7 +56,7 @@ result[:TMLE].ACE
 | Vignette | Description |
 |----------|-------------|
 | [Graphs and Identification](vignettes/Graphs_and_Identification.md) | ADMG construction, visualization, graph properties, and `identify()` routing |
-| [General ADMG ID Algorithm](vignettes/ADMG_ID_Algorithm.md) | Symbolic Pearl-Shpitser ID, hedge failures, fixing sequences, and nested-fixability diagnostics |
+| [General ADMG ID Algorithm](vignettes/ADMG_ID_Algorithm.md) | Symbolic Pearl-Shpitser ID, finite-support plug-in estimation, hedge failures, and fixing diagnostics |
 | [Estimation: Backdoor and Front-Door](vignettes/Estimation_Backdoor_Frontdoor.md) | Backdoor/a-fixable and front-door/p-fixable estimation workflows |
 | [Nested-Fixable and Missing Data](vignettes/Nested_and_Missing_Data.md) | Nested-fixable effects, ANIPW/NIPW, and missing-data weighting with mDAGs |
 | [Smoking Cessation NHEFS](vignettes/Smoking_Cessation_NHEFS.md) | End-to-end real-data workflow: hypothesize a graph, identify, estimate, and compare assumptions |
@@ -70,6 +70,7 @@ result[:TMLE].ACE
 - `to_mermaid`
 - `identify`
 - `ID_algorithm`
+- `estimate_id`
 - `estimate_causal`
 - `make_mdag`
 - `compute_missing_weights`

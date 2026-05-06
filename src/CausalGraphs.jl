@@ -20,6 +20,7 @@ export id_algorithm, is_id_identified
 export fixing_sequence, nested_fixability, is_nested_fixable
 export superlearner
 export estimate_causal, backdoor_tmle_a, nps_tmle_a, nested_anipw_a
+export estimate_id, id_plugin_a
 export calculate_density_ratio_dnorm
 export MDAG, MissingTree, IDLaw, IDResult, PropensityEstimate, CliqueResult, MEstimationResult
 export make_mdag, make_mtree, append_leaf, prune_tree, are_trees_identical
@@ -36,6 +37,7 @@ include("graph.jl")
 include("missing_core.jl")
 include("visualization.jl")
 include("identification.jl")
+include("id_plugin.jl")
 include("nuisance.jl")
 include("backdoor.jl")
 include("primalfix.jl")
@@ -56,8 +58,8 @@ Identification is determined automatically:
 - a-fixable (backdoor): returns TMLE, Onestep, Gcomp, IPW
 - p-fixable (front-door / NPS): returns TMLE, Onestep
 - nested-fixable: returns ANIPW, NIPW
-- general ID-algorithm identifiable: `identify()` reports `:id_algorithm`,
-  but arbitrary ID functionals do not yet have an automatic estimator here
+- general ID-algorithm identifiable: returns a finite-support ID plug-in
+  estimator for discrete variables
 
 `a` may be a scalar for E[Y(a)] or a length-2 vector `[a1, a0]` for the ACE.
 
@@ -141,9 +143,12 @@ function estimate_causal(; a, data::DataFrame,
             :rw       => out1.rw,
         )
     else  # :id_algorithm
-        error("The effect of $treatment on $outcome is identified by the general ID algorithm, " *
-              "but `estimate_causal()` does not yet implement an estimator for arbitrary ID functionals. " *
-              "Inspect `identify(...).id_expression` or `ID_algorithm(graph, treatment, outcome)`.")
+        @info "Effect is identified by the general ID algorithm. Using finite-support ID plug-in estimator."
+        return _combine_id_levels(a, aval ->
+            id_plugin_a(a=aval, data=data, graph=g,
+                        treatment=treatment, outcome=outcome,
+                        id_result=id.id_result,
+                        sample_weights=sample_weights; kwargs...))
     end
 end
 

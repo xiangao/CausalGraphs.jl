@@ -47,6 +47,31 @@ the familiar formula: average the mediator distribution under the intervention,
 then average the mediator-outcome regression over the observed treatment
 distribution.
 
+## Finite-Support Plug-In Estimation
+
+For discrete variables, `estimate_id()` can evaluate the symbolic ID functional
+automatically by enumerating the observed support and plugging in empirical
+conditional probabilities.
+
+```@example admg_id
+using DataFrames, Random
+Random.seed!(24)
+
+n = 800
+A = Float64.(rand(n) .< 0.5)
+M = Float64.(rand(n) .< (0.2 .+ 0.6 .* A))
+Y = Float64.(rand(n) .< (0.1 .+ 0.2 .* A .+ 0.4 .* M))
+df = DataFrame(A=A, M=M, Y=Y)
+
+id_est = estimate_id(a=[1, 0], data=df, graph=g_fd, treatment=:A, outcome=:Y)
+id_est[:IDPlugin]
+```
+
+The same plug-in route is used by `estimate_causal()` when `identify()` returns
+`:id_algorithm`. The estimator is deliberately labeled `:IDPlugin`: it is an
+automatic finite-support estimator, not a general TMLE for arbitrary continuous
+ID functionals.
+
 ## Non-Identification
 
 The bow graph has both `A -> Y` and hidden confounding `A <-> Y`. The observed
@@ -132,9 +157,12 @@ Use the functions at different levels of generality:
 - `ID_algorithm()` answers the more general symbolic ADMG identification
   question and returns a hedge when the effect is not identified.
 - `identify()` combines these checks for package routing.
-- `estimate_causal()` estimates only the currently implemented estimator
-  classes: a-fixable, p-fixable, and nested-fixable.
+- `estimate_id()` estimates symbolic ID functionals by finite-support plug-in
+  when the variables are discrete.
+- `estimate_causal()` estimates a-fixable, p-fixable, nested-fixable, and
+  discrete ID-algorithm functionals.
 
 General ID can produce complicated functionals. Those functionals are useful
-identification results, but they require separate estimation machinery before
-they should be treated as automatic estimators.
+identification results. For continuous or high-dimensional variables, they
+still require specialized estimation machinery beyond finite support
+enumeration.
