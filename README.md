@@ -148,14 +148,19 @@ discrete variables. It is not a general continuous-variable TMLE.
 
 If [`NPCausal.jl`](https://github.com/xiangao/NPCausal.jl) is also installed
 and loaded, `estimate_causal_npcausal(...)` can use `CausalGraphs.jl` for
-identification and route supported backdoor/a-fixable effects to
-`NPCausal.ate`:
+identification and route supported effects through the `NPCausal` namespace:
 
 ```julia
 using Pkg
 Pkg.add(url="https://github.com/xiangao/NPCausal.jl")
 
 using CausalGraphs, NPCausal
+
+graph = make_graph(
+    vertices = [:A, :M, :Y],
+    di_edges = [(:A, :M), (:M, :Y)],
+    bi_edges = [(:A, :Y)],
+)
 
 res = estimate_causal_npcausal(
     a = [1, 0],
@@ -167,13 +172,14 @@ res = estimate_causal_npcausal(
 )
 
 r = x -> round(x, sigdigits=4)
-(ACE = r(res[:NPCausalOnestep].ACE),
- SE = r(res[:NPCausalOnestep].standard_error))
+(ACE = r(res[:TMLE].ACE),
+ lower_ci = r(res[:TMLE].lower_ci),
+ upper_ci = r(res[:TMLE].upper_ci))
 ```
 
-The bridge is deliberately narrow for now: p-fixable, nested-fixable, and
-general ID-algorithm targets still use the estimators implemented in this
-package until matching `NPCausal.jl` APIs exist.
+The bridge covers backdoor/a-fixable effects via `NPCausal.ate`, p-fixable
+effects via NPS TMLE, nested-fixable effects via ANIPW, and finite-support
+discrete ID-algorithm functionals via `:IDPlugin`.
 
 The argument `a` can be a scalar, such as `a=1`, for `E[Y(a)]`, or a length-two
 vector, such as `a=[1,0]`, for an ACE contrast.

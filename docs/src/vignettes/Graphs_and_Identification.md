@@ -119,7 +119,8 @@ plug-in estimator.
 
 `CausalGraphs.jl` can also act as the identification layer for
 [`NPCausal.jl`](https://github.com/xiangao/NPCausal.jl). Install and load both
-packages, then call `estimate_causal_npcausal(...)`:
+packages, then call either `estimate_causal_npcausal(...)` or
+`NPCausal.admg_estimate_causal(...)`:
 
 ```julia
 using Pkg
@@ -141,9 +142,9 @@ r = x -> round(x, sigdigits=4)
  SE = r(res[:NPCausalOnestep].standard_error))
 ```
 
-The bridge currently supports `:a_fixable`/backdoor effects by passing the
-treatment Markov pillow to `NPCausal.ate`. Front-door, nested-fixable, and
-general ID-algorithm targets still use the estimators inside `CausalGraphs.jl`.
+The route covers `:a_fixable`/backdoor effects through `NPCausal.ate`,
+`:p_fixable` effects through NPS TMLE, `:nested_fixable` effects through ANIPW,
+and finite-support discrete `:id_algorithm` functionals through `:IDPlugin`.
 
 For the backdoor graph, the a-fixability condition holds because `A` is not in
 the same hidden-confounding district as any descendant other than itself. The

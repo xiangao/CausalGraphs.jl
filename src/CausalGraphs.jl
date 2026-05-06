@@ -54,10 +54,10 @@ Identify an effect with `CausalGraphs.jl` and estimate supported effects with
 `NPCausal.jl`.
 
 This optional bridge is loaded only when `NPCausal.jl` is also loaded in the
-Julia session. The current bridge supports `:a_fixable`/backdoor effects by
-passing the outcome, treatment, and treatment Markov pillow to `NPCausal.ate`.
-It returns `:NPCausalOnestep` plus the raw `NPCausal.ate` result. Other ADMG
-strategies still use `estimate_causal` or `estimate_id`.
+Julia session. It delegates to `NPCausal.admg_estimate_causal`, which routes
+backdoor/a-fixable effects to `NPCausal.ate`, p-fixable effects to NPS TMLE,
+nested-fixable effects to ANIPW, and finite-support discrete ID-algorithm
+functionals to `:IDPlugin`.
 """
 function estimate_causal_npcausal(; kwargs...)
     ext = Base.get_extension(@__MODULE__, :CausalGraphsNPCausalExt)
