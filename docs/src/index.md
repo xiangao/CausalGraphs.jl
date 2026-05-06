@@ -56,6 +56,7 @@ result[:TMLE].ACE
 | Vignette | Description |
 |----------|-------------|
 | [Graphs and Identification](vignettes/Graphs_and_Identification.md) | ADMG construction, visualization, graph properties, and `identify()` routing |
+| [General ADMG ID Algorithm](vignettes/ADMG_ID_Algorithm.md) | Symbolic Pearl-Shpitser ID, hedge failures, fixing sequences, and nested-fixability diagnostics |
 | [Estimation: Backdoor and Front-Door](vignettes/Estimation_Backdoor_Frontdoor.md) | Backdoor/a-fixable and front-door/p-fixable estimation workflows |
 | [Nested-Fixable and Missing Data](vignettes/Nested_and_Missing_Data.md) | Nested-fixable effects, ANIPW/NIPW, and missing-data weighting with mDAGs |
 | [Smoking Cessation NHEFS](vignettes/Smoking_Cessation_NHEFS.md) | End-to-end real-data workflow: hypothesize a graph, identify, estimate, and compare assumptions |
