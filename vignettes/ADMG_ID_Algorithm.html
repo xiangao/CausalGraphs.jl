@@ -123,7 +123,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><code>identify()</code> is the estimator-routing function. It first checks the effect classes for which <code>estimate_causal()</code> has estimators: a-fixable, p-fixable, and nested-fixable effects. <code>ID_algorithm()</code> is the more general symbolic Pearl-Shpitser ID check for ADMG total-effect queries.</p>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="0ae623b2" class="cell" data-execution_count="1">
+<div id="4df9dd25" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="bu">Pkg</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">activate</span>(<span class="fu">joinpath</span>(<span class="pp">@__DIR__</span>, <span class="st">".."</span>); io<span class="op">=</span><span class="cn">devnull</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -133,7 +133,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="front-door-as-a-general-id-query" class="level2">
 <h2 class="anchored" data-anchor-id="front-door-as-a-general-id-query">Front-Door as a General ID Query</h2>
 <p>The front-door graph has an unmeasured common cause of treatment and outcome, represented by <code>A &lt;-&gt; Y</code>, but the causal effect of <code>A</code> on <code>Y</code> is still identified through the mediator <code>M</code>.</p>
-<div id="253bcba1" class="cell" data-execution_count="2">
+<div id="28537d36" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>g_fd <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>A, <span class="op">:</span>M, <span class="op">:</span>Y],</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="op">:</span>A, <span class="op">:</span>M), (<span class="op">:</span>M, <span class="op">:</span>Y)],</span>
@@ -166,14 +166,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>For estimation, this graph is p-fixable, so <code>identify()</code> routes to the NPS-TMLE estimator.</p>
-<div id="ebfe883e" class="cell" data-execution_count="4">
+<div id="57386c7a" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">identify</span>(g_fd, <span class="op">:</span>A, <span class="op">:</span>Y).strategy</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
 <pre><code>:p_fixable</code></pre>
 </div>
 </div>
 <p>The same graph is also identified by the general ID algorithm. Here <code>ID_algorithm()</code> returns a symbolic functional.</p>
-<div id="0090a61d" class="cell" data-execution_count="5">
+<div id="432424f0" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>id_fd <span class="op">=</span> <span class="fu">ID_algorithm</span>(g_fd, <span class="op">:</span>A, <span class="op">:</span>Y)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"identified: "</span>, id_fd.identified)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"functional: "</span>, id_fd.expression)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -187,7 +187,7 @@ functional: sum_{M} P(M | A) * sum_{A} P(A) * P(Y | A, M)</code></pre>
 <section id="non-identification-and-hedges" class="level2">
 <h2 class="anchored" data-anchor-id="non-identification-and-hedges">Non-Identification and Hedges</h2>
 <p>The bow graph is the simplest non-identified ADMG for the effect of <code>A</code> on <code>Y</code>. It has both a causal edge <code>A -&gt; Y</code> and hidden confounding <code>A &lt;-&gt; Y</code>. The observed association cannot separate the directed effect from the latent common cause.</p>
-<div id="58fda3e9" class="cell" data-execution_count="6">
+<div id="56eb759d" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>g_bow <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>A, <span class="op">:</span>Y],</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
@@ -216,7 +216,7 @@ functional: sum_{M} P(M | A) * sum_{A} P(A) * P(Y | A, M)</code></pre>
 </div>
 </div>
 </div>
-<div id="a5279c9d" class="cell" data-execution_count="8">
+<div id="e5483cfe" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>id_bow <span class="op">=</span> <span class="fu">ID_algorithm</span>(g_bow, <span class="op">:</span>A, <span class="op">:</span>Y)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"identified: "</span>, id_bow.identified)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"hedge:      "</span>, id_bow.hedge)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -231,7 +231,7 @@ hedge:      (S = [:Y], F = [:A, :Y], treatment = [:A], outcome = [:Y])</code></p
 <h2 class="anchored" data-anchor-id="fixing-sequences">Fixing Sequences</h2>
 <p>Fixing is the graph operation that turns random vertices into intervention-like or conditioned-on vertices by removing incoming directed edges and bidirected edges involving the fixed node. A vertex is fixable when it is not in the same district as one of its proper descendants.</p>
 <p>The helper <code>fixing_sequence()</code> tries to fix a requested set of nodes and returns the order it found.</p>
-<div id="452ccdc8" class="cell" data-execution_count="9">
+<div id="a70d9588" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>g_bd <span class="op">=</span> <span class="fu">make_graph</span>(</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>X, <span class="op">:</span>A, <span class="op">:</span>Y],</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="op">:</span>X, <span class="op">:</span>A), (<span class="op">:</span>X, <span class="op">:</span>Y), (<span class="op">:</span>A, <span class="op">:</span>Y)],</span>
@@ -247,24 +247,32 @@ hedge:      (S = [:Y], F = [:A, :Y], treatment = [:A], outcome = [:Y])</code></p
 <section id="nested-fixability-diagnostics" class="level2">
 <h2 class="anchored" data-anchor-id="nested-fixability-diagnostics">Nested-Fixability Diagnostics</h2>
 <p>Nested-fixability uses fixing operations inside induced subgraphs. It is more general than ordinary backdoor adjustment and p-fixability, and it underlies the ANIPW/NIPW estimator route in this package.</p>
-<p>The graph below is not p-fixable because <code>A</code> and its child <code>M</code> are in the same district. The nested check exposes the SWIG ancestor set and the fixing diagnostics used by <code>identify()</code>.</p>
-<div id="e2d19046" class="cell" data-execution_count="10">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>g_nested <span class="op">=</span> <span class="fu">make_graph</span>(</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>Z, <span class="op">:</span>A, <span class="op">:</span>M, <span class="op">:</span>Y],</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [(<span class="op">:</span>Z, <span class="op">:</span>A), (<span class="op">:</span>Z, <span class="op">:</span>Y), (<span class="op">:</span>A, <span class="op">:</span>M), (<span class="op">:</span>M, <span class="op">:</span>Y)],</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    bi_edges <span class="op">=</span> [(<span class="op">:</span>A, <span class="op">:</span>M)],</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>);</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"p-fixable: "</span>, <span class="fu">is_p_fix</span>(g_nested, <span class="op">:</span>A))</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>nested <span class="op">=</span> <span class="fu">nested_fixability</span>(g_nested, <span class="op">:</span>A, <span class="op">:</span>Y)</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"nested identified: "</span>, nested.identified)</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Y*:               "</span>, nested.ystar)</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"nested order:     "</span>, nested.n_order)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The graph below is not p-fixable because the treatment district overlaps with post-treatment structure, but the nested check still identifies the effect. This is the kind of case where simple adjustment and front-door logic are not the right explanation, but fixing operations still provide one.</p>
+<div id="8b7d3df1" class="cell" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>g_hiv <span class="op">=</span> <span class="fu">make_graph</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [<span class="op">:</span>ViralLoad, <span class="op">:</span>Income, <span class="op">:</span>Exercise, <span class="op">:</span>T, <span class="op">:</span>Toxicity, <span class="op">:</span>Adherence, <span class="op">:</span>CD4],</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    di_edges <span class="op">=</span> [</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        (<span class="op">:</span>ViralLoad, <span class="op">:</span>T), (<span class="op">:</span>ViralLoad, <span class="op">:</span>CD4), (<span class="op">:</span>Income, <span class="op">:</span>T), (<span class="op">:</span>Exercise, <span class="op">:</span>CD4),</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        (<span class="op">:</span>T, <span class="op">:</span>Toxicity), (<span class="op">:</span>T, <span class="op">:</span>CD4), (<span class="op">:</span>Toxicity, <span class="op">:</span>Adherence), (<span class="op">:</span>Adherence, <span class="op">:</span>CD4),</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    bi_edges <span class="op">=</span> [</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        (<span class="op">:</span>Income, <span class="op">:</span>Toxicity), (<span class="op">:</span>Exercise, <span class="op">:</span>Income), (<span class="op">:</span>Exercise, <span class="op">:</span>T),</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        (<span class="op">:</span>ViralLoad, <span class="op">:</span>Adherence), (<span class="op">:</span>ViralLoad, <span class="op">:</span>CD4),</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"a-fixable: "</span>, <span class="fu">is_fix</span>(g_hiv, <span class="op">:</span>T))</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"p-fixable: "</span>, <span class="fu">is_p_fix</span>(g_hiv, <span class="op">:</span>T))</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>nested <span class="op">=</span> <span class="fu">nested_fixability</span>(g_hiv, <span class="op">:</span>T, <span class="op">:</span>CD4)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"nested identified: "</span>, nested.identified)</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Y*:               "</span>, nested.ystar)</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"nested order:     "</span>, nested.n_order)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>p-fixable: false
-nested identified: false
-Y*:               [:Y, :Z, :M]
-nested order:     Symbol[]</code></pre>
+<pre><code>a-fixable: false
+p-fixable: false
+nested identified: true
+Y*:               [:CD4, :ViralLoad, :Exercise, :Adherence, :Toxicity]
+nested order:     [:ViralLoad, :Income, :T, :Exercise, :Toxicity, :Adherence, :CD4]</code></pre>
 </div>
 </div>
 <p>The nested diagnostics are useful when building or debugging examples. They show which outcome ancestors remain after fixing treatment and which districts must be reachable by fixing vertices outside the district.</p>

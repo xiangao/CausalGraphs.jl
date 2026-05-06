@@ -129,19 +129,27 @@ Nested-fixability uses fixing operations inside induced subgraphs. It is more
 general than ordinary backdoor adjustment and p-fixability, and it underlies the
 ANIPW/NIPW estimator route in this package.
 
-The graph below is not p-fixable because `A` and its child `M` are in the same
-district. The nested check exposes the SWIG ancestor set and the fixing
-diagnostics used by `identify()`.
+The graph below is not p-fixable because the treatment district overlaps with
+post-treatment structure, but the nested check still identifies the effect.
+This is the kind of case where simple adjustment and front-door logic are not
+the right explanation, but fixing operations still provide one.
 
 ```{julia}
-g_nested = make_graph(
-    vertices = [:Z, :A, :M, :Y],
-    di_edges = [(:Z, :A), (:Z, :Y), (:A, :M), (:M, :Y)],
-    bi_edges = [(:A, :M)],
+g_hiv = make_graph(
+    vertices = [:ViralLoad, :Income, :Exercise, :T, :Toxicity, :Adherence, :CD4],
+    di_edges = [
+        (:ViralLoad, :T), (:ViralLoad, :CD4), (:Income, :T), (:Exercise, :CD4),
+        (:T, :Toxicity), (:T, :CD4), (:Toxicity, :Adherence), (:Adherence, :CD4),
+    ],
+    bi_edges = [
+        (:Income, :Toxicity), (:Exercise, :Income), (:Exercise, :T),
+        (:ViralLoad, :Adherence), (:ViralLoad, :CD4),
+    ],
 );
 
-println("p-fixable: ", is_p_fix(g_nested, :A))
-nested = nested_fixability(g_nested, :A, :Y)
+println("a-fixable: ", is_fix(g_hiv, :T))
+println("p-fixable: ", is_p_fix(g_hiv, :T))
+nested = nested_fixability(g_hiv, :T, :CD4)
 println("nested identified: ", nested.identified)
 println("Y*:               ", nested.ystar)
 println("nested order:     ", nested.n_order)

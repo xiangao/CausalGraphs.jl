@@ -98,14 +98,21 @@ general than ordinary backdoor adjustment and p-fixability, and it underlies the
 ANIPW/NIPW estimator route in this package.
 
 ```@example admg_id
-g_nested = make_graph(
-    vertices = [:Z, :A, :M, :Y],
-    di_edges = [(:Z, :A), (:Z, :Y), (:A, :M), (:M, :Y)],
-    bi_edges = [(:A, :M)],
+g_hiv = make_graph(
+    vertices = [:ViralLoad, :Income, :Exercise, :T, :Toxicity, :Adherence, :CD4],
+    di_edges = [
+        (:ViralLoad, :T), (:ViralLoad, :CD4), (:Income, :T), (:Exercise, :CD4),
+        (:T, :Toxicity), (:T, :CD4), (:Toxicity, :Adherence), (:Adherence, :CD4),
+    ],
+    bi_edges = [
+        (:Income, :Toxicity), (:Exercise, :Income), (:Exercise, :T),
+        (:ViralLoad, :Adherence), (:ViralLoad, :CD4),
+    ],
 )
 
-nested = nested_fixability(g_nested, :A, :Y)
-(p_fixable = is_p_fix(g_nested, :A),
+nested = nested_fixability(g_hiv, :T, :CD4)
+(a_fixable = is_fix(g_hiv, :T),
+ p_fixable = is_p_fix(g_hiv, :T),
  nested_identified = nested.identified,
  ystar = nested.ystar,
  nested_order = nested.n_order)
