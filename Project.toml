@@ -1,7 +1,7 @@
 name = "CausalGraphs"
 uuid = "68db26a2-7c2b-457b-8f5d-f446513faf50"
 authors = ["Xiang Ao <xiangao@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
@@ -16,12 +16,6 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsModels = "3eaba693-59b7-5ba5-a881-562e759f1c8d"
 
-[weakdeps]
-NPCausal = "cd612eeb-661c-4b56-8bb8-fdd3887649b5"
-
-[extensions]
-CausalGraphsNPCausalExt = "NPCausal"
-
 [compat]
 DataFrames = "1"
 DecisionTree = "0.12"
@@ -30,7 +24,6 @@ GLM = "1"
 MLJ = "0.23"
 MLJDecisionTreeInterface = "0.4"
 MLJLinearModels = "0.10"
-NPCausal = "0.1"
 StatsModels = "0.7"
 julia = "1.10"
 
