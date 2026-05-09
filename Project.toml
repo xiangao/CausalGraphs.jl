@@ -1,7 +1,7 @@
 name = "CausalGraphs"
 uuid = "68db26a2-7c2b-457b-8f5d-f446513faf50"
 authors = ["Xiang Ao <xiangao@gmail.com>"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
