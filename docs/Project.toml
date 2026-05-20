@@ -1,5 +1,5 @@
 [deps]
-CausalGraphs = "c9f3a1b2-7e4d-5f8a-b0c1-2d3e4f5a6b7c"
+CausalGraphs = "68db26a2-7c2b-457b-8f5d-f446513faf50"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
