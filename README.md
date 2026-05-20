@@ -1,25 +1,23 @@
 # CausalGraphs.jl
 
-`CausalGraphs.jl` is a Julia package for identification and estimation of
-causal effects in acyclic directed mixed graphs (ADMGs), with support for hidden
-variables, nested-fixable effects, and missing-data weighting.
+`CausalGraphs.jl` is the Julia package I use for working with causal graphs
+when some variables may be hidden. The main object is an ADMG: directed edges
+for causal relations and bidirected edges for unobserved common causes.
 
-It combines graph-based causal identification, semiparametric effect
-estimation, and missing-data weighting in one package:
+The package tries to keep the workflow close to the way the identification
+argument is written:
 
 1. Build an ADMG with directed and bidirected edges.
 2. Check whether an effect is a-fixable, p-fixable, nested-fixable, identified
    by the general ID algorithm, or not identified.
-3. Route automatically to the appropriate semiparametric estimator.
+3. Route to the estimator that matches the identification result.
 4. Optionally identify missing-data mechanisms on an mDAG and pass
    inverse-probability weights into the causal estimator.
 
-The package currently implements graph utilities, automatic identification
-routing, backdoor TMLE, front-door/NPS TMLE, nested ANIPW/NIPW, default
-parametric nuisance fits, MLJ-based SuperLearner ensembles, symbolic
-Pearl-Shpitser ID for ADMGs, finite-support plug-in estimation with EIF CIs for discrete ID
-functionals, mDAG missing-data identification, missingness propensity
-estimation, and missing-data weighting.
+The package has graph utilities, backdoor TMLE, front-door/NPS TMLE, nested
+ANIPW/NIPW, simple parametric nuisance fits, optional MLJ learners, symbolic
+Pearl-Shpitser ID for ADMGs, finite-support plug-in estimation for discrete ID
+functionals, and missing-data weighting for mDAGs.
 
 `CausalGraphs.jl` brings together ideas and workflows from Anna Guo and Razieh
 Nabi's R packages [`flexCausal`](https://github.com/annaguo-bios/flexCausal)
